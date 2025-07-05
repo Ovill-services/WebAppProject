@@ -1,0 +1,99 @@
+<nav class="navbar navbar-expand-lg mb-5" style="z-index: 2000; background: transparent; box-shadow: none;">
+  <div class="container-fluid">
+    <!-- Navbar brand -->
+    <form action="/">
+      <button class="navbar-brand nav-link" target="_blank" type="submit">
+        <strong>Ovill</strong>
+      </button>
+    </form>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarExample01"
+      aria-controls="navbarExample01" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarExample01" style="background: transparent;">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item active">
+          <form action="/">
+            <button class="nav-link" aria-current="page" type="submit">Home</button>
+          </form>
+        </li>
+        <li class="nav-item active">
+          <form action="/pricing">
+            <button class="nav-link" aria-current="page" type="submit">Pricing</button>
+          </form>
+        </li>
+        <li class="nav-item">
+          <form action="/about">
+            <button class="nav-link" aria-current="page" type="submit">About us</button>
+          </form>
+        </li>
+        <li class="nav-item">
+          <form action="/contact">
+            <button class="nav-link" aria-current="page" type="submit">Contact Us</button>
+          </form>
+        </li>
+      </ul>
+
+      <ul class="navbar-nav ms-auto mb-2 mb-lg-0 px-5">
+        <li class="nav-item">
+          <form action="/login">
+            <button class="nav-link bg-primary btn" type="submit">Login</button>
+          </form>
+        </li>
+        
+        <li class="nav-item dropdown">
+          <a href="#" class="nav-link py-2 px-0 px-lg-2 dropdown-toggle d-flex align-items-center show ml-3"
+            id="bd-color-mode" data-bs-toggle="dropdown" aria-expanded="false" data-bs-display="static">theme
+            <svg xmlns="http://www.w3.org/2000/svg" id="moon" height="20px" viewBox="0 -960 960 960" width="20px"
+              fill="#e3e3e3">
+              <path
+                d="M479.96-144Q340-144 242-242t-98-238q0-140 97.93-238t237.83-98q13.06 0 25.65 1 12.59 1 25.59 3-39 29-62 72t-23 92q0 85 58.5 143.5T648-446q49 0 92-23t72-62q2 13 3 25.59t1 25.65q0 139.9-98.04 237.83t-238 97.93Zm.04-72q82 0 148.78-47.07Q695.55-310.15 727-386q-20 5-39.67 8.5Q667.67-374 648-374q-113.86 0-193.93-80.07Q374-534.14 374-648q0-19.67 3.5-39.33Q381-707 386-727q-75.85 31.45-122.93 98.22Q216-562 216-480q0 110 77 187t187 77Zm-14-250Z" />
+            </svg>
+            <svg xmlns="http://www.w3.org/2000/svg" id="sun" height="20px" viewBox="0 -960 960 960" width="24px"
+              fill="#e3e3e3">
+              <path
+                d="M480-360q50 0 85-35t35-85q0-50-35-85t-85-35q-50 0-85 35t-35 85q0 50 35 85t85 35Zm0 80q-83 0-141.5-58.5T280-480q0-83 58.5-141.5T480-680q83 0 141.5 58.5T680-480q0 83-58.5 141.5T480-280ZM200-440H40v-80h160v80Zm720 0H760v-80h160v80ZM440-760v-160h80v160h-80Zm0 720v-160h80v160h-80ZM256-650l-101-97 57-59 96 100-52 56Zm492 496-97-101 53-55 101 97-57 59Zm-98-550 97-101 59 57-100 96-56-52ZM154-212l101-97 55 53-97 101-59-57Zm326-268Z" />
+            </svg>
+
+          </a>
+
+          <ul class="dropdown-menu dropdown-menu-end mt-0 mb-0m ms-auto" aria-labelledby="bd-color-mode"
+            style="--bs-dropdown-min-width: 6rem;" data-bs-popper="static">
+            <li>
+              <button type="button" class="dropdown-item d-flex align-items-center bg-light text-dark"
+                data-bs-theme-value="light"> Light
+                <svg xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 -960 960 960" width="24px"
+                  fill="#000000">
+                  <path
+                    d="M480-360q50 0 85-35t35-85q0-50-35-85t-85-35q-50 0-85 35t-35 85q0 50 35 85t85 35Zm0 80q-83 0-141.5-58.5T280-480q0-83 58.5-141.5T480-680q83 0 141.5 58.5T680-480q0 83-58.5 141.5T480-280ZM200-440H40v-80h160v80Zm720 0H760v-80h160v80ZM440-760v-160h80v160h-80Zm0 720v-160h80v160h-80ZM256-650l-101-97 57-59 96 100-52 56Zm492 496-97-101 53-55 101 97-57 59Zm-98-550 97-101 59 57-100 96-56-52ZM154-212l101-97 55 53-97 101-59-57Zm326-268Z" />
+                </svg>
+
+              </button>
+            </li>
+            <li>
+              <button type="button" class="dropdown-item d-flex align-items-center bg-dark text-light"
+                data-bs-theme-value="dark"> Dark
+                <svg xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 -960 960 960" width="20px"
+                  fill="#e3e3e3">
+                  <path
+                    d="M479.96-144Q340-144 242-242t-98-238q0-140 97.93-238t237.83-98q13.06 0 25.65 1 12.59 1 25.59 3-39 29-62 72t-23 92q0 85 58.5 143.5T648-446q49 0 92-23t72-62q2 13 3 25.59t1 25.65q0 139.9-98.04 237.83t-238 97.93Zm.04-72q82 0 148.78-47.07Q695.55-310.15 727-386q-20 5-39.67 8.5Q667.67-374 648-374q-113.86 0-193.93-80.07Q374-534.14 374-648q0-19.67 3.5-39.33Q381-707 386-727q-75.85 31.45-122.93 98.22Q216-562 216-480q0 110 77 187t187 77Zm-14-250Z" />
+                </svg>
+              </button>
+            </li>
+            <li>
+              <button type="button" class="dropdown-item d-flex align-items-center bg-secondary text-light"
+                data-bs-theme-value="auto"> Auto
+                <svg xmlns="http://www.w3.org/2000/svg" height="15px" viewBox="0 -960 960 960" width="20px"
+                  fill="#e3e3e3">
+                  <path
+                    d="M480.28-96Q401-96 331-126t-122.5-82.5Q156-261 126-330.96t-30-149.5Q96-560 126-629.5q30-69.5 82.5-122T330.96-834q69.96-30 149.5-30t149.04 30q69.5 30 122 82.5T834-629.28q30 69.73 30 149Q864-401 834-331t-82.5 122.5Q699-156 629.28-126q-69.73 30-149 30ZM516-170q117-14 196.5-101.72T792-480q0-120.56-79.5-208.28T516-790v620Z" />
+                </svg>
+              </button>
+            </li>
+          </ul>
+        </li>
+
+      </ul>
+    </div>
+  </div>
+</nav>
