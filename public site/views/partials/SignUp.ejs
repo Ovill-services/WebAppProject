@@ -1,0 +1,95 @@
+<section class="vh-100 d-flex align-items-center justify-content-center" style="background: var(--bs-body-bg); min-height: 100vh;">
+  <div class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-lg-8 col-xl-7">
+        <div class="card border-0 shadow-lg bg-body-tertiary" style="border-radius: 2rem; backdrop-filter: blur(6px);">
+          <div class="card-body p-5">
+            <h2 class="text-center fw-bold mb-4" style="color: var(--bs-primary); letter-spacing: 1px;">Sign up</h2>
+            <form class="px-2 px-md-4" action="/register" method="POST">
+              <div class="mb-3">
+                <label for="form3Example1c" class="form-label">Your Name</label>
+                <input type="text" id="form3Example1c" class="form-control rounded-pill py-2 px-3" placeholder="Enter your name" name="name"/>
+              </div>
+              <div class="mb-3">
+                <label for="form3Example3c" class="form-label">Your Email</label>
+                <input type="email" id="form3Example3c" class="form-control rounded-pill py-2 px-3" placeholder="Enter your email" name="email"/>
+              </div>
+              <div class="mb-3">
+                <label for="form3Example4c" class="form-label">Password</label>
+                <input type="password" id="form3Example4c" class="form-control rounded-pill py-2 px-3" placeholder="Password" name="password"/>
+              </div>
+              <div class="mb-3">
+                <label for="form3Example4cd" class="form-label">Repeat your password</label>
+                <input type="password" id="form3Example4cd" class="form-control rounded-pill py-2 px-3" placeholder="Repeat password" name="confirm_password"/>
+              </div>
+              <div class="form-check d-flex justify-content-center mb-4">
+                <input class="form-check-input me-2" type="checkbox" value="" id="form2Example3c" />
+                <label class="form-check-label" for="form2Example3c">
+                  I agree all statements in <a href="#" class="text-primary">Terms of service</a>
+                </label>
+              </div>
+              <div class="d-flex justify-content-center mb-3">
+                <button type="submit" class="btn btn-primary btn-lg rounded-pill px-5 shadow-sm">Register</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+  document.querySelector('form[action="/register"]').addEventListener('submit', function(e) {
+    const name = document.getElementById('form3Example1c').value.trim();
+    const email = document.getElementById('form3Example3c').value.trim();
+    const password = document.getElementById('form3Example4c').value;
+    const confirm = document.getElementById('form3Example4cd').value;
+    const terms = document.getElementById('form2Example3c').checked;
+
+    if (!name || !email || !password || !confirm) {
+      e.preventDefault();
+      Swal.fire({
+        icon: 'error',
+        title: 'All fields are required',
+        text: 'Please fill in all fields.',
+        confirmButtonColor: '#3085d6',
+        theme: 'auto'
+      });
+      return;
+    }
+    if (password !== confirm) {
+      e.preventDefault();
+      Swal.fire({
+        icon: 'error',
+        title: 'Passwords do not match',
+        text: 'Please make sure your password and confirmation match.',
+        confirmButtonColor: '#3085d6',
+        theme: 'auto'
+      });
+      return;
+    }
+    if (!terms) {
+      e.preventDefault();
+      Swal.fire({
+        icon: 'error',
+        title: 'Terms not agreed',
+        text: 'You must agree to the Terms of service to register.',
+        confirmButtonColor: '#3085d6',
+        theme: 'auto'
+      });
+      return;
+    }
+    // All validations passed, show success alert and then submit form
+    e.preventDefault();
+    Swal.fire({
+      icon: 'success',
+      title: 'Registration Successful!',
+      text: 'Your registration data is valid.',
+      confirmButtonColor: '#3085d6',
+      theme: 'auto'
+    }).then(() => {
+      this.submit();
+    });
+  });
+</script>
