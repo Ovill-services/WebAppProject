@@ -1,0 +1,8 @@
+
+<%- include('components/header.ejs') %>
+<% if (page === 'dashboard') { %>
+  <%- include('pages/dashboard.ejs') %>
+<% } else if (page === 'profile') { %>
+  <%- include('pages/profile.ejs', { user }) %>
+<% } %>
+<%- include('components/footer.ejs') %>
