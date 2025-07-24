@@ -1,3 +1,14 @@
-<%- include('partials/header.ejs') %>
-<%- include(`partials/${page}.ejs`, { sweetalertScript: typeof sweetalertScript !== 'undefined' ? sweetalertScript : '' }) %>
-<%- include('partials/footer.ejs') %>
+<% if (page === 'dashboard' || page === 'profile') { %>
+  <%- include('privatezone/views/components/header.ejs') %>
+  <%- include('privatezone/views/components/sidebar.ejs') %>
+  <% if (page === 'dashboard') { %>
+    <%- include('privatezone/views/pages/dashboard.ejs') %>
+  <% } else if (page === 'profile') { %>
+    <%- include('privatezone/views/pages/profile.ejs', { user }) %>
+  <% } %>
+  <%- include('privatezone/views/components/footer.ejs') %>
+<% } else { %>
+  <%- include('partials/header.ejs') %>
+  <%- include(`partials/${page}.ejs`, { sweetalertScript: typeof sweetalertScript !== 'undefined' ? sweetalertScript : '' }) %>
+  <%- include('partials/footer.ejs') %>
+<% } %>

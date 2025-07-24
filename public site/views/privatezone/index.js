@@ -1,13 +1,60 @@
+
 import express from 'express';
-import path from 'path';
-import bodyParser from 'body-parser';
-import { appendFile } from 'fs';
+const router = express.Router();
 
-const app = express();
+// take user name from DB
 
-app.get('/private-zone', (req, res) => {
-    res.render('index.ejs', {
-        page: 'dashboard'
-    });
-    console.log('Private zone accessed');
+
+
+router.get('/private-zone', (req, res) => {
+    if (req.session && req.session.user) {
+        res.render('privatezone/views/index.ejs', {
+            page: 'dashboard',
+            user: req.session.user
+        });
+        console.log('Private zone accessed');
+    } else {
+        res.redirect('/login');
+    }
+
+    console.log(req.session);
 });
+
+
+
+router.get('/private-zone/profile', (req, res) => {
+    if (req.session && req.session.user) {
+        res.render('privatezone/views/index.ejs', {
+            page: 'profile',
+            user: req.session.user
+        });
+        console.log('Profile accessed');
+    } else {
+        res.redirect('/login');
+    }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+router.get('/private-zone/logout', (req, res) => {
+    req.session.destroy(err => {
+        if (err) {
+            console.error('Error destroying session:', err);
+        }
+        res.redirect('/');
+    });
+});
+
+export default router;
