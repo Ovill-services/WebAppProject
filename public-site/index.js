@@ -104,24 +104,43 @@ app.post('/register', async (req, res) => {
     console.log('Received a request to register a user');
     const { name, email, password } = req.body;
 
-    // Hash the password using SHA256
-    const hash = crypto.createHash('sha256').update(password).digest('hex');
-
-    const query = 'INSERT INTO users (name, username, password, entrydate, lastlogin) VALUES ($1, $2, $3, $4, $5)';
-    const values = [name, email, hash, moment().format('YYYY-MM-DD HH:mm:ss'), moment().format('YYYY-MM-DD HH:mm:ss')];
     try {
+        // First check if email already exists
+        const checkQuery = 'SELECT username FROM users WHERE username = $1';
+        const checkResult = await db.query(checkQuery, [email]);
+        
+        if (checkResult.rows.length > 0) {
+            // Email already exists
+            const sweetalertScript = `<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script><script>Swal.fire({icon: 'error', title: 'Email Already Registered', text: 'This email address is already registered. Please use a different email or try logging in.', confirmButtonColor: '#3085d6', theme: 'auto'});</script>`;
+            return res.render('index.ejs', {
+                page: 'SignUp',
+                sweetalertScript,
+                message: undefined,
+                method: 'POST'
+            });
+        }
+
+        // Hash the password using SHA256
+        const hash = crypto.createHash('sha256').update(password).digest('hex');
+
+        const query = 'INSERT INTO users (name, username, password, entrydate, lastlogin) VALUES ($1, $2, $3, $4, $5)';
+        const values = [name, email, hash, moment().format('YYYY-MM-DD HH:mm:ss'), moment().format('YYYY-MM-DD HH:mm:ss')];
+        
         await db.query(query, values);
         console.log('User registered successfully');
         res.render('index.ejs', {
             page: 'login',
             message: 'Registration successful! Please log in.',
+            sweetalertScript: undefined,
             method: 'POST'
         });
     } catch (error) {
         console.error('Error registering user:', error);
+        const sweetalertScript = `<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script><script>Swal.fire({icon: 'error', title: 'Registration Error', text: 'There was an error registering your account. Please try again later.', confirmButtonColor: '#3085d6', theme: 'auto'});</script>`;
         res.render('index.ejs', {
             page: 'SignUp',
-            message: 'There was an error registering your account. Please try again later.',
+            sweetalertScript,
+            message: undefined,
             method: 'POST'
         });
     }

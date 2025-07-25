@@ -1,4 +1,49 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js" integrity="sha384-ndDqU0Gzau9qJ1lfW4pNLlhNTkCfHzAVBReH9diLvGRem5+R9g2FzA8ZGN954O5Q" crossorigin="anonymous"></script>
+
+<script>
+// Mobile sidebar toggle functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const sidebar = document.getElementById('sidebar');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const sidebarClose = document.getElementById('sidebarClose');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+    function showSidebar() {
+        sidebar.classList.add('show');
+        sidebarOverlay.classList.add('show');
+        document.body.style.overflow = 'hidden'; // Prevent scrolling when sidebar is open
+    }
+
+    function hideSidebar() {
+        sidebar.classList.remove('show');
+        sidebarOverlay.classList.remove('show');
+        document.body.style.overflow = ''; // Restore scrolling
+    }
+
+    // Toggle sidebar when button is clicked
+    if (sidebarToggle) {
+        sidebarToggle.addEventListener('click', showSidebar);
+    }
+
+    // Close sidebar when close button is clicked
+    if (sidebarClose) {
+        sidebarClose.addEventListener('click', hideSidebar);
+    }
+
+    // Close sidebar when overlay is clicked
+    if (sidebarOverlay) {
+        sidebarOverlay.addEventListener('click', hideSidebar);
+    }
+
+    // Close sidebar on window resize if screen becomes large
+    window.addEventListener('resize', function() {
+        if (window.innerWidth >= 992) {
+            hideSidebar();
+        }
+    });
+});
+</script>
+
 </div>
 
 </body>

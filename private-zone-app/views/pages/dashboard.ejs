@@ -1,82 +1,80 @@
-
-
 <div class="main-content">
-<div class="container mt-5">
-  <h1 class="mb-4">Dashboard</h1>
-  <div class="row mb-4">
-    <div class="col-md-4">
-      <div class="card text-white bg-success mb-3">
-        <div class="card-body">
-          <h5 class="card-title">Active Users</h5>
-          <p class="card-text display-6">1,234</p>
+  <div class="container mt-5">
+    <h1 class="mb-4" data-translate="dashboard">Dashboard</h1>
+    <div class="row mb-4">
+      <div class="col-md-4">
+        <div class="card text-white bg-success mb-3">
+          <div class="card-body">
+            <h5 class="card-title">Active Users</h5>
+            <p class="card-text display-6">1,234</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card text-white bg-info mb-3">
+          <div class="card-body">
+            <h5 class="card-title">Messages</h5>
+            <p class="card-text display-6">567</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card text-white bg-warning mb-3">
+          <div class="card-body">
+            <h5 class="card-title">Tasks</h5>
+            <p class="card-text display-6">42</p>
+          </div>
         </div>
       </div>
     </div>
-    <div class="col-md-4">
-      <div class="card text-white bg-info mb-3">
-        <div class="card-body">
-          <h5 class="card-title">Messages</h5>
-          <p class="card-text display-6">567</p>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-4">
-      <div class="card text-white bg-warning mb-3">
-        <div class="card-body">
-          <h5 class="card-title">Tasks</h5>
-          <p class="card-text display-6">42</p>
-        </div>
-      </div>
-    </div>
-  </div>
 
-  <div class="card mb-4">
-    <div class="card-header bg-primary text-white">
-      User Activity (Graph)
+    <div class="card mb-4">
+      <div class="card-header bg-primary text-white">
+        User Activity (Graph)
+      </div>
+      <div class="card-body">
+        <canvas id="activityChart" height="100"></canvas>
+      </div>
     </div>
-    <div class="card-body">
-      <canvas id="activityChart" height="100"></canvas>
-    </div>
-  </div>
 
-  <div class="card">
-    <div class="card-header bg-primary text-white">
-      Recent Activity
-    </div>
-    <div class="card-body">
-      <table class="table table-hover">
-        <thead>
-          <tr>
-            <th scope="col">#</th>
-            <th scope="col">Action</th>
-            <th scope="col">Date</th>
-            <th scope="col">Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <th scope="row">1</th>
-            <td>Logged in</td>
-            <td>2025-07-11</td>
-            <td><span class="badge bg-success">Success</span></td>
-          </tr>
-          <tr>
-            <th scope="row">2</th>
-            <td>Updated profile</td>
-            <td>2025-07-10</td>
-            <td><span class="badge bg-info">Info</span></td>
-          </tr>
-          <tr>
-            <th scope="row">3</th>
-            <td>Logged out</td>
-            <td>2025-07-09</td>
-            <td><span class="badge bg-secondary">Other</span></td>
-          </tr>
-        </tbody>
-      </table>
+    <div class="card">
+      <div class="card-header bg-primary text-white">
+        Recent Activity
+      </div>
+      <div class="card-body">
+        <table class="table table-hover">
+          <thead>
+            <tr>
+              <th scope="col">#</th>
+              <th scope="col">Action</th>
+              <th scope="col">Date</th>
+              <th scope="col">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">1</th>
+              <td>Logged in</td>
+              <td>2025-07-11</td>
+              <td><span class="badge bg-success">Success</span></td>
+            </tr>
+            <tr>
+              <th scope="row">2</th>
+              <td>Updated profile</td>
+              <td>2025-07-10</td>
+              <td><span class="badge bg-info">Info</span></td>
+            </tr>
+            <tr>
+              <th scope="row">3</th>
+              <td>Logged out</td>
+              <td>2025-07-09</td>
+              <td><span class="badge bg-secondary">Other</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
-</div>
 </div>
 
 <!-- Chart.js CDN -->

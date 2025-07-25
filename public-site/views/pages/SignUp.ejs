@@ -80,16 +80,12 @@
       });
       return;
     }
-    // All validations passed, show success alert and then submit form
-    e.preventDefault();
-    Swal.fire({
-      icon: 'success',
-      title: 'Registration Successful!',
-      text: 'Your registration data is valid.',
-      confirmButtonColor: '#3085d6',
-      theme: 'auto'
-    }).then(() => {
-      this.submit();
-    });
+    // All validations passed, submit form directly if there might be server-side validation
+    // Don't show client-side success message to avoid conflicts with server messages
   });
 </script>
+
+<!-- Server-side alerts -->
+<% if (typeof sweetalertScript !== 'undefined' && sweetalertScript) { %>
+  <%- sweetalertScript %>
+<% } %>
