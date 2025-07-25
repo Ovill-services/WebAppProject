@@ -1,0 +1,67 @@
+{
+    "navigation": {
+        "home": "Inicio",
+        "profile": "Perfil",
+        "messages": "Mensajes",
+        "settings": "Configuración",
+        "logout": "Cerrar sesión"
+    },
+    "profile": {
+        "profileTitle": "Perfil",
+        "profileInformation": "Información del Perfil",
+        "editProfile": "Editar Perfil",
+        "saveChanges": "Guardar Cambios",
+        "cancel": "Cancelar",
+        "fullName": "Nombre Completo",
+        "email": "Correo Electrónico",
+        "phone": "Teléfono",
+        "bio": "Biografía",
+        "jobTitle": "Cargo",
+        "company": "Empresa",
+        "skills": "Habilidades",
+        "notProvided": "No proporcionado",
+        "noBioProvided": "Sin biografía",
+        "notSpecified": "No especificado",
+        "noSkillsAdded": "Sin habilidades agregadas",
+        "skillsPlaceholder": "ej., JavaScript, Python, React",
+        "jobTitlePlaceholder": "ej., Desarrollador de Software",
+        "companyPlaceholder": "ej., Empresa Tecnológica",
+        "professionalInformation": "Información Profesional",
+        "editProfileInformation": "Editar Información del Perfil",
+        "skillsHelper": "(separadas por comas)",
+        "skillsHelpText": "Ingresa habilidades separadas por comas"
+    },
+    "preferences": {
+        "preferences": "Preferencias",
+        "theme": "Tema",
+        "language": "Idioma",
+        "emailNotifications": "Notificaciones por Correo",
+        "pushNotifications": "Notificaciones Push",
+        "savePreferences": "Guardar Preferencias",
+        "lightTheme": "🌞 Claro",
+        "darkTheme": "🌙 Oscuro",
+        "autoTheme": "🔄 Automático (Sistema)",
+        "englishLang": "🇺🇸 Inglés",
+        "spanishLang": "🇪🇸 Español",
+        "frenchLang": "🇫🇷 Francés",
+        "germanLang": "🇩🇪 Alemán"
+    },
+    "messages": {
+        "profileUpdated": "¡Perfil actualizado con éxito!",
+        "preferencesUpdated": "¡Preferencias guardadas con éxito!",
+        "languageChanged": "Idioma cambiado a",
+        "themeChanged": "Tema cambiado a",
+        "fillRequiredFields": "Por favor, completa todos los campos requeridos.",
+        "validEmailRequired": "Por favor, ingresa una dirección de correo válida.",
+        "serverError": "Error al conectar con el servidor. Inténtalo de nuevo.",
+        "avatarUploadSoon": "¡Función de subida de avatar próximamente! Vista previa cargada.",
+        "avatarUploaded": "¡Avatar actualizado con éxito!",
+        "avatarUploadError": "Error al subir el avatar. Inténtalo de nuevo.",
+        "fileSizeLimit": "El tamaño del archivo debe ser menor a 5MB",
+        "imageFileRequired": "Por favor selecciona un archivo de imagen"
+    },
+    "dashboard": {
+        "welcome": "Bienvenido",
+        "dashboard": "Panel de Control"
+    }
+}

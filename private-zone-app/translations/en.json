@@ -1,0 +1,67 @@
+{
+    "navigation": {
+        "home": "Home",
+        "profile": "Profile",
+        "messages": "Messages",
+        "settings": "Settings",
+        "logout": "Logout"
+    },
+    "profile": {
+        "profileTitle": "Profile",
+        "profileInformation": "Profile Information",
+        "editProfile": "Edit Profile",
+        "saveChanges": "Save Changes",
+        "cancel": "Cancel",
+        "fullName": "Full Name",
+        "email": "Email",
+        "phone": "Phone",
+        "bio": "Bio",
+        "jobTitle": "Job Title",
+        "company": "Company",
+        "skills": "Skills",
+        "notProvided": "Not provided",
+        "noBioProvided": "No bio provided",
+        "notSpecified": "Not specified",
+        "noSkillsAdded": "No skills added",
+        "skillsPlaceholder": "e.g., JavaScript, Python, React",
+        "jobTitlePlaceholder": "e.g., Software Developer",
+        "companyPlaceholder": "e.g., Tech Corp",
+        "professionalInformation": "Professional Information",
+        "editProfileInformation": "Edit Profile Information",
+        "skillsHelper": "(comma separated)",
+        "skillsHelpText": "Enter skills separated by commas"
+    },
+    "preferences": {
+        "preferences": "Preferences",
+        "theme": "Theme",
+        "language": "Language",
+        "emailNotifications": "Email Notifications",
+        "pushNotifications": "Push Notifications",
+        "savePreferences": "Save Preferences",
+        "lightTheme": "🌞 Light",
+        "darkTheme": "🌙 Dark",
+        "autoTheme": "🔄 Auto (System)",
+        "englishLang": "🇺🇸 English",
+        "spanishLang": "🇪🇸 Spanish",
+        "frenchLang": "🇫🇷 French",
+        "germanLang": "🇩🇪 German"
+    },
+    "messages": {
+        "profileUpdated": "Profile updated successfully!",
+        "preferencesUpdated": "Preferences saved successfully!",
+        "languageChanged": "Language changed to",
+        "themeChanged": "Theme changed to",
+        "fillRequiredFields": "Please fill in all required fields.",
+        "validEmailRequired": "Please enter a valid email address.",
+        "serverError": "Error connecting to server. Please try again.",
+        "avatarUploadSoon": "Avatar upload feature coming soon! Preview loaded.",
+        "avatarUploaded": "Avatar updated successfully!",
+        "avatarUploadError": "Error uploading avatar. Please try again.",
+        "fileSizeLimit": "File size must be less than 5MB",
+        "imageFileRequired": "Please select an image file"
+    },
+    "dashboard": {
+        "welcome": "Welcome",
+        "dashboard": "Dashboard"
+    }
+}

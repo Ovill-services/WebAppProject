@@ -1,0 +1,67 @@
+{
+    "navigation": {
+        "home": "Startseite",
+        "profile": "Profil",
+        "messages": "Nachrichten",
+        "settings": "Einstellungen",
+        "logout": "Abmelden"
+    },
+    "profile": {
+        "profileTitle": "Profil",
+        "profileInformation": "Profilinformationen",
+        "editProfile": "Profil Bearbeiten",
+        "saveChanges": "Änderungen Speichern",
+        "cancel": "Abbrechen",
+        "fullName": "Vollständiger Name",
+        "email": "E-Mail",
+        "phone": "Telefon",
+        "bio": "Biografie",
+        "jobTitle": "Berufsbezeichnung",
+        "company": "Unternehmen",
+        "skills": "Fähigkeiten",
+        "notProvided": "Nicht angegeben",
+        "noBioProvided": "Keine Biografie angegeben",
+        "notSpecified": "Nicht spezifiziert",
+        "noSkillsAdded": "Keine Fähigkeiten hinzugefügt",
+        "skillsPlaceholder": "z.B., JavaScript, Python, React",
+        "jobTitlePlaceholder": "z.B., Software-Entwickler",
+        "companyPlaceholder": "z.B., Tech-Unternehmen",
+        "professionalInformation": "Berufliche Informationen",
+        "editProfileInformation": "Profilinformationen Bearbeiten",
+        "skillsHelper": "(durch Kommas getrennt)",
+        "skillsHelpText": "Geben Sie Fähigkeiten durch Kommas getrennt ein"
+    },
+    "preferences": {
+        "preferences": "Einstellungen",
+        "theme": "Design",
+        "language": "Sprache",
+        "emailNotifications": "E-Mail-Benachrichtigungen",
+        "pushNotifications": "Push-Benachrichtigungen",
+        "savePreferences": "Einstellungen Speichern",
+        "lightTheme": "🌞 Hell",
+        "darkTheme": "🌙 Dunkel",
+        "autoTheme": "🔄 Automatisch (System)",
+        "englishLang": "🇺🇸 Englisch",
+        "spanishLang": "🇪🇸 Spanisch",
+        "frenchLang": "🇫🇷 Französisch",
+        "germanLang": "🇩🇪 Deutsch"
+    },
+    "messages": {
+        "profileUpdated": "Profil erfolgreich aktualisiert!",
+        "preferencesUpdated": "Einstellungen erfolgreich gespeichert!",
+        "languageChanged": "Sprache geändert zu",
+        "themeChanged": "Design geändert zu",
+        "fillRequiredFields": "Bitte füllen Sie alle erforderlichen Felder aus.",
+        "validEmailRequired": "Bitte geben Sie eine gültige E-Mail-Adresse ein.",
+        "serverError": "Fehler beim Verbinden mit dem Server. Bitte versuchen Sie es erneut.",
+        "avatarUploadSoon": "Avatar-Upload-Funktion demnächst verfügbar! Vorschau geladen.",
+        "avatarUploaded": "Avatar erfolgreich aktualisiert!",
+        "avatarUploadError": "Fehler beim Hochladen des Avatars. Bitte versuchen Sie es erneut.",
+        "fileSizeLimit": "Die Dateigröße muss kleiner als 5MB sein",
+        "imageFileRequired": "Bitte wählen Sie eine Bilddatei aus"
+    },
+    "dashboard": {
+        "welcome": "Willkommen",
+        "dashboard": "Dashboard"
+    }
+}

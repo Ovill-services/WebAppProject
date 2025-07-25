@@ -1,6 +1,6 @@
 <div class="main-content">
     <div class="mt-5 container">
-        <h1 class="mb-4" data-translate="profileTitle">Profile</h1>
+        <h1 class="mb-4" data-translate="profile.profileTitle">Profile</h1>
         <div class="row mb-4">
             <div class="col-lg-3 col-md-4 col-12 mb-4 mb-md-0">
                 <div class="align-items-center text-center">
@@ -33,10 +33,10 @@
 
                 </div>
                 <div class="text-center d-grid gap-2">
-                    <button id="editProfileBtn" class="btn btn-secondary" data-translate="editProfile">Edit Profile</button>
-                    <button id="saveProfileBtn" class="btn btn-success d-none" data-translate="saveChanges">Save Changes</button>
+                    <button id="editProfileBtn" class="btn btn-secondary" data-translate="profile.editProfile">Edit Profile</button>
+                    <button id="saveProfileBtn" class="btn btn-success d-none" data-translate="profile.saveChanges">Save Changes</button>
                     <div class="d-none" id="editButtons">
-                        <button id="cancelEditBtn" class="btn btn-outline-secondary w-100 mb-2" data-translate="cancel">Cancel</button>
+                        <button id="cancelEditBtn" class="btn btn-outline-secondary w-100 mb-2" data-translate="profile.cancel">Cancel</button>
                     </div>
                 </div>
             </div>
@@ -46,12 +46,12 @@
                 <!-- View Mode -->
                 <div id="profileView" class="card">
                     <div class="card-header">
-                        <h5 class="mb-0" data-translate="profileInformation">Profile Information</h5>
+                        <h5 class="mb-0" data-translate="profile.profileInformation">Profile Information</h5>
                     </div>
                     <div class="card-body">
                         <div class="row mb-3">
                             <div class="col-sm-3">
-                                <strong data-translate="fullName">Full Name:</strong>
+                                <strong data-translate="profile.fullName">Full Name:</strong>
                             </div>
                             <div class="col-sm-9" id="displayName">
                                 <%= user.name %>
@@ -59,7 +59,7 @@
                         </div>
                         <div class="row mb-3">
                             <div class="col-sm-3">
-                                <strong data-translate="email">Email:</strong>
+                                <strong data-translate="profile.email">Email:</strong>
                             </div>
                             <div class="col-sm-9" id="displayEmail">
                                 <%= user.email %>
@@ -67,7 +67,7 @@
                         </div>
                         <div class="row mb-3">
                             <div class="col-sm-3">
-                                <strong data-translate="phone">Phone:</strong>
+                                <strong data-translate="profile.phone">Phone:</strong>
                             </div>
                             <div class="col-sm-9" id="displayPhone">
                                 <%= user.phone || 'Not provided' %>
@@ -75,7 +75,7 @@
                         </div>
                         <div class="row mb-3">
                             <div class="col-sm-3">
-                                <strong data-translate="bio">Bio:</strong>
+                                <strong data-translate="profile.bio">Bio:</strong>
                             </div>
                             <div class="col-sm-9" id="displayBio">
                                 <%= user.bio || 'No bio provided' %>
@@ -83,7 +83,7 @@
                         </div>
                         <div class="row mb-3">
                             <div class="col-sm-3">
-                                <strong data-translate="jobTitle">Job Title:</strong>
+                                <strong data-translate="profile.jobTitle">Job Title:</strong>
                             </div>
                             <div class="col-sm-9" id="displayJobTitle">
                                 <%= user.jobTitle || 'Not specified' %>
@@ -91,7 +91,7 @@
                         </div>
                         <div class="row mb-3">
                             <div class="col-sm-3">
-                                <strong data-translate="company">Company:</strong>
+                                <strong data-translate="profile.company">Company:</strong>
                             </div>
                             <div class="col-sm-9" id="displayCompany">
                                 <%= user.company || 'Not specified' %>
@@ -99,7 +99,7 @@
                         </div>
                         <div class="row mb-3">
                             <div class="col-sm-3">
-                                <strong data-translate="skills">Skills:</strong>
+                                <strong data-translate="profile.skills">Skills:</strong>
                             </div>
                             <div class="col-sm-9" id="displaySkills">
                                 <% if (user.skills && user.skills.length > 0) { %>
@@ -107,7 +107,7 @@
                                         <span class="badge bg-primary me-1 mb-1"><%= skill.trim() %></span>
                                     <% }); %>
                                 <% } else { %>
-                                    <span class="text-muted" data-translate="noSkillsAdded">No skills added</span>
+                                    <span class="text-muted" data-translate="profile.noSkillsAdded">No skills added</span>
                                 <% } %>
                             </div>
                         </div>
@@ -117,41 +117,41 @@
                 <!-- Edit Mode Form -->
                 <div id="profileEdit" class="card d-none">
                     <div class="card-header">
-                        <h5 class="mb-0" data-translate="editProfileInformation">Edit Profile Information</h5>
+                        <h5 class="mb-0" data-translate="profile.editProfileInformation">Edit Profile Information</h5>
                     </div>
                     <div class="card-body">
                         <form id="profileForm">
                             <div class="mb-3">
-                                <label for="editName" class="form-label" data-translate="fullName">Full Name</label>
+                                <label for="editName" class="form-label" data-translate="profile.fullName">Full Name</label>
                                 <input type="text" class="form-control" id="editName" value="<%= user.name %>" required>
                             </div>
                             <div class="mb-3">
-                                <label for="editEmail" class="form-label" data-translate="email">Email</label>
+                                <label for="editEmail" class="form-label" data-translate="profile.email">Email</label>
                                 <input type="email" class="form-control" id="editEmail" value="<%= user.email %>" required>
                             </div>
                             <div class="mb-3">
-                                <label for="editPhone" class="form-label" data-translate="phone">Phone</label>
+                                <label for="editPhone" class="form-label" data-translate="profile.phone">Phone</label>
                                 <input type="tel" class="form-control" id="editPhone" value="<%= user.phone || '' %>">
                             </div>
                             <div class="mb-3">
-                                <label for="editBio" class="form-label" data-translate="bio">Bio</label>
+                                <label for="editBio" class="form-label" data-translate="profile.bio">Bio</label>
                                 <textarea class="form-control" id="editBio" rows="3"><%= user.bio || '' %></textarea>
                             </div>
                             
                             <!-- Professional Information -->
-                            <h6 class="mt-4 mb-3 text-primary" data-translate="professionalInformation">Professional Information</h6>
+                            <h6 class="mt-4 mb-3 text-primary" data-translate="profile.professionalInformation">Professional Information</h6>
                             <div class="mb-3">
-                                <label for="editJobTitle" class="form-label" data-translate="jobTitle">Job Title</label>
-                                <input type="text" class="form-control" id="editJobTitle" value="<%= user.jobTitle || '' %>" data-translate="jobTitlePlaceholder" placeholder="e.g., Software Developer">
+                                <label for="editJobTitle" class="form-label" data-translate="profile.jobTitle">Job Title</label>
+                                <input type="text" class="form-control" id="editJobTitle" value="<%= user.jobTitle || '' %>" data-translate="profile.jobTitlePlaceholder" placeholder="e.g., Software Developer">
                             </div>
                             <div class="mb-3">
-                                <label for="editCompany" class="form-label" data-translate="company">Company</label>
-                                <input type="text" class="form-control" id="editCompany" value="<%= user.company || '' %>" data-translate="companyPlaceholder" placeholder="e.g., Tech Corp">
+                                <label for="editCompany" class="form-label" data-translate="profile.company">Company</label>
+                                <input type="text" class="form-control" id="editCompany" value="<%= user.company || '' %>" data-translate="profile.companyPlaceholder" placeholder="e.g., Tech Corp">
                             </div>
                             <div class="mb-3">
-                                <label for="editSkills" class="form-label"><span data-translate="skills">Skills</span> <small class="text-muted" data-translate="skillsHelper">(comma separated)</small></label>
-                                <input type="text" class="form-control" id="editSkills" value="<%= user.skills || '' %>" data-translate="skillsPlaceholder" placeholder="e.g., JavaScript, Python, React">
-                                <div class="form-text" data-translate="skillsHelpText">Enter skills separated by commas</div>
+                                <label for="editSkills" class="form-label"><span data-translate="profile.skills">Skills</span> <small class="text-muted" data-translate="profile.skillsHelper">(comma separated)</small></label>
+                                <input type="text" class="form-control" id="editSkills" value="<%= user.skills || '' %>" data-translate="profile.skillsPlaceholder" placeholder="e.g., JavaScript, Python, React">
+                                <div class="form-text" data-translate="profile.skillsHelpText">Enter skills separated by commas</div>
                             </div>
                         </form>
                     </div>
@@ -160,35 +160,35 @@
                 <!-- Theme Preferences Card -->
                 <div class="card mt-4">
                     <div class="card-header">
-                        <h5 class="mb-0"><i class="bi bi-palette me-2"></i><span data-translate="preferences">Preferences</span></h5>
+                        <h5 class="mb-0"><i class="bi bi-palette me-2"></i><span data-translate="preferences.preferences">Preferences</span></h5>
                     </div>
                     <div class="card-body">
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label for="themeSelect" class="form-label" data-translate="theme">Theme</label>
+                                    <label for="themeSelect" class="form-label" data-translate="preferences.theme">Theme</label>
                                     <select class="form-select" id="themeSelect">
-                                        <option value="light" data-translate="lightTheme">🌞 Light</option>
-                                        <option value="dark" data-translate="darkTheme">🌙 Dark</option>
-                                        <option value="auto" data-translate="autoTheme">🔄 Auto (System)</option>
+                                        <option value="light" data-translate="preferences.lightTheme">🌞 Light</option>
+                                        <option value="dark" data-translate="preferences.darkTheme">🌙 Dark</option>
+                                        <option value="auto" data-translate="preferences.autoTheme">🔄 Auto (System)</option>
                                     </select>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label for="languageSelect" class="form-label" data-translate="language">Language</label>
+                                    <label for="languageSelect" class="form-label" data-translate="preferences.language">Language</label>
                                     <select class="form-select" id="languageSelect">
-                                        <option value="en" data-translate="englishLang">🇺🇸 English</option>
-                                        <option value="es" data-translate="spanishLang">🇪🇸 Spanish</option>
-                                        <option value="fr" data-translate="frenchLang">🇫🇷 French</option>
-                                        <option value="de" data-translate="germanLang">🇩🇪 German</option>
+                                        <option value="en" data-translate="preferences.englishLang">🇺🇸 English</option>
+                                        <option value="es" data-translate="preferences.spanishLang">🇪🇸 Spanish</option>
+                                        <option value="fr" data-translate="preferences.frenchLang">🇫🇷 French</option>
+                                        <option value="de" data-translate="preferences.germanLang">🇩🇪 German</option>
                                     </select>
                                 </div>
                             </div>
                         </div>
                         <div class="mt-3">
                             <button class="btn btn-outline-primary btn-sm" id="savePreferencesBtn">
-                                <i class="bi bi-check-circle me-1"></i><span data-translate="savePreferences">Save Preferences</span>
+                                <i class="bi bi-check-circle me-1"></i><span data-translate="preferences.savePreferences">Save Preferences</span>
                             </button>
                         </div>
                     </div>
@@ -260,14 +260,14 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Basic validation
         if (!formData.name.trim() || !formData.email.trim()) {
-            showAlert(LanguageManager.t('fillRequiredFields'), 'danger');
+            showAlert(LanguageManager.t('messages.fillRequiredFields'), 'danger');
             return;
         }
         
         // Email validation
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(formData.email)) {
-            showAlert(LanguageManager.t('validEmailRequired'), 'danger');
+            showAlert(LanguageManager.t('messages.validEmailRequired'), 'danger');
             return;
         }
         
@@ -319,16 +319,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.querySelector('h6.text-muted').textContent = formData.email;
                 
                 // Show success message
-                showAlert(LanguageManager.t('profileUpdated'), 'success');
+                showAlert(LanguageManager.t('messages.profileUpdated'), 'success');
                 
                 // Switch back to view mode
                 switchToViewMode();
             } else {
-                showAlert(result.message || LanguageManager.t('serverError'), 'danger');
+                showAlert(result.message || LanguageManager.t('messages.serverError'), 'danger');
             }
         } catch (error) {
             console.error('Error updating profile:', error);
-            showAlert(LanguageManager.t('serverError'), 'danger');
+            showAlert(LanguageManager.t('messages.serverError'), 'danger');
         } finally {
             // Reset button
             saveBtn.disabled = false;
@@ -376,13 +376,13 @@ document.addEventListener('DOMContentLoaded', function() {
         if (file) {
             // Check file size (5MB limit)
             if (file.size > 5 * 1024 * 1024) {
-                showAlert(LanguageManager.t('fileSizeLimit'), 'danger');
+                showAlert(LanguageManager.t('messages.fileSizeLimit'), 'danger');
                 return;
             }
 
             // Check file type
             if (!file.type.startsWith('image/')) {
-                showAlert(LanguageManager.t('imageFileRequired'), 'danger');
+                showAlert(LanguageManager.t('messages.imageFileRequired'), 'danger');
                 return;
             }
 
@@ -420,16 +420,16 @@ document.addEventListener('DOMContentLoaded', function() {
             const result = await response.json();
 
             if (result.success) {
-                showAlert(LanguageManager.t('avatarUploaded'), 'success');
+                showAlert(LanguageManager.t('messages.avatarUploaded'), 'success');
                 // The preview is already shown, no need to update again
             } else {
-                showAlert(result.message || LanguageManager.t('avatarUploadError'), 'danger');
+                showAlert(result.message || LanguageManager.t('messages.avatarUploadError'), 'danger');
                 // Revert to original avatar on error
                 location.reload();
             }
         } catch (error) {
             console.error('Error uploading avatar:', error);
-            showAlert(LanguageManager.t('avatarUploadError'), 'danger');
+            showAlert(LanguageManager.t('messages.avatarUploadError'), 'danger');
             // Revert to original avatar on error
             location.reload();
         } finally {
@@ -468,14 +468,16 @@ document.addEventListener('DOMContentLoaded', function() {
         const newTheme = this.value;
         applyTheme(newTheme);
         localStorage.setItem('theme', newTheme);
-        showAlert(LanguageManager.t('themeChanged') + ' ' + newTheme, 'success');
+        showAlert(LanguageManager.t('messages.themeChanged') + ' ' + newTheme, 'success');
     });
     
     // Language change handler
-    languageSelect.addEventListener('change', function() {
+    languageSelect.addEventListener('change', async function() {
         const newLanguage = this.value;
-        if (LanguageManager.setLanguage(newLanguage)) {
-            showAlert(LanguageManager.t('languageChanged') + ' ' + LanguageManager.t(newLanguage + 'Lang'), 'success');
+        const success = await LanguageManager.setLanguage(newLanguage);
+        if (success) {
+            const langName = LanguageManager.t('preferences.' + newLanguage + 'Lang');
+            showAlert(LanguageManager.t('messages.languageChanged') + ' ' + langName, 'success');
             
             // Update dynamic content that uses translated text
             updateDynamicTranslations();
@@ -484,41 +486,47 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Function to update dynamic content with translations
     function updateDynamicTranslations() {
+        // Wait for translations to be loaded
+        if (!LanguageManager.isLoaded) {
+            setTimeout(updateDynamicTranslations, 100);
+            return;
+        }
+        
         // Update display values that use translated text
         const phoneDisplay = document.getElementById('displayPhone');
         if (phoneDisplay && !phoneDisplay.textContent.trim()) {
-            phoneDisplay.textContent = LanguageManager.t('notProvided');
+            phoneDisplay.textContent = LanguageManager.t('profile.notProvided');
         }
         
         const bioDisplay = document.getElementById('displayBio');
         if (bioDisplay && (!bioDisplay.textContent.trim() || bioDisplay.textContent === 'No bio provided')) {
-            bioDisplay.textContent = LanguageManager.t('noBioProvided');
+            bioDisplay.textContent = LanguageManager.t('profile.noBioProvided');
         }
         
         const jobTitleDisplay = document.getElementById('displayJobTitle');
         if (jobTitleDisplay && (!jobTitleDisplay.textContent.trim() || jobTitleDisplay.textContent === 'Not specified')) {
-            jobTitleDisplay.textContent = LanguageManager.t('notSpecified');
+            jobTitleDisplay.textContent = LanguageManager.t('profile.notSpecified');
         }
         
         const companyDisplay = document.getElementById('displayCompany');
         if (companyDisplay && (!companyDisplay.textContent.trim() || companyDisplay.textContent === 'Not specified')) {
-            companyDisplay.textContent = LanguageManager.t('notSpecified');
+            companyDisplay.textContent = LanguageManager.t('profile.notSpecified');
         }
         
         const skillsDisplay = document.getElementById('displaySkills');
         const skillsPlaceholder = skillsDisplay.querySelector('.text-muted');
         if (skillsPlaceholder && skillsPlaceholder.textContent === 'No skills added') {
-            skillsPlaceholder.textContent = LanguageManager.t('noSkillsAdded');
+            skillsPlaceholder.textContent = LanguageManager.t('profile.noSkillsAdded');
         }
         
         // Update form placeholders
-        document.getElementById('editJobTitle').placeholder = LanguageManager.t('jobTitlePlaceholder');
-        document.getElementById('editCompany').placeholder = LanguageManager.t('companyPlaceholder');
-        document.getElementById('editSkills').placeholder = LanguageManager.t('skillsPlaceholder');
+        document.getElementById('editJobTitle').placeholder = LanguageManager.t('profile.jobTitlePlaceholder');
+        document.getElementById('editCompany').placeholder = LanguageManager.t('profile.companyPlaceholder');
+        document.getElementById('editSkills').placeholder = LanguageManager.t('profile.skillsPlaceholder');
     }
     
     // Save preferences handler
-    savePreferencesBtn.addEventListener('click', function() {
+    savePreferencesBtn.addEventListener('click', async function() {
         const preferences = {
             theme: themeSelect.value,
             language: languageSelect.value,
@@ -534,10 +542,10 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Apply changes
         applyTheme(preferences.theme);
-        LanguageManager.setLanguage(preferences.language);
+        await LanguageManager.setLanguage(preferences.language);
         updateDynamicTranslations();
         
-        showAlert(LanguageManager.t('preferencesUpdated'), 'success');
+        showAlert(LanguageManager.t('messages.preferencesUpdated'), 'success');
     });
     
     // Load notification preferences (if elements exist)

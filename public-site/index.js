@@ -169,7 +169,8 @@ app.post('/login', async (req, res) => {
             console.log('User logged in:', req.session.user);
             
             // Redirect to private zone app (running on different port)
-            return res.redirect('http://localhost:3001/dashboard');
+            const privateZoneUrl = process.env.PRIVATE_ZONE_URL || 'http://localhost:3001/dashboard';
+            return res.redirect(privateZoneUrl);
         } else {
             // Login failed
             sweetalertScript = `<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script><script>Swal.fire({icon: 'error', title: 'Invalid email or password. Please try again.', confirmButtonColor: '#3085d6', theme: 'auto'});</script>`;

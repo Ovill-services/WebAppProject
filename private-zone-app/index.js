@@ -237,6 +237,79 @@ app.post('/api/upload-avatar', requireAuth, upload.single('avatar'), async (req,
     }
 });
 
+// Translations API route
+app.get('/api/translations/:lang', (req, res) => {
+    try {
+        const requestedLang = req.params.lang || 'en';
+        const supportedLanguages = ['en', 'es', 'fr', 'de'];
+        
+        // Default to English if language not supported
+        const lang = supportedLanguages.includes(requestedLang) ? requestedLang : 'en';
+        
+        // Read translation file
+        const translationPath = path.join(__dirname, 'translations', `${lang}.json`);
+        
+        if (fs.existsSync(translationPath)) {
+            const translations = JSON.parse(fs.readFileSync(translationPath, 'utf8'));
+            
+            // Flatten the nested object for easier frontend access
+            const flatTranslations = {};
+            
+            function flatten(obj, prefix = '') {
+                for (const key in obj) {
+                    if (typeof obj[key] === 'object' && obj[key] !== null) {
+                        flatten(obj[key], prefix + key + '.');
+                    } else {
+                        flatTranslations[prefix + key] = obj[key];
+                    }
+                }
+            }
+            
+            flatten(translations);
+            
+            res.json({
+                success: true,
+                language: lang,
+                translations: flatTranslations
+            });
+        } else {
+            // Fallback to English if file doesn't exist
+            const fallbackPath = path.join(__dirname, 'translations', 'en.json');
+            const translations = JSON.parse(fs.readFileSync(fallbackPath, 'utf8'));
+            
+            const flatTranslations = {};
+            function flatten(obj, prefix = '') {
+                for (const key in obj) {
+                    if (typeof obj[key] === 'object' && obj[key] !== null) {
+                        flatten(obj[key], prefix + key + '.');
+                    } else {
+                        flatTranslations[prefix + key] = obj[key];
+                    }
+                }
+            }
+            
+            flatten(translations);
+            
+            res.json({
+                success: true,
+                language: 'en',
+                translations: flatTranslations
+            });
+        }
+    } catch (error) {
+        console.error('Error loading translations:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error loading translations'
+        });
+    }
+});
+
+// Default translations route (defaults to English)
+app.get('/api/translations', (req, res) => {
+    res.redirect('/api/translations/en');
+});
+
 // Logout route
 app.get('/logout', (req, res) => {
     req.session.destroy(err => {
