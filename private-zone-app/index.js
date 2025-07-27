@@ -7,9 +7,21 @@ import pg from 'pg';
 import pgSession from 'connect-pg-simple';
 import multer from 'multer';
 import fs from 'fs';
+import dotenv from 'dotenv';
+import { MicrosoftAuthService } from './services/microsoftAuthService.js';
+import { MicrosoftGraphService } from './services/microsoftGraphService.js';
+
+// Load environment variables
+dotenv.config();
+
+// Load environment variables
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Initialize Microsoft Auth Service
+const microsoftAuth = new MicrosoftAuthService();
 
 // PostgreSQL session store
 const PgSession = pgSession(session);
@@ -98,13 +110,230 @@ function requireAuth(req, res, next) {
     }
 }
 
+// Microsoft OAuth Routes
+app.get('/auth/microsoft', requireAuth, async (req, res) => {
+    try {
+        if (!microsoftAuth.checkConfiguration()) {
+            return res.status(503).json({ 
+                error: 'Microsoft integration not configured',
+                message: 'Please configure Microsoft credentials in environment variables'
+            });
+        }
+
+        const authUrl = await microsoftAuth.getAuthUrl();
+        res.redirect(authUrl);
+    } catch (error) {
+        console.error('Error getting Microsoft auth URL:', error);
+        res.status(500).json({ error: 'Failed to initiate Microsoft authentication' });
+    }
+});
+
+app.get('/auth/microsoft/callback', requireAuth, async (req, res) => {
+    try {
+        if (!microsoftAuth.checkConfiguration()) {
+            return res.redirect('/calendar?error=microsoft_not_configured');
+        }
+
+        const { code } = req.query;
+        if (!code) {
+            return res.status(400).json({ error: 'Authorization code not received' });
+        }
+
+        // Exchange code for tokens
+        const tokenData = await microsoftAuth.getTokenFromCode(code);
+        
+        // Store tokens in database
+        const insertQuery = `
+            INSERT INTO microsoft_integration (user_email, access_token, refresh_token, expires_on, account_info)
+            VALUES ($1, $2, $3, $4, $5)
+            ON CONFLICT (user_email) 
+            DO UPDATE SET 
+                access_token = EXCLUDED.access_token,
+                refresh_token = EXCLUDED.refresh_token,
+                expires_on = EXCLUDED.expires_on,
+                account_info = EXCLUDED.account_info,
+                updated_at = CURRENT_TIMESTAMP,
+                is_active = true
+        `;
+        
+        await db.query(insertQuery, [
+            req.session.user.email,
+            tokenData.accessToken,
+            tokenData.refreshToken,
+            tokenData.expiresOn,
+            JSON.stringify(tokenData.account)
+        ]);
+
+        // Redirect to calendar with success message
+        res.redirect('/calendar?connected=microsoft');
+    } catch (error) {
+        console.error('Error handling Microsoft callback:', error);
+        res.redirect('/calendar?error=microsoft_auth_failed');
+    }
+});
+
+// Disconnect Microsoft integration
+app.post('/api/microsoft/disconnect', requireAuth, async (req, res) => {
+    try {
+        await db.query('UPDATE microsoft_integration SET is_active = false WHERE user_email = $1', [req.session.user.email]);
+        res.json({ success: true, message: 'Microsoft integration disconnected' });
+    } catch (error) {
+        console.error('Error disconnecting Microsoft integration:', error);
+        res.status(500).json({ success: false, message: 'Failed to disconnect Microsoft integration' });
+    }
+});
+
+// Get Microsoft integration status
+app.get('/api/microsoft/status', requireAuth, async (req, res) => {
+    try {
+        if (!microsoftAuth.checkConfiguration()) {
+            return res.json({ 
+                connected: false,
+                configured: false,
+                message: 'Microsoft integration not configured'
+            });
+        }
+
+        const result = await db.query(
+            'SELECT is_active, created_at FROM microsoft_integration WHERE user_email = $1 AND is_active = true',
+            [req.session.user.email]
+        );
+        
+        const isConnected = result.rows.length > 0;
+        res.json({ 
+            connected: isConnected,
+            configured: true,
+            connectedSince: isConnected ? result.rows[0].created_at : null
+        });
+    } catch (error) {
+        console.error('Error checking Microsoft status:', error);
+        res.status(500).json({ 
+            connected: false, 
+            configured: microsoftAuth.checkConfiguration(),
+            error: 'Failed to check status' 
+        });
+    }
+});
+
+// Get calendar events from Microsoft
+app.get('/api/microsoft/events', requireAuth, async (req, res) => {
+    try {
+        const { start, end } = req.query;
+        
+        // Get user's Microsoft tokens
+        const tokenResult = await db.query(
+            'SELECT access_token, refresh_token, expires_on, account_info FROM microsoft_integration WHERE user_email = $1 AND is_active = true',
+            [req.session.user.email]
+        );
+        
+        if (tokenResult.rows.length === 0) {
+            return res.status(401).json({ error: 'Microsoft integration not found' });
+        }
+        
+        let { access_token, refresh_token, expires_on, account_info } = tokenResult.rows[0];
+        
+        // Check if token needs refresh
+        if (new Date() >= new Date(expires_on)) {
+            try {
+                const refreshedTokens = await microsoftAuth.refreshAccessToken(refresh_token, JSON.parse(account_info));
+                access_token = refreshedTokens.accessToken;
+                
+                // Update tokens in database
+                await db.query(
+                    'UPDATE microsoft_integration SET access_token = $1, refresh_token = $2, expires_on = $3 WHERE user_email = $4',
+                    [refreshedTokens.accessToken, refreshedTokens.refreshToken, refreshedTokens.expiresOn, req.session.user.email]
+                );
+            } catch (refreshError) {
+                console.error('Error refreshing token:', refreshError);
+                return res.status(401).json({ error: 'Failed to refresh Microsoft token' });
+            }
+        }
+        
+        // Get calendar events
+        const graphService = new MicrosoftGraphService(access_token);
+        const startDate = start || new Date().toISOString();
+        const endDate = end || new Date(new Date().getTime() + 30 * 24 * 60 * 60 * 1000).toISOString(); // 30 days from now
+        
+        const events = await graphService.getCalendarEvents(startDate, endDate);
+        res.json({ success: true, events });
+        
+    } catch (error) {
+        console.error('Error fetching Microsoft calendar events:', error);
+        res.status(500).json({ error: 'Failed to fetch calendar events' });
+    }
+});
+
+// Create event in Microsoft calendar
+app.post('/api/microsoft/events', requireAuth, async (req, res) => {
+    try {
+        const { title, description, start, end, location, attendees } = req.body;
+        
+        // Get user's Microsoft tokens
+        const tokenResult = await db.query(
+            'SELECT access_token, refresh_token, expires_on, account_info FROM microsoft_integration WHERE user_email = $1 AND is_active = true',
+            [req.session.user.email]
+        );
+        
+        if (tokenResult.rows.length === 0) {
+            return res.status(401).json({ error: 'Microsoft integration not found' });
+        }
+        
+        let { access_token } = tokenResult.rows[0];
+        
+        // Create event
+        const graphService = new MicrosoftGraphService(access_token);
+        const eventData = {
+            title,
+            description,
+            start: new Date(start),
+            end: new Date(end),
+            location,
+            attendees: attendees || []
+        };
+        
+        const createdEvent = await graphService.createEvent(eventData);
+        res.json({ success: true, event: createdEvent });
+        
+    } catch (error) {
+        console.error('Error creating Microsoft calendar event:', error);
+        res.status(500).json({ error: 'Failed to create calendar event' });
+    }
+});
+
 // Dashboard route
-app.get('/dashboard', requireAuth, (req, res) => {
-    res.render('index.ejs', {
-        page: 'dashboard',
-        user: req.session.user
-    });
-    console.log('Dashboard accessed by:', req.session.user);
+app.get('/dashboard', requireAuth, async (req, res) => {
+    try {
+        // Get complete user data from database
+        const query = 'SELECT * FROM users WHERE username = $1';
+        const result = await db.query(query, [req.session.user.email]);
+        
+        let userData = req.session.user;
+        if (result.rows.length > 0) {
+            const dbUser = result.rows[0];
+            userData = {
+                name: dbUser.name,
+                email: dbUser.username,
+                phone: dbUser.phone || '',
+                bio: dbUser.bio || '',
+                jobTitle: dbUser.job_title || '',
+                company: dbUser.company || '',
+                skills: dbUser.skills || '',
+                avatar_url: dbUser.avatar_url || null
+            };
+        }
+        
+        res.render('index.ejs', {
+            page: 'dashboard',
+            user: userData
+        });
+        console.log('Dashboard accessed by:', req.session.user);
+    } catch (error) {
+        console.error('Error fetching user data for dashboard:', error);
+        res.render('index.ejs', {
+            page: 'dashboard',
+            user: req.session.user
+        });
+    }
 });
 
 // Profile route
@@ -162,6 +391,16 @@ app.get('/profile', requireAuth, async (req, res) => {
     }
     console.log('Profile accessed by:', req.session.user);
 });
+
+app.get('/calendar', requireAuth, (req, res) => {
+    res.render('index.ejs', {
+        page: 'calendar',
+        user: req.session.user
+    });
+    console.log('Calendar accessed by:', req.session.user);
+});
+
+
 
 // Profile update route
 app.put('/api/profile', requireAuth, async (req, res) => {

@@ -4,7 +4,8 @@
         "profile": "Profile",
         "messages": "Messages",
         "settings": "Settings",
-        "logout": "Logout"
+        "logout": "Logout",
+        "calendar": "Calendar"
     },
     "profile": {
         "profileTitle": "Profile",

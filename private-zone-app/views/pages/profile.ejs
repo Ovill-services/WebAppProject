@@ -318,6 +318,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.querySelector('h3 strong').textContent = formData.name;
                 document.querySelector('h6.text-muted').textContent = formData.email;
                 
+                // Update sidebar user name if it exists
+                const sidebarUserName = document.querySelector('.dropdown-toggle strong');
+                if (sidebarUserName) {
+                    sidebarUserName.textContent = formData.name;
+                }
+                
                 // Show success message
                 showAlert(LanguageManager.t('messages.profileUpdated'), 'success');
                 
@@ -392,6 +398,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Update the avatar preview immediately
                 const avatarContainer = document.getElementById('profileAvatar');
                 avatarContainer.outerHTML = `<img src="${e.target.result}" class="profile-avatar-img mb-2 rounded-circle" id="profileAvatar" style="width: 150px; height: 150px; object-fit: cover; border: 3px solid #0D6EFD;">`;
+                
+                // Also update the sidebar avatar if it exists
+                const sidebarAvatar = document.getElementById('sidebarAvatar');
+                if (sidebarAvatar) {
+                    sidebarAvatar.src = e.target.result;
+                }
             };
             reader.readAsDataURL(file);
 
@@ -421,7 +433,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (result.success) {
                 showAlert(LanguageManager.t('messages.avatarUploaded'), 'success');
-                // The preview is already shown, no need to update again
+                // The preview is already shown in the profile page
+                // Also update sidebar avatar if the upload was successful and we have the URL
+                if (result.avatarUrl) {
+                    const sidebarAvatar = document.getElementById('sidebarAvatar');
+                    if (sidebarAvatar) {
+                        sidebarAvatar.src = result.avatarUrl;
+                    }
+                }
             } else {
                 showAlert(result.message || LanguageManager.t('messages.avatarUploadError'), 'danger');
                 // Revert to original avatar on error

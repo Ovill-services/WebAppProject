@@ -17,8 +17,8 @@ CURRENT_DIR=$(pwd)
 cd "${PUBLIC_SITE_DIR:-./public-site}"
 echo "Installing dependencies for Public Site..."
 npm install
-echo "Starting Public Site on port 3000..."
-PGPASSWORD="$PGPASSWORD" node index.js &
+echo "Starting Public Site on port 3000 with nodemon..."
+PGPASSWORD="$PGPASSWORD" npx nodemon index.js &
 PUBLIC_PID=$!
 
 # Return to main directory and start Private Zone App
@@ -26,8 +26,8 @@ cd "$CURRENT_DIR"
 cd "${PRIVATE_ZONE_APP_DIR:-./private-zone-app}"
 echo "Installing dependencies for Private Zone App..."
 npm install
-echo "Starting Private Zone App on port 3001..."
-PGPASSWORD="$PGPASSWORD" node index.js &
+echo "Starting Private Zone App on port 3001 with nodemon..."
+PGPASSWORD="$PGPASSWORD" npx nodemon index.js &
 PRIVATE_PID=$!
 
 echo ""
