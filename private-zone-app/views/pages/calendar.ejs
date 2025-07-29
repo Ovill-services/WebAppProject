@@ -2,7 +2,7 @@
     <div class="mt-5 container">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1 class="mb-0">
-                <i class="bi bi-calendar-event text-primary me-3"></i>Calendar
+                <i class="bi bi-calendar-event text-primary me-3"></i><span data-translate="calendar.title">Calendar</span>
             </h1>
             <div class="text-muted">
                 <i class="bi bi-clock me-1"></i>
@@ -23,11 +23,11 @@
                             <span id="currentMonth">January 2025</span>
                         </h5>
                         <div class="btn-group" role="group">
-                            <button type="button" class="btn btn-outline-light btn-sm" id="prevMonth" title="Previous Month">
+                            <button type="button" class="btn btn-outline-light btn-sm" id="prevMonth" data-translate="calendar.previousMonth" title="Previous Month">
                                 <i class="bi bi-chevron-left"></i>
                             </button>
-                            <button type="button" class="btn btn-light btn-sm text-primary fw-bold" id="todayBtn">Today</button>
-                            <button type="button" class="btn btn-outline-light btn-sm" id="nextMonth" title="Next Month">
+                            <button type="button" class="btn btn-light btn-sm text-primary fw-bold" id="todayBtn" data-translate="calendar.today">Today</button>
+                            <button type="button" class="btn btn-outline-light btn-sm" id="nextMonth" data-translate="calendar.nextMonth" title="Next Month">
                                 <i class="bi bi-chevron-right"></i>
                             </button>
                         </div>
@@ -38,13 +38,13 @@
                             <table class="table mb-0" id="calendarTable">
                                 <thead class="bg-light">
                                     <tr>
-                                        <th class="text-center py-3 fw-bold text-muted border-0">SUN</th>
-                                        <th class="text-center py-3 fw-bold text-muted border-0">MON</th>
-                                        <th class="text-center py-3 fw-bold text-muted border-0">TUE</th>
-                                        <th class="text-center py-3 fw-bold text-muted border-0">WED</th>
-                                        <th class="text-center py-3 fw-bold text-muted border-0">THU</th>
-                                        <th class="text-center py-3 fw-bold text-muted border-0">FRI</th>
-                                        <th class="text-center py-3 fw-bold text-muted border-0">SAT</th>
+                                        <th class="text-center py-3 fw-bold text-muted border-0" data-translate="calendar.dayNames.sunday">SUN</th>
+                                        <th class="text-center py-3 fw-bold text-muted border-0" data-translate="calendar.dayNames.monday">MON</th>
+                                        <th class="text-center py-3 fw-bold text-muted border-0" data-translate="calendar.dayNames.tuesday">TUE</th>
+                                        <th class="text-center py-3 fw-bold text-muted border-0" data-translate="calendar.dayNames.wednesday">WED</th>
+                                        <th class="text-center py-3 fw-bold text-muted border-0" data-translate="calendar.dayNames.thursday">THU</th>
+                                        <th class="text-center py-3 fw-bold text-muted border-0" data-translate="calendar.dayNames.friday">FRI</th>
+                                        <th class="text-center py-3 fw-bold text-muted border-0" data-translate="calendar.dayNames.saturday">SAT</th>
                                     </tr>
                                 </thead>
                                 <tbody id="calendarBody">
@@ -64,7 +64,7 @@
                 <div class="card shadow-sm border-0 h-100">
                     <div class="card-header bg-success text-white py-3">
                         <h6 class="mb-0 d-flex align-items-center">
-                            <i class="bi bi-lightning-charge me-2"></i>Quick Actions
+                            <i class="bi bi-lightning-charge me-2"></i><span data-translate="calendar.quickActions">Quick Actions</span>
                         </h6>
                     </div>
                     <div class="card-body">
@@ -74,15 +74,15 @@
                                     data-bs-toggle="modal" 
                                     data-bs-target="#addEventModal">
                                 <i class="bi bi-calendar-plus me-2"></i>
-                                <span>Add Event</span>
+                                <span data-translate="calendar.addEvent">Add Event</span>
                             </button>
                             <button class="btn btn-outline-primary btn-lg d-flex align-items-center justify-content-center" id="scheduleMeetingBtn">
                                 <i class="bi bi-people me-2"></i>
-                                <span>Schedule Meeting</span>
+                                <span data-translate="calendar.scheduleMeeting">Schedule Meeting</span>
                             </button>
                             <button class="btn btn-outline-info btn-lg d-flex align-items-center justify-content-center" id="syncCalendarBtn">
                                 <i class="bi bi-arrow-clockwise me-2"></i>
-                                <span>Sync Calendar</span>
+                                <span data-translate="calendar.syncCalendar">Sync Calendar</span>
                             </button>
                         </div>
                         
@@ -90,14 +90,14 @@
                         <hr class="my-4">
                         <div class="row text-center">
                             <div class="col-6">
-                                <div class="small text-muted">This Month</div>
+                                <div class="small text-muted" data-translate="calendar.thisMonth">This Month</div>
                                 <div class="h5 mb-0 text-primary">0</div>
-                                <div class="small">Events</div>
+                                <div class="small" data-translate="calendar.events">Events</div>
                             </div>
                             <div class="col-6">
-                                <div class="small text-muted">Today</div>
+                                <div class="small text-muted" data-translate="calendar.today">Today</div>
                                 <div class="h5 mb-0 text-success">0</div>
-                                <div class="small">Tasks</div>
+                                <div class="small" data-translate="calendar.tasks">Tasks</div>
                             </div>
                         </div>
                     </div>
@@ -109,19 +109,19 @@
                 <div class="card shadow-sm border-0 h-100">
                     <div class="card-header bg-info text-white py-3 d-flex justify-content-between align-items-center">
                         <h6 class="mb-0 d-flex align-items-center">
-                            <i class="bi bi-calendar-check me-2"></i>Upcoming Events
+                            <i class="bi bi-calendar-check me-2"></i><span data-translate="calendar.upcomingEvents">Upcoming Events</span>
                         </h6>
-                        <span class="badge bg-light text-info">0 events</span>
+                        <span class="badge bg-light text-info"><span id="eventsCount">0</span> <span data-translate="calendar.events">events</span></span>
                     </div>
                     <div class="card-body" id="upcomingEventsContainer">
                         <div class="text-center py-5" id="noEventsMessage">
                             <div class="mb-4">
                                 <i class="bi bi-calendar-x display-1 text-muted opacity-50"></i>
                             </div>
-                            <h5 class="text-muted mb-2">No upcoming events</h5>
-                            <p class="text-muted mb-4">Your scheduled events will appear here</p>
+                            <h5 class="text-muted mb-2" data-translate="calendar.noEventsMessage">No upcoming events</h5>
+                            <p class="text-muted mb-4" data-translate="calendar.noEventsDescription">Your scheduled events will appear here</p>
                             <button class="btn btn-outline-primary" id="createFirstEventBtn">
-                                <i class="bi bi-plus-circle me-2"></i>Create your first event
+                                <i class="bi bi-plus-circle me-2"></i><span data-translate="calendar.createFirstEvent">Create your first event</span>
                             </button>
                         </div>
                         
@@ -139,15 +139,15 @@
                 <div class="card shadow-sm border-0">
                     <div class="card-header bg-warning text-dark py-3">
                         <h6 class="mb-0 d-flex align-items-center">
-                            <i class="bi bi-puzzle me-2"></i>Calendar Integration
+                            <i class="bi bi-puzzle me-2"></i><span data-translate="calendar.calendarIntegration">Calendar Integration</span>
                         </h6>
                     </div>
                     <div class="card-body text-center py-5">
                         <div class="mb-4">
                             <i class="bi bi-calendar-check display-4 text-success"></i>
                         </div>
-                        <h5 class="mb-3">Google Calendar Integration</h5>
-                        <p class="text-muted mb-4 col-md-8 mx-auto">
+                        <h5 class="mb-3" data-translate="calendar.googleCalendarIntegration">Google Calendar Integration</h5>
+                        <p class="text-muted mb-4 col-md-8 mx-auto" data-translate="calendar.googleCalendarDescription">
                             Your Google Calendar is automatically synced when you log in with Google! All your events are imported and managed in one place.
                         </p>
                         
@@ -155,7 +155,7 @@
                             <div class="col-md-8">
                                 <div class="alert alert-info d-flex align-items-center" role="alert">
                                     <i class="bi bi-info-circle me-2"></i>
-                                    <div id="calendarStatusMessage">
+                                    <div id="calendarStatusMessage" data-translate="calendar.checkingConnection">
                                         Checking calendar connection...
                                     </div>
                                 </div>
@@ -163,14 +163,14 @@
                                 <div class="d-flex flex-wrap justify-content-center gap-3" id="calendarActions">
                                     <button class="btn btn-success btn-lg" id="refreshCalendarBtn">
                                         <i class="bi bi-arrow-clockwise me-2"></i>
-                                        <span>Refresh Calendar</span>
+                                        <span data-translate="calendar.refreshCalendar">Refresh Calendar</span>
                                     </button>
                                 </div>
                             </div>
                         </div>
                         
                         <div class="mt-4">
-                            <small class="text-muted">
+                            <small class="text-muted" data-translate="calendar.secureIntegrations">
                                 <i class="bi bi-shield-check me-1"></i>
                                 All integrations are secure and encrypted
                             </small>
@@ -188,7 +188,7 @@
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title">
-                    <i class="bi bi-calendar-plus me-2"></i>Add New Event
+                    <i class="bi bi-calendar-plus me-2"></i><span data-translate="calendar.addNewEvent">Add New Event</span>
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
@@ -196,18 +196,18 @@
                 <form id="createEventForm">
                     <div class="row">
                         <div class="col-md-12 mb-3">
-                            <label for="title" class="form-label">Event Title *</label>
+                            <label for="title" class="form-label" data-translate="calendar.eventTitle">Event Title</label> *
                             <input type="text" class="form-control" id="title" name="title" required>
                         </div>
                     </div>
                     
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <label for="startDate" class="form-label">Start Date *</label>
+                            <label for="startDate" class="form-label" data-translate="calendar.startDate">Start Date</label> *
                             <input type="date" class="form-control" id="startDate" name="startDate" required>
                         </div>
                         <div class="col-md-6">
-                            <label for="endDate" class="form-label">End Date *</label>
+                            <label for="endDate" class="form-label" data-translate="calendar.endDate">End Date</label> *
                             <input type="date" class="form-control" id="endDate" name="endDate" required>
                         </div>
                     </div>
@@ -216,7 +216,7 @@
                         <div class="col-12">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="allDay" name="allDay">
-                                <label class="form-check-label" for="allDay">
+                                <label class="form-check-label" for="allDay" data-translate="calendar.allDayEvent">
                                     All Day Event
                                 </label>
                             </div>
@@ -225,30 +225,30 @@
                     
                     <div class="row mb-3" id="timeFields">
                         <div class="col-md-6">
-                            <label for="startTime" class="form-label">Start Time</label>
+                            <label for="startTime" class="form-label" data-translate="calendar.startTime">Start Time</label>
                             <input type="time" class="form-control" id="startTime" name="startTime">
                         </div>
                         <div class="col-md-6">
-                            <label for="endTime" class="form-label">End Time</label>
+                            <label for="endTime" class="form-label" data-translate="calendar.endTime">End Time</label>
                             <input type="time" class="form-control" id="endTime" name="endTime">
                         </div>
                     </div>
                     
                     <div class="mb-3">
-                        <label for="location" class="form-label">Location</label>
-                        <input type="text" class="form-control" id="location" name="location" placeholder="Meeting room, address, or virtual link">
+                        <label for="location" class="form-label" data-translate="calendar.location">Location</label>
+                        <input type="text" class="form-control" id="location" name="location" data-translate="calendar.locationPlaceholder" placeholder="Meeting room, address, or virtual link">
                     </div>
                     
                     <div class="mb-3">
-                        <label for="description" class="form-label">Description</label>
+                        <label for="description" class="form-label" data-translate="calendar.description">Description</label>
                         <textarea class="form-control" id="description" name="description" rows="3"></textarea>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-translate="calendar.cancel">Cancel</button>
                 <button type="button" class="btn btn-primary" onclick="window.createEvent();">
-                    <i class="bi bi-check-circle me-2"></i>Create Event
+                    <i class="bi bi-check-circle me-2"></i><span data-translate="calendar.createEvent">Create Event</span>
                 </button>
             </div>
         </div>
@@ -261,7 +261,7 @@
         <div class="modal-content">
             <div class="modal-header bg-info text-white">
                 <h5 class="modal-title">
-                    <i class="bi bi-calendar-event me-2"></i>Event Details
+                    <i class="bi bi-calendar-event me-2"></i><span data-translate="calendar.eventDetails">Event Details</span>
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
@@ -269,12 +269,12 @@
                 <!-- Event details will be populated here -->
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-translate="calendar.close">Close</button>
                 <button type="button" class="btn btn-warning" onclick="window.editEventFromView();">
-                    <i class="bi bi-pencil me-1"></i>Edit Event
+                    <i class="bi bi-pencil me-1"></i><span data-translate="calendar.editEvent">Edit Event</span>
                 </button>
                 <button type="button" class="btn btn-danger" onclick="window.deleteEventFromView();">
-                    <i class="bi bi-trash me-1"></i>Delete Event
+                    <i class="bi bi-trash me-1"></i><span data-translate="calendar.deleteEvent">Delete Event</span>
                 </button>
             </div>
         </div>
@@ -287,7 +287,7 @@
         <div class="modal-content">
             <div class="modal-header bg-warning text-dark">
                 <h5 class="modal-title" id="editEventModalLabel">
-                    <i class="bi bi-pencil-square me-2"></i>Edit Event
+                    <i class="bi bi-pencil-square me-2"></i><span data-translate="calendar.editEvent">Edit Event</span>
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
@@ -297,7 +297,7 @@
                     
                     <div class="row mb-3">
                         <div class="col-12">
-                            <label for="editTitle" class="form-label">Event Title <span class="text-danger">*</span></label>
+                            <label for="editTitle" class="form-label" data-translate="calendar.eventTitle">Event Title</label> <span class="text-danger">*</span>
                             <input type="text" class="form-control" id="editTitle" name="title" required 
                                    placeholder="Enter event title">
                         </div>
@@ -305,11 +305,11 @@
                     
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <label for="editStartDate" class="form-label">Start Date <span class="text-danger">*</span></label>
+                            <label for="editStartDate" class="form-label" data-translate="calendar.startDate">Start Date</label> <span class="text-danger">*</span>
                             <input type="date" class="form-control" id="editStartDate" name="startDate" required>
                         </div>
                         <div class="col-md-6">
-                            <label for="editEndDate" class="form-label">End Date <span class="text-danger">*</span></label>
+                            <label for="editEndDate" class="form-label" data-translate="calendar.endDate">End Date</label> <span class="text-danger">*</span>
                             <input type="date" class="form-control" id="editEndDate" name="endDate" required>
                         </div>
                     </div>
@@ -318,7 +318,7 @@
                         <div class="col-12">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="editAllDay" name="allDay">
-                                <label class="form-check-label" for="editAllDay">
+                                <label class="form-check-label" for="editAllDay" data-translate="calendar.allDayEvent">
                                     All Day Event
                                 </label>
                             </div>
@@ -327,18 +327,18 @@
                     
                     <div class="row mb-3" id="editTimeFields">
                         <div class="col-md-6">
-                            <label for="editStartTime" class="form-label">Start Time</label>
+                            <label for="editStartTime" class="form-label" data-translate="calendar.startTime">Start Time</label>
                             <input type="time" class="form-control" id="editStartTime" name="startTime">
                         </div>
                         <div class="col-md-6">
-                            <label for="editEndTime" class="form-label">End Time</label>
+                            <label for="editEndTime" class="form-label" data-translate="calendar.endTime">End Time</label>
                             <input type="time" class="form-control" id="editEndTime" name="endTime">
                         </div>
                     </div>
                     
                     <div class="row mb-3">
                         <div class="col-12">
-                            <label for="editLocation" class="form-label">Location</label>
+                            <label for="editLocation" class="form-label" data-translate="calendar.location">Location</label>
                             <input type="text" class="form-control" id="editLocation" name="location" 
                                    placeholder="Enter event location">
                         </div>
@@ -346,7 +346,7 @@
                     
                     <div class="row mb-3">
                         <div class="col-12">
-                            <label for="editDescription" class="form-label">Description</label>
+                            <label for="editDescription" class="form-label" data-translate="calendar.description">Description</label>
                             <textarea class="form-control" id="editDescription" name="description" 
                                       rows="3" placeholder="Enter event description"></textarea>
                         </div>
@@ -354,9 +354,9 @@
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-translate="calendar.cancel">Cancel</button>
                 <button type="button" class="btn btn-warning" onclick="window.updateEvent();">
-                    <i class="bi bi-check-lg me-1"></i>Update Event
+                    <i class="bi bi-check-lg me-1"></i><span data-translate="calendar.updateEvent">Update Event</span>
                 </button>
             </div>
         </div>
@@ -369,10 +369,32 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentMonth = currentDate.getMonth();
     let currentYear = currentDate.getFullYear();
 
-    const monthNames = [
+    // Translated month names - will be updated by language system
+    let monthNames = [
         'January', 'February', 'March', 'April', 'May', 'June',
         'July', 'August', 'September', 'October', 'November', 'December'
     ];
+    
+    // Function to get translated month names
+    function getMonthNames() {
+        if (window.LanguageManager && window.LanguageManager.isLoaded) {
+            return [
+                window.LanguageManager.t('calendar.monthNames.january'),
+                window.LanguageManager.t('calendar.monthNames.february'),
+                window.LanguageManager.t('calendar.monthNames.march'),
+                window.LanguageManager.t('calendar.monthNames.april'),
+                window.LanguageManager.t('calendar.monthNames.may'),
+                window.LanguageManager.t('calendar.monthNames.june'),
+                window.LanguageManager.t('calendar.monthNames.july'),
+                window.LanguageManager.t('calendar.monthNames.august'),
+                window.LanguageManager.t('calendar.monthNames.september'),
+                window.LanguageManager.t('calendar.monthNames.october'),
+                window.LanguageManager.t('calendar.monthNames.november'),
+                window.LanguageManager.t('calendar.monthNames.december')
+            ];
+        }
+        return monthNames;
+    }
 
     // Update current time
     function updateTime() {
@@ -394,7 +416,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const daysInMonth = new Date(year, month + 1, 0).getDate();
         const today = new Date();
         
-        document.getElementById('currentMonth').textContent = `${monthNames[month]} ${year}`;
+        const translatedMonthNames = getMonthNames();
+        document.getElementById('currentMonth').textContent = `${translatedMonthNames[month]} ${year}`;
         
         const calendarBody = document.getElementById('calendarBody');
         calendarBody.innerHTML = '';
@@ -441,7 +464,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         cell.innerHTML = `
                             <div class="today-badge">
                                 <div class="day-number fw-bold text-white">${date}</div>
-                                <small class="text-white-50">Today</small>
+                                <small class="text-white-50">${window.LanguageManager ? window.LanguageManager.t('calendar.today') : 'Today'}</small>
                             </div>
                         `;
                     } else {
@@ -575,7 +598,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 googleConnected = true;
                 statusMessage.innerHTML = `
                     <i class="bi bi-check-circle-fill text-success me-2"></i>
-                    <strong>Google Calendar Connected!</strong> Your calendar events are automatically synced.
+                    <strong>${window.LanguageManager ? window.LanguageManager.t('calendar.connected') : 'Google Calendar Connected!'}</strong> ${window.LanguageManager ? window.LanguageManager.t('calendar.connectedDescription') : 'Your calendar events are automatically synced.'}
                 `;
                 statusMessage.parentElement.classList.remove('alert-info');
                 statusMessage.parentElement.classList.add('alert-success');
@@ -584,7 +607,7 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 statusMessage.innerHTML = `
                     <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>
-                    <strong>Google Calendar Not Connected</strong> - Please log in with Google to enable automatic calendar sync.
+                    <strong>${window.LanguageManager ? window.LanguageManager.t('calendar.notConnected') : 'Google Calendar Not Connected'}</strong> - ${window.LanguageManager ? window.LanguageManager.t('calendar.notConnectedDescription') : 'Please log in with Google to enable automatic calendar sync.'}
                 `;
                 statusMessage.parentElement.classList.remove('alert-info');
                 statusMessage.parentElement.classList.add('alert-warning');
@@ -594,7 +617,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const statusMessage = document.getElementById('calendarStatusMessage');
             statusMessage.innerHTML = `
                 <i class="bi bi-x-circle-fill text-danger me-2"></i>
-                <strong>Error</strong> - Unable to check calendar status.
+                <strong>${window.LanguageManager ? window.LanguageManager.t('calendar.connectionError') : 'Error'}</strong> - ${window.LanguageManager ? window.LanguageManager.t('calendar.connectionError') : 'Unable to check calendar status.'}
             `;
             statusMessage.parentElement.classList.remove('alert-info');
             statusMessage.parentElement.classList.add('alert-danger');
@@ -611,9 +634,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         try {
             await checkGoogleCalendarStatus();
-            showNotification('Calendar refreshed successfully!', 'success');
+            showNotification(window.LanguageManager ? window.LanguageManager.t('calendar.calendarRefreshed') : 'Calendar refreshed successfully!', 'success');
         } catch (error) {
-            showNotification('Failed to refresh calendar', 'error');
+            showNotification(window.LanguageManager ? window.LanguageManager.t('calendar.calendarRefreshError') : 'Failed to refresh calendar', 'error');
         } finally {
             btn.disabled = false;
             btn.innerHTML = originalText;
@@ -642,18 +665,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 updateEventCount();
                 
                 // Show user feedback
+                const translatedMonthNames = getMonthNames();
                 if (googleEvents.length === 0) {
-                    showNotification(`No events found for ${monthNames[currentMonth]} ${currentYear}`, 'info');
+                    const message = window.LanguageManager 
+                        ? window.LanguageManager.t('calendar.noEventsForMonth').replace('{month}', translatedMonthNames[currentMonth]).replace('{year}', currentYear)
+                        : `No events found for ${translatedMonthNames[currentMonth]} ${currentYear}`;
+                    showNotification(message, 'info');
                 } else {
-                    showNotification(`Loaded ${googleEvents.length} event(s) for ${monthNames[currentMonth]}`, 'success');
+                    const message = window.LanguageManager 
+                        ? window.LanguageManager.t('calendar.eventsLoaded').replace('{count}', googleEvents.length).replace('{month}', translatedMonthNames[currentMonth])
+                        : `Loaded ${googleEvents.length} event(s) for ${translatedMonthNames[currentMonth]}`;
+                    showNotification(message, 'success');
                 }
             } else {
                 console.error('❌ API Error:', data);
-                showNotification('Failed to load calendar events', 'error');
+                showNotification(window.LanguageManager ? window.LanguageManager.t('calendar.failedToLoadEvents') : 'Failed to load calendar events', 'error');
             }
         } catch (error) {
             console.error('❌ Error loading Google Calendar events:', error);
-            showNotification('Failed to load Google Calendar events', 'error');
+            showNotification(window.LanguageManager ? window.LanguageManager.t('calendar.failedToLoadEvents') : 'Failed to load Google Calendar events', 'error');
         }
     }
 
@@ -738,16 +768,16 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Format time for tooltip
         let timeDisplay = '';
-        if (!event.allDay) {
-            const eventTime = new Date(event.start);
-            const endTime = new Date(event.end);
-            timeDisplay = `\n🕐 ${eventTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - ${endTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
-        } else {
-            timeDisplay = '\n📅 All day';
-        }
-        
-        indicator.title = `${event.title}${timeDisplay}${event.location ? '\n📍 ' + event.location : ''}\n\nClick to view details`;
-        cell.appendChild(indicator);
+                if (!event.allDay) {
+                    const eventTime = new Date(event.start);
+                    const endTime = new Date(event.end);
+                    timeDisplay = `\n🕐 ${eventTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - ${endTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+                } else {
+                    timeDisplay = `\n📅 ${window.LanguageManager ? window.LanguageManager.t('calendar.allDay') : 'All day'}`;
+                }
+                
+                indicator.title = `${event.title}${timeDisplay}${event.location ? '\n📍 ' + event.location : ''}\n\n${window.LanguageManager ? window.LanguageManager.t('calendar.eventDetails').replace('Event Details', 'Click to view details') : 'Click to view details'}`;
+                cell.appendChild(indicator);
         
         // Add event count if there are multiple events
         const existingIndicators = cell.querySelectorAll('.event-indicator');
@@ -798,7 +828,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!googleEvents || googleEvents.length === 0) {
             noEventsMessage.style.display = 'block';
             eventsList.style.display = 'none';
-            if (eventCountBadge) eventCountBadge.textContent = '0 events';
+            if (eventCountBadge) eventCountBadge.textContent = `0 ${window.LanguageManager ? window.LanguageManager.t('calendar.events') : 'events'}`;
             return;
         }
         
@@ -817,11 +847,11 @@ document.addEventListener('DOMContentLoaded', function() {
         if (upcomingEvents.length === 0) {
             noEventsMessage.style.display = 'block';
             eventsList.style.display = 'none';
-            if (eventCountBadge) eventCountBadge.textContent = '0 upcoming';
+            if (eventCountBadge) eventCountBadge.textContent = `0 ${window.LanguageManager ? window.LanguageManager.t('calendar.upcoming') : 'upcoming'}`;
         } else {
             noEventsMessage.style.display = 'none';
             eventsList.style.display = 'block';
-            if (eventCountBadge) eventCountBadge.textContent = `${upcomingEvents.length} upcoming`;
+            if (eventCountBadge) eventCountBadge.textContent = `${upcomingEvents.length} ${window.LanguageManager ? window.LanguageManager.t('calendar.upcoming') : 'upcoming'}`;
             
             // Generate events HTML
             eventsList.innerHTML = upcomingEvents.map(event => {
@@ -830,15 +860,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 const isTomorrow = eventDate.toDateString() === new Date(now.getTime() + 24 * 60 * 60 * 1000).toDateString();
                 
                 let dateDisplay = eventDate.toLocaleDateString();
-                if (isToday) dateDisplay = 'Today';
-                else if (isTomorrow) dateDisplay = 'Tomorrow';
+                if (isToday) dateDisplay = window.LanguageManager ? window.LanguageManager.t('calendar.today') : 'Today';
+                else if (isTomorrow) dateDisplay = window.LanguageManager ? window.LanguageManager.t('calendar.tomorrow') : 'Tomorrow';
                 
                 let timeDisplay = '';
                 if (!event.allDay) {
                     const endTime = new Date(event.end);
                     timeDisplay = `${eventDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - ${endTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
                 } else {
-                    timeDisplay = 'All day';
+                    timeDisplay = window.LanguageManager ? window.LanguageManager.t('calendar.allDay') : 'All day';
                 }
                 
                 return `
@@ -855,7 +885,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 ${event.location ? `<small class="text-muted d-block"><i class="bi bi-geo-alt me-1"></i>${event.location}</small>` : ''}
                             </div>
                             <div class="text-end">
-                                <span class="badge bg-primary">Google</span>
+                                <span class="badge bg-primary">${window.LanguageManager ? window.LanguageManager.t('calendar.googleCalendar') : 'Google Calendar'}</span>
                             </div>
                         </div>
                         ${event.description ? `<div class="mt-2"><small class="text-muted">${event.description.substring(0, 100)}${event.description.length > 100 ? '...' : ''}</small></div>` : ''}
@@ -880,8 +910,10 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!event.allDay) {
             timeDisplay = `${eventDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - ${endDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
         } else {
-            timeDisplay = 'All day';
+            timeDisplay = window.LanguageManager ? window.LanguageManager.t('calendar.allDay') : 'All day';
         }
+        
+        const t = (key, fallback) => window.LanguageManager ? window.LanguageManager.t(key) : fallback;
         
         content.innerHTML = `
             <div class="row">
@@ -891,34 +923,34 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="mb-3">
                         <div class="d-flex align-items-center mb-2">
                             <i class="bi bi-calendar3 me-2 text-muted"></i>
-                            <strong>Date:</strong>
+                            <strong>${t('calendar.date', 'Date')}:</strong>
                             <span class="ms-2">${eventDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
                         </div>
                         
                         <div class="d-flex align-items-center mb-2">
                             <i class="bi bi-clock me-2 text-muted"></i>
-                            <strong>Time:</strong>
+                            <strong>${t('calendar.time', 'Time')}:</strong>
                             <span class="ms-2">${timeDisplay}</span>
                         </div>
                         
                         ${event.location ? `
                             <div class="d-flex align-items-center mb-2">
                                 <i class="bi bi-geo-alt me-2 text-muted"></i>
-                                <strong>Location:</strong>
+                                <strong>${t('calendar.location', 'Location')}:</strong>
                                 <span class="ms-2">${event.location}</span>
                             </div>
                         ` : ''}
                         
                         <div class="d-flex align-items-center mb-2">
                             <i class="bi bi-tag me-2 text-muted"></i>
-                            <strong>Source:</strong>
-                            <span class="badge bg-success ms-2">Google Calendar</span>
+                            <strong>${t('calendar.source', 'Source')}:</strong>
+                            <span class="badge bg-success ms-2">${t('calendar.googleCalendar', 'Google Calendar')}</span>
                         </div>
                     </div>
                     
                     ${event.description ? `
                         <div class="mb-3">
-                            <strong class="d-block mb-2">Description:</strong>
+                            <strong class="d-block mb-2">${t('calendar.description', 'Description')}:</strong>
                             <div class="p-3 bg-light rounded">${event.description}</div>
                         </div>
                     ` : ''}
@@ -926,7 +958,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="mt-4 p-3 bg-info bg-opacity-10 rounded">
                         <small class="text-muted">
                             <i class="bi bi-info-circle me-1"></i>
-                            This event is from your Google Calendar. You can edit or delete it using the buttons below.
+                            ${t('calendar.eventFromGoogle', 'This event is from your Google Calendar. You can edit or delete it using the buttons below.')}
                         </small>
                     </div>
                 </div>
@@ -1090,7 +1122,7 @@ let showAlert, loadGoogleCalendarEvents; // Will be assigned from DOMContentLoad
 window.createEvent = function() {
     const form = document.getElementById('createEventForm');
     if (!form) {
-        alert('Form not found!');
+        alert(window.LanguageManager ? window.LanguageManager.t('calendar.formNotFound') : 'Form not found!');
         return;
     }
     
@@ -1125,7 +1157,7 @@ window.createEvent = function() {
     const submitBtn = document.querySelector('#addEventModal .btn-primary');
     const originalText = submitBtn.textContent;
     submitBtn.disabled = true;
-    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creating...';
+    submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>${window.LanguageManager ? window.LanguageManager.t('calendar.creating') : 'Creating...'}`;
     
     fetch('/calendar/create-event', {
         method: 'POST',
@@ -1146,9 +1178,9 @@ window.createEvent = function() {
             
             // Show success message - use existing showAlert function if available
             if (typeof window.showAlert === 'function') {
-                window.showAlert('Event created successfully!', 'success');
+                window.showAlert(window.LanguageManager ? window.LanguageManager.t('calendar.eventCreatedSuccess') : 'Event created successfully!', 'success');
             } else {
-                alert('Event created successfully!');
+                alert(window.LanguageManager ? window.LanguageManager.t('calendar.eventCreatedSuccess') : 'Event created successfully!');
             }
             
             // Reload events if function exists
@@ -1158,12 +1190,16 @@ window.createEvent = function() {
                 location.reload();
             }
         } else {
-            let errorMessage = 'Error creating event: ' + data.error;
+            let errorMessage = (window.LanguageManager ? window.LanguageManager.t('calendar.eventCreationError') : 'Error creating event') + ': ' + data.error;
             
-                            // Check if it's a permission error
-                            if (data.error && (data.error.includes('permission') || data.error.includes('scope') || data.error.includes('forbidden'))) {
-                                errorMessage += '<br><br>You may need to re-authorize with calendar write permissions. <button type="button" class="btn btn-warning btn-sm mt-2" onclick="window.reauthorizeCalendar()">Re-authorize Now</button>';
-                            }            if (typeof window.showAlert === 'function') {
+            // Check if it's a permission error
+            if (data.error && (data.error.includes('permission') || data.error.includes('scope') || data.error.includes('forbidden'))) {
+                const permissionMsg = window.LanguageManager ? window.LanguageManager.t('calendar.permissionError') : 'You may need to re-authorize with calendar write permissions.';
+                const reauthorizeBtn = window.LanguageManager ? window.LanguageManager.t('calendar.reauthorizeNow') : 'Re-authorize Now';
+                errorMessage += `<br><br>${permissionMsg} <button type="button" class="btn btn-warning btn-sm mt-2" onclick="window.reauthorizeCalendar()">${reauthorizeBtn}</button>`;
+            }
+            
+            if (typeof window.showAlert === 'function') {
                 window.showAlert(errorMessage, 'danger');
             } else {
                 alert(errorMessage.replace(/<[^>]*>/g, ''));
@@ -1173,9 +1209,9 @@ window.createEvent = function() {
     .catch(error => {
         console.error('Error creating event:', error);
         if (typeof window.showAlert === 'function') {
-            window.showAlert('Error creating event. Please try again.', 'danger');
+            window.showAlert(window.LanguageManager ? window.LanguageManager.t('calendar.eventCreationError') + '. Please try again.' : 'Error creating event. Please try again.', 'danger');
         } else {
-            alert('Error creating event. Please try again.');
+            alert(window.LanguageManager ? window.LanguageManager.t('calendar.eventCreationError') + '. Please try again.' : 'Error creating event. Please try again.');
         }
     })
     .finally(() => {
@@ -1399,5 +1435,16 @@ window.reauthorizeCalendar = function() {
     // Redirect to public site Google OAuth to get updated permissions
     window.location.href = 'http://localhost:3000/auth/google';
 };
+
+// Listen for language changes and update calendar
+document.addEventListener('languageChanged', function(e) {
+    console.log('Language changed to:', e.detail.language);
+    // Regenerate calendar with new month names
+    generateCalendar(currentMonth, currentYear);
+    // Update any dynamic content
+    if (googleConnected) {
+        loadGoogleCalendarEvents();
+    }
+});
 
 </script>

@@ -498,7 +498,12 @@ app.get('/calendar', requireAuth, (req, res) => {
     });
 });
 
-
+app.get('/tasks', requireAuth, (req, res) => {
+    res.render('index.ejs', {
+        page: 'tasks',
+        user: req.session.user
+    });
+});
 
 // Profile update route
 app.put('/api/profile', requireAuth, async (req, res) => {
@@ -647,6 +652,227 @@ app.get('/api/translations', (req, res) => {
     res.redirect('/api/translations/en');
 });
 
+// Task Management API Routes
+
+// Get all tasks for the authenticated user
+app.get('/api/tasks', requireAuth, async (req, res) => {
+    try {
+        const query = 'SELECT * FROM tasks WHERE user_email = $1 ORDER BY created_at DESC';
+        const result = await db.query(query, [req.session.user.email]);
+        
+        res.json({
+            success: true,
+            tasks: result.rows
+        });
+    } catch (error) {
+        console.error('Error fetching tasks:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching tasks'
+        });
+    }
+});
+
+// Create a new task
+app.post('/api/tasks', requireAuth, async (req, res) => {
+    try {
+        const { text, source = 'user' } = req.body;
+        
+        if (!text || text.trim() === '') {
+            return res.status(400).json({
+                success: false,
+                message: 'Task text is required'
+            });
+        }
+
+        // Validate source
+        const validSources = ['user', 'google_tasks', 'microsoft_todo', 'calendar_integration'];
+        const taskSource = validSources.includes(source) ? source : 'user';
+        
+        const query = `
+            INSERT INTO tasks (user_email, text, completed, source)
+            VALUES ($1, $2, false, $3)
+            RETURNING *
+        `;
+        const values = [req.session.user.email, text.trim(), taskSource];
+        const result = await db.query(query, values);
+        
+        res.json({
+            success: true,
+            task: result.rows[0],
+            message: 'Task created successfully'
+        });
+    } catch (error) {
+        console.error('Error creating task:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error creating task'
+        });
+    }
+});
+
+// Update a task (text or completion status)
+app.put('/api/tasks/:id', requireAuth, async (req, res) => {
+    try {
+        const taskId = parseInt(req.params.id);
+        const { text, completed, source } = req.body;
+        
+        // First check if the task belongs to the user
+        const checkQuery = 'SELECT * FROM tasks WHERE id = $1 AND user_email = $2';
+        const checkResult = await db.query(checkQuery, [taskId, req.session.user.email]);
+        
+        if (checkResult.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Task not found'
+            });
+        }
+
+        // Validate source if provided
+        const validSources = ['user', 'google_tasks', 'microsoft_todo', 'calendar_integration'];
+        const validatedSource = source && validSources.includes(source) ? source : undefined;
+        
+        // Build dynamic update query based on provided fields
+        const updateFields = [];
+        const values = [];
+        let valueIndex = 1;
+        
+        if (text !== undefined) {
+            updateFields.push(`text = $${valueIndex++}`);
+            values.push(text.trim());
+        }
+        
+        if (completed !== undefined) {
+            updateFields.push(`completed = $${valueIndex++}`);
+            values.push(completed);
+        }
+        
+        if (validatedSource !== undefined) {
+            updateFields.push(`source = $${valueIndex++}`);
+            values.push(validatedSource);
+        }
+        
+        if (updateFields.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'No valid update data provided'
+            });
+        }
+        
+        // Add WHERE clause parameters
+        values.push(taskId, req.session.user.email);
+        
+        const updateQuery = `
+            UPDATE tasks 
+            SET ${updateFields.join(', ')} 
+            WHERE id = $${valueIndex++} AND user_email = $${valueIndex++} 
+            RETURNING *
+        `;
+        
+        const result = await db.query(updateQuery, values);
+        
+        res.json({
+            success: true,
+            task: result.rows[0],
+            message: 'Task updated successfully'
+        });
+    } catch (error) {
+        console.error('Error updating task:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error updating task'
+        });
+    }
+});
+
+// Delete a task
+app.delete('/api/tasks/:id', requireAuth, async (req, res) => {
+    try {
+        const taskId = parseInt(req.params.id);
+        
+        // First check if the task belongs to the user, then delete
+        const query = 'DELETE FROM tasks WHERE id = $1 AND user_email = $2 RETURNING *';
+        const result = await db.query(query, [taskId, req.session.user.email]);
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Task not found'
+            });
+        }
+        
+        res.json({
+            success: true,
+            message: 'Task deleted successfully',
+            deletedTask: result.rows[0]
+        });
+    } catch (error) {
+        console.error('Error deleting task:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error deleting task'
+        });
+    }
+});
+
+// Bulk operations for tasks
+app.post('/api/tasks/bulk', requireAuth, async (req, res) => {
+    try {
+        const { action, taskIds } = req.body;
+        
+        if (!action || !taskIds || !Array.isArray(taskIds)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid bulk operation request'
+            });
+        }
+        
+        let query;
+        let values;
+        
+        switch (action) {
+            case 'complete':
+                query = 'UPDATE tasks SET completed = true WHERE id = ANY($1) AND user_email = $2 RETURNING *';
+                values = [taskIds, req.session.user.email];
+                break;
+            case 'uncomplete':
+                query = 'UPDATE tasks SET completed = false WHERE id = ANY($1) AND user_email = $2 RETURNING *';
+                values = [taskIds, req.session.user.email];
+                break;
+            case 'delete':
+                query = 'DELETE FROM tasks WHERE id = ANY($1) AND user_email = $2 RETURNING *';
+                values = [taskIds, req.session.user.email];
+                break;
+            default:
+                return res.status(400).json({
+                    success: false,
+                    message: 'Invalid bulk action'
+                });
+        }
+        
+        const result = await db.query(query, values);
+        
+        res.json({
+            success: true,
+            affectedTasks: result.rows,
+            message: `Bulk ${action} operation completed successfully`
+        });
+    } catch (error) {
+        console.error('Error performing bulk operation:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error performing bulk operation'
+        });
+    }
+});
+
+
+//TODO - add google tasks integration
+
+
+
+
+
 // Logout route
 app.get('/logout', (req, res) => {
     req.session.destroy(err => {
@@ -679,3 +905,4 @@ async function startServer() {
 }
 
 startServer();
+//

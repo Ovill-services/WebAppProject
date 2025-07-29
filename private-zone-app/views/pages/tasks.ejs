@@ -1,0 +1,480 @@
+<div class="main-content">
+    <div class="mt-5 container">
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="mb-0">
+                <i class="bi bi-check2-square text-primary me-3"></i><span>Tasks</span>
+            </h1>
+            <div class="text-muted">
+                <i class="bi bi-clock me-1"></i>
+                <span id="currentTime"></span>
+            </div>
+        </div>
+
+        <!-- Add New Task Card -->
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-plus-circle me-2"></i>Add New Task
+                </h5>
+            </div>
+            <div class="card-body">
+                <form id="addTaskForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <input type="text" class="form-control" id="taskInput" placeholder="Enter your task..." required>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="taskSource">
+                                <option value="user">Manual Entry</option>
+                                <option value="google_tasks">Google Tasks</option>
+                                <option value="microsoft_todo">Microsoft To Do</option>
+                                <option value="calendar_integration">Calendar</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-plus-lg me-1"></i>Add Task
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Tasks List -->
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-list-task me-2"></i>My Tasks
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="tasksList">
+                    <!-- Tasks will be dynamically added here -->
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-clipboard-check display-1 mb-3"></i>
+                        <p class="mb-0">No tasks yet. Add your first task above!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        
+    </div>
+</div>
+
+
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Time update functionality
+        function updateTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+            });
+            document.getElementById('currentTime').textContent = timeString;
+        }
+
+        updateTime(); // Initial call to set time immediately
+        setInterval(updateTime, 60000); // Update every minute
+
+        // Task management functionality
+        let tasks = [];
+
+        // API helper functions
+        async function apiRequest(url, options = {}) {
+            try {
+                const response = await fetch(url, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    },
+                    ...options
+                });
+
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.message || `HTTP error! status: ${response.status}`);
+                }
+                
+                return data;
+            } catch (error) {
+                console.error('API request failed:', error);
+                showNotification('Error: ' + error.message, 'error');
+                throw error;
+            }
+        }
+
+        function showNotification(message, type = 'info') {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `alert alert-${type === 'error' ? 'danger' : type === 'success' ? 'success' : 'info'} alert-dismissible fade show position-fixed`;
+            notification.style.cssText = 'top: 20px; right: 20px; z-index: 1050; min-width: 300px;';
+            notification.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 5000);
+        }
+
+        // Load tasks from server
+        async function loadTasks() {
+            try {
+                const data = await apiRequest('/api/tasks');
+                tasks = data.tasks || [];
+                renderTasks();
+            } catch (error) {
+                console.error('Error loading tasks:', error);
+            }
+        }
+
+        function renderTasks() {
+            const tasksList = document.getElementById('tasksList');
+            
+            if (tasks.length === 0) {
+                tasksList.innerHTML = `
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-clipboard-check display-1 mb-3"></i>
+                        <p class="mb-0">No tasks yet. Add your first task above!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            tasksList.innerHTML = tasks.map(task => `
+                <div class="task-item border-bottom py-3 ${task.completed ? 'task-completed' : ''}" data-task-id="${task.id}">
+                    <div class="d-flex align-items-center">
+                        <div class="form-check me-3">
+                            <input class="form-check-input task-checkbox" type="checkbox" ${task.completed ? 'checked' : ''} data-task-id="${task.id}">
+                        </div>
+                        <div class="flex-grow-1">
+                            <span class="task-text ${task.completed ? 'text-decoration-line-through text-muted' : ''}">${escapeHtml(task.text)}</span>
+                            <div class="d-flex align-items-center gap-2 mt-1">
+                                <small class="text-muted">Created: ${new Date(task.created_at).toLocaleDateString()}</small>
+                                <span class="source-badge badge ${getSourceBadgeClass(task.source)}">${getSourceDisplayName(task.source)}</span>
+                            </div>
+                        </div>
+                        <div class="ms-auto">
+                            <button class="btn btn-sm btn-outline-warning task-edit" data-task-id="${task.id}">
+                                <i class="bi bi-pen"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger delete-task" data-task-id="${task.id}">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Helper function to get source display name
+        function getSourceDisplayName(source) {
+            const sourceNames = {
+                'user': 'Manual',
+                'google_tasks': 'Google Tasks',
+                'microsoft_todo': 'Microsoft To Do',
+                'calendar_integration': 'Calendar'
+            };
+            return sourceNames[source] || 'Unknown';
+        }
+
+        // Helper function to get source badge class
+        function getSourceBadgeClass(source) {
+            const badgeClasses = {
+                'user': 'bg-primary',
+                'google_tasks': 'bg-success',
+                'microsoft_todo': 'bg-info',
+                'calendar_integration': 'bg-warning text-dark'
+            };
+            return badgeClasses[source] || 'bg-secondary';
+        }
+
+        // Helper function to escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Add new task
+        async function addTask(taskText, source = 'user') {
+            try {
+                const data = await apiRequest('/api/tasks', {
+                    method: 'POST',
+                    body: JSON.stringify({ text: taskText, source: source })
+                });
+                
+                tasks.unshift(data.task); // Add to beginning of array
+                renderTasks();
+                showNotification('Task added successfully!', 'success');
+            } catch (error) {
+                console.error('Error adding task:', error);
+            }
+        }
+
+        // Toggle task completion
+        async function toggleTask(taskId) {
+            try {
+                const task = tasks.find(t => t.id === parseInt(taskId));
+                if (!task) return;
+
+                const data = await apiRequest(`/api/tasks/${taskId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ completed: !task.completed })
+                });
+                
+                // Update local task
+                const taskIndex = tasks.findIndex(t => t.id === parseInt(taskId));
+                if (taskIndex !== -1) {
+                    tasks[taskIndex] = data.task;
+                }
+                
+                renderTasks();
+                showNotification('Task updated successfully!', 'success');
+            } catch (error) {
+                console.error('Error toggling task:', error);
+            }
+        }
+
+        // Delete task
+        async function deleteTask(taskId) {
+            try {
+                await apiRequest(`/api/tasks/${taskId}`, {
+                    method: 'DELETE'
+                });
+                
+                tasks = tasks.filter(t => t.id !== parseInt(taskId));
+                renderTasks();
+                showNotification('Task deleted successfully!', 'success');
+            } catch (error) {
+                console.error('Error deleting task:', error);
+            }
+        }
+
+        // Edit task
+        async function editTask(taskId, newText) {
+            try {
+                const data = await apiRequest(`/api/tasks/${taskId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ text: newText })
+                });
+                
+                // Update local task
+                const taskIndex = tasks.findIndex(t => t.id === parseInt(taskId));
+                if (taskIndex !== -1) {
+                    tasks[taskIndex] = data.task;
+                }
+                
+                renderTasks();
+                showNotification('Task updated successfully!', 'success');
+            } catch (error) {
+                console.error('Error editing task:', error);
+            }
+        }
+
+        function startEditTask(taskId) {
+            const task = tasks.find(t => t.id === parseInt(taskId));
+            if (!task) return;
+
+            const taskItem = document.querySelector(`[data-task-id="${taskId}"]`);
+            const taskTextElement = taskItem.querySelector('.task-text');
+            const currentText = task.text;
+
+            // Create edit input
+            const editInput = document.createElement('input');
+            editInput.type = 'text';
+            editInput.className = 'form-control task-edit-input';
+            editInput.value = currentText;
+            editInput.style.fontSize = '1.1rem';
+
+            // Create save and cancel buttons
+            const buttonContainer = document.createElement('div');
+            buttonContainer.className = 'mt-2';
+            
+            const saveBtn = document.createElement('button');
+            saveBtn.className = 'btn btn-sm btn-success me-2';
+            saveBtn.innerHTML = '<i class="bi bi-check-lg"></i> Save';
+            
+            const cancelBtn = document.createElement('button');
+            cancelBtn.className = 'btn btn-sm btn-secondary';
+            cancelBtn.innerHTML = '<i class="bi bi-x-lg"></i> Cancel';
+
+            buttonContainer.appendChild(saveBtn);
+            buttonContainer.appendChild(cancelBtn);
+
+            // Replace task text with edit input
+            const taskTextContainer = taskTextElement.parentElement;
+            const originalContent = taskTextContainer.innerHTML;
+            
+            taskTextContainer.innerHTML = '';
+            taskTextContainer.appendChild(editInput);
+            taskTextContainer.appendChild(buttonContainer);
+
+            // Focus the input and select all text
+            editInput.focus();
+            editInput.select();
+
+            // Save function
+            function saveEdit() {
+                const newText = editInput.value.trim();
+                if (newText && newText !== currentText) {
+                    editTask(taskId, newText);
+                } else {
+                    // Restore original content if no changes
+                    taskTextContainer.innerHTML = originalContent;
+                }
+            }
+
+            // Cancel function
+            function cancelEdit() {
+                taskTextContainer.innerHTML = originalContent;
+            }
+
+            // Event listeners
+            saveBtn.addEventListener('click', saveEdit);
+            cancelBtn.addEventListener('click', cancelEdit);
+            
+            // Save on Enter, cancel on Escape
+            editInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    saveEdit();
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    cancelEdit();
+                }
+            });
+
+            // Cancel if clicking outside (optional)
+            editInput.addEventListener('blur', function() {
+                // Small delay to allow button clicks to register
+                setTimeout(() => {
+                    if (document.activeElement !== saveBtn && document.activeElement !== cancelBtn) {
+                        cancelEdit();
+                    }
+                }, 150);
+            });
+        }
+
+        // Event listeners
+        document.getElementById('addTaskForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const taskInput = document.getElementById('taskInput');
+            const taskSource = document.getElementById('taskSource');
+            const taskText = taskInput.value.trim();
+            const source = taskSource.value;
+            
+            if (taskText) {
+                addTask(taskText, source);
+                taskInput.value = '';
+                taskSource.value = 'user'; // Reset to default
+            }
+        });
+
+        document.getElementById('tasksList').addEventListener('click', function(e) {
+            const taskId = e.target.dataset.taskId;
+            
+            if (e.target.classList.contains('task-checkbox')) {
+                toggleTask(taskId);
+            } else if (e.target.classList.contains('delete-task') || e.target.parentElement.classList.contains('delete-task')) {
+                if (confirm('Are you sure you want to delete this task?')) {
+                    deleteTask(taskId);
+                }
+            } else if (e.target.classList.contains('task-edit') || e.target.parentElement.classList.contains('task-edit')) {
+                startEditTask(taskId);
+            }
+        });
+
+        // Initial load
+        loadTasks();
+    });
+</script>
+
+<style>
+    .task-item {
+        transition: opacity 0.3s ease;
+    }
+    
+    .task-completed {
+        opacity: 0.7;
+    }
+    
+    .task-text {
+        font-size: 1.1rem;
+    }
+    
+    .task-edit-input {
+        font-size: 1.1rem !important;
+        border: 2px solid #007bff;
+    }
+    
+    .task-edit-input:focus {
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        border-color: #007bff;
+    }
+    
+    .source-badge {
+        font-size: 0.75rem;
+        font-weight: 500;
+        border-radius: 4px;
+    }
+    
+    .source-badge.bg-primary {
+        background-color: #0d6efd !important;
+    }
+    
+    .source-badge.bg-success {
+        background-color: #198754 !important;
+    }
+    
+    .source-badge.bg-info {
+        background-color: #0dcaf0 !important;
+        color: #000 !important;
+    }
+    
+    .source-badge.bg-warning {
+        background-color: #ffc107 !important;
+        color: #000 !important;
+    }
+    
+    .card {
+        border: none;
+        border-radius: 10px;
+    }
+    
+    .card-header {
+        border-radius: 10px 10px 0 0 !important;
+    }
+    
+    .btn {
+        border-radius: 8px;
+    }
+    
+    .form-control, .form-select {
+        border-radius: 8px;
+    }
+    
+    .task-item .btn-group {
+        gap: 5px;
+    }
+    
+    @media (max-width: 768px) {
+        .col-md-6, .col-md-3 {
+            margin-bottom: 10px;
+        }
+    }
+</style>
