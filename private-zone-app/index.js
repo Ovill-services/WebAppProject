@@ -8,11 +8,7 @@ import pgSession from 'connect-pg-simple';
 import multer from 'multer';
 import fs from 'fs';
 import dotenv from 'dotenv';
-import { MicrosoftAuthService } from './services/microsoftAuthService.js';
-import { MicrosoftGraphService } from './services/microsoftGraphService.js';
-
-// Load environment variables
-dotenv.config();
+import { GoogleCalendarService } from './services/googleCalendarService.js';
 
 // Load environment variables
 dotenv.config();
@@ -20,8 +16,8 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Initialize Microsoft Auth Service
-const microsoftAuth = new MicrosoftAuthService();
+// Initialize Google Calendar Service
+const googleCalendarService = new GoogleCalendarService();
 
 // PostgreSQL session store
 const PgSession = pgSession(session);
@@ -110,193 +106,296 @@ function requireAuth(req, res, next) {
     }
 }
 
-// Microsoft OAuth Routes
-app.get('/auth/microsoft', requireAuth, async (req, res) => {
+// API Routes for Google Calendar (status and events only)
+
+// Get Google Calendar integration status
+app.get('/api/google/calendar/status', requireAuth, async (req, res) => {
     try {
-        if (!microsoftAuth.checkConfiguration()) {
-            return res.status(503).json({ 
-                error: 'Microsoft integration not configured',
-                message: 'Please configure Microsoft credentials in environment variables'
-            });
-        }
-
-        const authUrl = await microsoftAuth.getAuthUrl();
-        res.redirect(authUrl);
-    } catch (error) {
-        console.error('Error getting Microsoft auth URL:', error);
-        res.status(500).json({ error: 'Failed to initiate Microsoft authentication' });
-    }
-});
-
-app.get('/auth/microsoft/callback', requireAuth, async (req, res) => {
-    try {
-        if (!microsoftAuth.checkConfiguration()) {
-            return res.redirect('/calendar?error=microsoft_not_configured');
-        }
-
-        const { code } = req.query;
-        if (!code) {
-            return res.status(400).json({ error: 'Authorization code not received' });
-        }
-
-        // Exchange code for tokens
-        const tokenData = await microsoftAuth.getTokenFromCode(code);
-        
-        // Store tokens in database
-        const insertQuery = `
-            INSERT INTO microsoft_integration (user_email, access_token, refresh_token, expires_on, account_info)
-            VALUES ($1, $2, $3, $4, $5)
-            ON CONFLICT (user_email) 
-            DO UPDATE SET 
-                access_token = EXCLUDED.access_token,
-                refresh_token = EXCLUDED.refresh_token,
-                expires_on = EXCLUDED.expires_on,
-                account_info = EXCLUDED.account_info,
-                updated_at = CURRENT_TIMESTAMP,
-                is_active = true
-        `;
-        
-        await db.query(insertQuery, [
-            req.session.user.email,
-            tokenData.accessToken,
-            tokenData.refreshToken,
-            tokenData.expiresOn,
-            JSON.stringify(tokenData.account)
-        ]);
-
-        // Redirect to calendar with success message
-        res.redirect('/calendar?connected=microsoft');
-    } catch (error) {
-        console.error('Error handling Microsoft callback:', error);
-        res.redirect('/calendar?error=microsoft_auth_failed');
-    }
-});
-
-// Disconnect Microsoft integration
-app.post('/api/microsoft/disconnect', requireAuth, async (req, res) => {
-    try {
-        await db.query('UPDATE microsoft_integration SET is_active = false WHERE user_email = $1', [req.session.user.email]);
-        res.json({ success: true, message: 'Microsoft integration disconnected' });
-    } catch (error) {
-        console.error('Error disconnecting Microsoft integration:', error);
-        res.status(500).json({ success: false, message: 'Failed to disconnect Microsoft integration' });
-    }
-});
-
-// Get Microsoft integration status
-app.get('/api/microsoft/status', requireAuth, async (req, res) => {
-    try {
-        if (!microsoftAuth.checkConfiguration()) {
-            return res.json({ 
-                connected: false,
-                configured: false,
-                message: 'Microsoft integration not configured'
-            });
-        }
-
         const result = await db.query(
-            'SELECT is_active, created_at FROM microsoft_integration WHERE user_email = $1 AND is_active = true',
+            'SELECT is_active, created_at, calendar_info FROM google_calendar_integration WHERE user_email = $1 AND is_active = true',
             [req.session.user.email]
         );
         
         const isConnected = result.rows.length > 0;
         res.json({ 
             connected: isConnected,
-            configured: true,
-            connectedSince: isConnected ? result.rows[0].created_at : null
+            connectedSince: isConnected ? result.rows[0].created_at : null,
+            calendarInfo: isConnected ? result.rows[0].calendar_info : null
         });
     } catch (error) {
-        console.error('Error checking Microsoft status:', error);
+        console.error('Error checking Google Calendar status:', error);
         res.status(500).json({ 
-            connected: false, 
-            configured: microsoftAuth.checkConfiguration(),
+            connected: false,
             error: 'Failed to check status' 
         });
     }
 });
 
-// Get calendar events from Microsoft
-app.get('/api/microsoft/events', requireAuth, async (req, res) => {
+// Get calendar events from Google Calendar
+app.get('/api/google/calendar/events', requireAuth, async (req, res) => {
     try {
         const { start, end } = req.query;
         
-        // Get user's Microsoft tokens
+        // Get user's Google Calendar tokens
         const tokenResult = await db.query(
-            'SELECT access_token, refresh_token, expires_on, account_info FROM microsoft_integration WHERE user_email = $1 AND is_active = true',
+            'SELECT access_token, refresh_token, expires_at FROM google_calendar_integration WHERE user_email = $1 AND is_active = true',
             [req.session.user.email]
         );
         
         if (tokenResult.rows.length === 0) {
-            return res.status(401).json({ error: 'Microsoft integration not found' });
+            return res.status(401).json({ error: 'Google Calendar integration not found' });
         }
         
-        let { access_token, refresh_token, expires_on, account_info } = tokenResult.rows[0];
+        let { access_token, refresh_token, expires_at } = tokenResult.rows[0];
         
         // Check if token needs refresh
-        if (new Date() >= new Date(expires_on)) {
+        if (expires_at && new Date() >= new Date(expires_at)) {
             try {
-                const refreshedTokens = await microsoftAuth.refreshAccessToken(refresh_token, JSON.parse(account_info));
-                access_token = refreshedTokens.accessToken;
+                const refreshedTokens = await googleCalendarService.refreshAccessToken(refresh_token);
+                access_token = refreshedTokens.access_token;
                 
                 // Update tokens in database
+                const newExpiresAt = refreshedTokens.expiry_date ? new Date(refreshedTokens.expiry_date) : null;
                 await db.query(
-                    'UPDATE microsoft_integration SET access_token = $1, refresh_token = $2, expires_on = $3 WHERE user_email = $4',
-                    [refreshedTokens.accessToken, refreshedTokens.refreshToken, refreshedTokens.expiresOn, req.session.user.email]
+                    'UPDATE google_calendar_integration SET access_token = $1, expires_at = $2 WHERE user_email = $3',
+                    [refreshedTokens.access_token, newExpiresAt, req.session.user.email]
                 );
             } catch (refreshError) {
                 console.error('Error refreshing token:', refreshError);
-                return res.status(401).json({ error: 'Failed to refresh Microsoft token' });
+                return res.status(401).json({ error: 'Failed to refresh Google Calendar token' });
             }
         }
         
-        // Get calendar events
-        const graphService = new MicrosoftGraphService(access_token);
+        // Set credentials and get events
+        googleCalendarService.setCredentials({ access_token, refresh_token });
         const startDate = start || new Date().toISOString();
         const endDate = end || new Date(new Date().getTime() + 30 * 24 * 60 * 60 * 1000).toISOString(); // 30 days from now
         
-        const events = await graphService.getCalendarEvents(startDate, endDate);
+        const events = await googleCalendarService.getEvents(startDate, endDate);
         res.json({ success: true, events });
         
     } catch (error) {
-        console.error('Error fetching Microsoft calendar events:', error);
+        console.error('Error fetching Google Calendar events:', error);
         res.status(500).json({ error: 'Failed to fetch calendar events' });
     }
 });
 
-// Create event in Microsoft calendar
-app.post('/api/microsoft/events', requireAuth, async (req, res) => {
+// Create event in Google Calendar
+app.post('/api/google/calendar/events', requireAuth, async (req, res) => {
     try {
         const { title, description, start, end, location, attendees } = req.body;
         
-        // Get user's Microsoft tokens
+        // Get user's Google Calendar tokens
         const tokenResult = await db.query(
-            'SELECT access_token, refresh_token, expires_on, account_info FROM microsoft_integration WHERE user_email = $1 AND is_active = true',
+            'SELECT access_token, refresh_token FROM google_calendar_integration WHERE user_email = $1 AND is_active = true',
             [req.session.user.email]
         );
         
         if (tokenResult.rows.length === 0) {
-            return res.status(401).json({ error: 'Microsoft integration not found' });
+            return res.status(401).json({ error: 'Google Calendar integration not found' });
         }
         
-        let { access_token } = tokenResult.rows[0];
+        const { access_token, refresh_token } = tokenResult.rows[0];
         
         // Create event
-        const graphService = new MicrosoftGraphService(access_token);
+        googleCalendarService.setCredentials({ access_token, refresh_token });
         const eventData = {
             title,
             description,
-            start: new Date(start),
-            end: new Date(end),
+            start: new Date(start).toISOString(),
+            end: new Date(end).toISOString(),
             location,
             attendees: attendees || []
         };
         
-        const createdEvent = await graphService.createEvent(eventData);
+        const createdEvent = await googleCalendarService.createEvent(eventData);
         res.json({ success: true, event: createdEvent });
         
     } catch (error) {
-        console.error('Error creating Microsoft calendar event:', error);
+        console.error('Error creating Google Calendar event:', error);
         res.status(500).json({ error: 'Failed to create calendar event' });
+    }
+});
+
+// Calendar page route for creating events (alternative endpoint)
+app.post('/calendar/create-event', requireAuth, async (req, res) => {
+    try {
+        const { title, description, start, end, location, allDay } = req.body;
+        
+        // Get user's Google Calendar tokens
+        const tokenResult = await db.query(
+            'SELECT access_token, refresh_token, expires_at FROM google_calendar_integration WHERE user_email = $1 AND is_active = true',
+            [req.session.user.email]
+        );
+        
+        if (tokenResult.rows.length === 0) {
+            return res.status(401).json({ error: 'Google Calendar integration not found' });
+        }
+        
+        let { access_token, refresh_token, expires_at } = tokenResult.rows[0];
+        
+        // Check if token needs refresh
+        if (expires_at && new Date() >= new Date(expires_at)) {
+            try {
+                const refreshedTokens = await googleCalendarService.refreshAccessToken(refresh_token);
+                access_token = refreshedTokens.access_token;
+                
+                // Update tokens in database
+                const newExpiresAt = refreshedTokens.expiry_date ? new Date(refreshedTokens.expiry_date) : null;
+                await db.query(
+                    'UPDATE google_calendar_integration SET access_token = $1, expires_at = $2 WHERE user_email = $3',
+                    [refreshedTokens.access_token, newExpiresAt, req.session.user.email]
+                );
+            } catch (refreshError) {
+                console.error('Error refreshing token:', refreshError);
+                return res.status(401).json({ error: 'Failed to refresh Google Calendar token' });
+            }
+        }
+        
+        // Set credentials and create event
+        googleCalendarService.setCredentials({ access_token, refresh_token });
+        
+        let startDate, endDate;
+        if (allDay) {
+            // For all-day events, use date format without time
+            startDate = start;
+            endDate = end;
+        } else {
+            // For timed events, use ISO string format
+            startDate = new Date(start).toISOString();
+            endDate = new Date(end).toISOString();
+        }
+        
+        const eventData = {
+            title,
+            description,
+            start: startDate,
+            end: endDate,
+            location,
+            allDay
+        };
+        
+        const createdEvent = await googleCalendarService.createEvent(eventData);
+        res.json({ success: true, event: createdEvent });
+        
+    } catch (error) {
+        console.error('Error creating Google Calendar event:', error);
+        res.status(500).json({ error: error.message || 'Failed to create calendar event' });
+    }
+});
+
+// Update event route
+app.put('/calendar/update-event/:eventId', requireAuth, async (req, res) => {
+    try {
+        const { eventId } = req.params;
+        const { title, description, start, end, location, allDay } = req.body;
+        
+        // Get user's Google Calendar tokens
+        const tokenResult = await db.query(
+            'SELECT access_token, refresh_token, expires_at FROM google_calendar_integration WHERE user_email = $1 AND is_active = true',
+            [req.session.user.email]
+        );
+        
+        if (tokenResult.rows.length === 0) {
+            return res.status(401).json({ error: 'Google Calendar integration not found' });
+        }
+        
+        let { access_token, refresh_token, expires_at } = tokenResult.rows[0];
+        
+        // Check if token needs refresh
+        if (expires_at && new Date() >= new Date(expires_at)) {
+            try {
+                const refreshedTokens = await googleCalendarService.refreshAccessToken(refresh_token);
+                access_token = refreshedTokens.access_token;
+                
+                // Update tokens in database
+                const newExpiresAt = refreshedTokens.expiry_date ? new Date(refreshedTokens.expiry_date) : null;
+                await db.query(
+                    'UPDATE google_calendar_integration SET access_token = $1, expires_at = $2 WHERE user_email = $3',
+                    [refreshedTokens.access_token, newExpiresAt, req.session.user.email]
+                );
+            } catch (refreshError) {
+                console.error('Error refreshing token:', refreshError);
+                return res.status(401).json({ error: 'Failed to refresh Google Calendar token' });
+            }
+        }
+        
+        // Set credentials and update event
+        googleCalendarService.setCredentials({ access_token, refresh_token });
+        
+        let startDate, endDate;
+        if (allDay) {
+            // For all-day events, use date format without time
+            startDate = start;
+            endDate = end;
+        } else {
+            // For timed events, use ISO string format
+            startDate = new Date(start).toISOString();
+            endDate = new Date(end).toISOString();
+        }
+        
+        const eventData = {
+            title,
+            description,
+            start: startDate,
+            end: endDate,
+            location,
+            allDay
+        };
+        
+        const updatedEvent = await googleCalendarService.updateEvent(eventId, eventData);
+        res.json({ success: true, event: updatedEvent });
+        
+    } catch (error) {
+        console.error('Error updating Google Calendar event:', error);
+        res.status(500).json({ error: error.message || 'Failed to update calendar event' });
+    }
+});
+
+// Delete event route
+app.delete('/calendar/delete-event/:eventId', requireAuth, async (req, res) => {
+    try {
+        const { eventId } = req.params;
+        
+        // Get user's Google Calendar tokens
+        const tokenResult = await db.query(
+            'SELECT access_token, refresh_token, expires_at FROM google_calendar_integration WHERE user_email = $1 AND is_active = true',
+            [req.session.user.email]
+        );
+        
+        if (tokenResult.rows.length === 0) {
+            return res.status(401).json({ error: 'Google Calendar integration not found' });
+        }
+        
+        let { access_token, refresh_token, expires_at } = tokenResult.rows[0];
+        
+        // Check if token needs refresh
+        if (expires_at && new Date() >= new Date(expires_at)) {
+            try {
+                const refreshedTokens = await googleCalendarService.refreshAccessToken(refresh_token);
+                access_token = refreshedTokens.access_token;
+                
+                // Update tokens in database
+                const newExpiresAt = refreshedTokens.expiry_date ? new Date(refreshedTokens.expiry_date) : null;
+                await db.query(
+                    'UPDATE google_calendar_integration SET access_token = $1, expires_at = $2 WHERE user_email = $3',
+                    [refreshedTokens.access_token, newExpiresAt, req.session.user.email]
+                );
+            } catch (refreshError) {
+                console.error('Error refreshing token:', refreshError);
+                return res.status(401).json({ error: 'Failed to refresh Google Calendar token' });
+            }
+        }
+        
+        // Set credentials and delete event
+        googleCalendarService.setCredentials({ access_token, refresh_token });
+        
+        await googleCalendarService.deleteEvent(eventId);
+        res.json({ success: true, message: 'Event deleted successfully' });
+        
+    } catch (error) {
+        console.error('Error deleting Google Calendar event:', error);
+        res.status(500).json({ error: error.message || 'Failed to delete calendar event' });
     }
 });
 
@@ -397,7 +496,6 @@ app.get('/calendar', requireAuth, (req, res) => {
         page: 'calendar',
         user: req.session.user
     });
-    console.log('Calendar accessed by:', req.session.user);
 });
 
 

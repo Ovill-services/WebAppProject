@@ -10,13 +10,16 @@
             </div>
         </div>
         
+        <!-- Alert container for notifications -->
+        <div id="alertContainer"></div>
+        
         <!-- Enhanced Calendar Navigation -->
         <div class="row mb-4">
             <div class="col-12">
                 <div class="card shadow-sm border-0">
                     <div class="card-header bg-gradient-primary text-white d-flex justify-content-between align-items-center py-3">
                         <h5 class="mb-0 d-flex align-items-center">
-                            <i class="bi bi-calendar-month me-2"></i>
+                            <i class="bi bi-calendar me-2"></i>
                             <span id="currentMonth">January 2025</span>
                         </h5>
                         <div class="btn-group" role="group">
@@ -66,15 +69,18 @@
                     </div>
                     <div class="card-body">
                         <div class="d-grid gap-3">
-                            <button class="btn btn-primary btn-lg d-flex align-items-center justify-content-center">
+                            <button class="btn btn-primary btn-lg d-flex align-items-center justify-content-center" 
+                                    id="addEventBtn" 
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#addEventModal">
                                 <i class="bi bi-calendar-plus me-2"></i>
                                 <span>Add Event</span>
                             </button>
-                            <button class="btn btn-outline-primary btn-lg d-flex align-items-center justify-content-center">
+                            <button class="btn btn-outline-primary btn-lg d-flex align-items-center justify-content-center" id="scheduleMeetingBtn">
                                 <i class="bi bi-people me-2"></i>
                                 <span>Schedule Meeting</span>
                             </button>
-                            <button class="btn btn-outline-info btn-lg d-flex align-items-center justify-content-center">
+                            <button class="btn btn-outline-info btn-lg d-flex align-items-center justify-content-center" id="syncCalendarBtn">
                                 <i class="bi bi-arrow-clockwise me-2"></i>
                                 <span>Sync Calendar</span>
                             </button>
@@ -107,16 +113,20 @@
                         </h6>
                         <span class="badge bg-light text-info">0 events</span>
                     </div>
-                    <div class="card-body">
-                        <div class="text-center py-5">
+                    <div class="card-body" id="upcomingEventsContainer">
+                        <div class="text-center py-5" id="noEventsMessage">
                             <div class="mb-4">
                                 <i class="bi bi-calendar-x display-1 text-muted opacity-50"></i>
                             </div>
                             <h5 class="text-muted mb-2">No upcoming events</h5>
                             <p class="text-muted mb-4">Your scheduled events will appear here</p>
-                            <button class="btn btn-outline-primary">
+                            <button class="btn btn-outline-primary" id="createFirstEventBtn">
                                 <i class="bi bi-plus-circle me-2"></i>Create your first event
                             </button>
+                        </div>
+                        
+                        <div id="eventsList" style="display: none;">
+                            <!-- Events will be populated here -->
                         </div>
                     </div>
                 </div>
@@ -134,30 +144,26 @@
                     </div>
                     <div class="card-body text-center py-5">
                         <div class="mb-4">
-                            <i class="bi bi-cloud-arrow-down display-4 text-muted"></i>
+                            <i class="bi bi-calendar-check display-4 text-success"></i>
                         </div>
-                        <h5 class="mb-3">Connect Your External Calendars</h5>
+                        <h5 class="mb-3">Google Calendar Integration</h5>
                         <p class="text-muted mb-4 col-md-8 mx-auto">
-                            Sync your Google Calendar or Microsoft Outlook to automatically import and manage all your events in one place.
+                            Your Google Calendar is automatically synced when you log in with Google! All your events are imported and managed in one place.
                         </p>
                         
                         <div class="row justify-content-center">
                             <div class="col-md-8">
-                                <div class="d-flex flex-wrap justify-content-center gap-3">
-                                    <button class="btn btn-outline-danger btn-lg" disabled>
-                                        <i class="bi bi-google me-2"></i>
-                                        <span>Google Calendar</span>
-                                        <span class="badge bg-danger ms-2">Soon</span>
-                                    </button>
-                                    <button class="btn btn-outline-primary btn-lg" id="microsoftIntegrationBtn">
-                                        <i class="bi bi-microsoft me-2"></i>
-                                        <span id="microsoftBtnText">Microsoft Outlook</span>
-                                        <span class="badge bg-primary ms-2" id="microsoftBtnBadge">Connect</span>
-                                    </button>
-                                    <button class="btn btn-outline-secondary btn-lg" disabled>
-                                        <i class="bi bi-apple me-2"></i>
-                                        <span>Apple Calendar</span>
-                                        <span class="badge bg-secondary ms-2">Soon</span>
+                                <div class="alert alert-info d-flex align-items-center" role="alert">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    <div id="calendarStatusMessage">
+                                        Checking calendar connection...
+                                    </div>
+                                </div>
+                                
+                                <div class="d-flex flex-wrap justify-content-center gap-3" id="calendarActions">
+                                    <button class="btn btn-success btn-lg" id="refreshCalendarBtn">
+                                        <i class="bi bi-arrow-clockwise me-2"></i>
+                                        <span>Refresh Calendar</span>
                                     </button>
                                 </div>
                             </div>
@@ -171,6 +177,187 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Event Modal -->
+<div class="modal fade" id="addEventModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-calendar-plus me-2"></i>Add New Event
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createEventForm">
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label for="title" class="form-label">Event Title *</label>
+                            <input type="text" class="form-control" id="title" name="title" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="startDate" class="form-label">Start Date *</label>
+                            <input type="date" class="form-control" id="startDate" name="startDate" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="endDate" class="form-label">End Date *</label>
+                            <input type="date" class="form-control" id="endDate" name="endDate" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="allDay" name="allDay">
+                                <label class="form-check-label" for="allDay">
+                                    All Day Event
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3" id="timeFields">
+                        <div class="col-md-6">
+                            <label for="startTime" class="form-label">Start Time</label>
+                            <input type="time" class="form-control" id="startTime" name="startTime">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="endTime" class="form-label">End Time</label>
+                            <input type="time" class="form-control" id="endTime" name="endTime">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="location" class="form-label">Location</label>
+                        <input type="text" class="form-control" id="location" name="location" placeholder="Meeting room, address, or virtual link">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="window.createEvent();">
+                    <i class="bi bi-check-circle me-2"></i>Create Event
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Event Modal -->
+<div class="modal fade" id="viewEventModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-calendar-event me-2"></i>Event Details
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="eventDetailsContent">
+                <!-- Event details will be populated here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-warning" onclick="window.editEventFromView();">
+                    <i class="bi bi-pencil me-1"></i>Edit Event
+                </button>
+                <button type="button" class="btn btn-danger" onclick="window.deleteEventFromView();">
+                    <i class="bi bi-trash me-1"></i>Delete Event
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Event Modal -->
+<div class="modal fade" id="editEventModal" tabindex="-1" aria-labelledby="editEventModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="editEventModalLabel">
+                    <i class="bi bi-pencil-square me-2"></i>Edit Event
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editEventForm">
+                    <input type="hidden" id="editEventId" name="eventId">
+                    
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <label for="editTitle" class="form-label">Event Title <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="editTitle" name="title" required 
+                                   placeholder="Enter event title">
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="editStartDate" class="form-label">Start Date <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="editStartDate" name="startDate" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editEndDate" class="form-label">End Date <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="editEndDate" name="endDate" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="editAllDay" name="allDay">
+                                <label class="form-check-label" for="editAllDay">
+                                    All Day Event
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3" id="editTimeFields">
+                        <div class="col-md-6">
+                            <label for="editStartTime" class="form-label">Start Time</label>
+                            <input type="time" class="form-control" id="editStartTime" name="startTime">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editEndTime" class="form-label">End Time</label>
+                            <input type="time" class="form-control" id="editEndTime" name="endTime">
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <label for="editLocation" class="form-label">Location</label>
+                            <input type="text" class="form-control" id="editLocation" name="location" 
+                                   placeholder="Enter event location">
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <label for="editDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="editDescription" name="description" 
+                                      rows="3" placeholder="Enter event description"></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-warning" onclick="window.updateEvent();">
+                    <i class="bi bi-check-lg me-1"></i>Update Event
+                </button>
             </div>
         </div>
     </div>
@@ -333,7 +520,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         setTimeout(() => {
             generateCalendar(currentMonth, currentYear);
-            if (microsoftConnected) loadMicrosoftEvents();
+            if (googleConnected) loadGoogleCalendarEvents();
             this.disabled = false;
         }, 150);
     });
@@ -348,7 +535,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         setTimeout(() => {
             generateCalendar(currentMonth, currentYear);
-            if (microsoftConnected) loadMicrosoftEvents();
+            if (googleConnected) loadGoogleCalendarEvents();
             this.disabled = false;
         }, 150);
     });
@@ -358,7 +545,7 @@ document.addEventListener('DOMContentLoaded', function() {
         currentMonth = today.getMonth();
         currentYear = today.getFullYear();
         generateCalendar(currentMonth, currentYear);
-        if (microsoftConnected) loadMicrosoftEvents();
+        if (googleConnected) loadGoogleCalendarEvents();
         
         // Add pulse effect to today button
         this.style.transform = 'scale(0.95)';
@@ -370,147 +557,137 @@ document.addEventListener('DOMContentLoaded', function() {
     // Generate initial calendar
     generateCalendar(currentMonth, currentYear);
 
-    // Microsoft Integration functionality
-    let microsoftConnected = false;
-    let microsoftEvents = [];
+    // Google Calendar Integration functionality
+    let googleConnected = false;
+    let googleEvents = [];
 
-    // Check Microsoft integration status on page load
-    checkMicrosoftStatus();
+    // Check Google Calendar integration status on page load
+    checkGoogleCalendarStatus();
 
-    async function checkMicrosoftStatus() {
+    async function checkGoogleCalendarStatus() {
         try {
-            const response = await fetch('/api/microsoft/status');
+            const response = await fetch('/api/google/calendar/status');
             const data = await response.json();
             
-            if (!data.configured) {
-                microsoftConnected = false;
-                updateMicrosoftUI(false, 'not_configured');
-                return;
-            }
+            const statusMessage = document.getElementById('calendarStatusMessage');
             
             if (data.connected) {
-                microsoftConnected = true;
-                updateMicrosoftUI(true);
-                await loadMicrosoftEvents();
+                googleConnected = true;
+                statusMessage.innerHTML = `
+                    <i class="bi bi-check-circle-fill text-success me-2"></i>
+                    <strong>Google Calendar Connected!</strong> Your calendar events are automatically synced.
+                `;
+                statusMessage.parentElement.classList.remove('alert-info');
+                statusMessage.parentElement.classList.add('alert-success');
+                
+                await loadGoogleCalendarEvents();
             } else {
-                updateMicrosoftUI(false);
+                statusMessage.innerHTML = `
+                    <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>
+                    <strong>Google Calendar Not Connected</strong> - Please log in with Google to enable automatic calendar sync.
+                `;
+                statusMessage.parentElement.classList.remove('alert-info');
+                statusMessage.parentElement.classList.add('alert-warning');
             }
         } catch (error) {
-            console.error('Error checking Microsoft status:', error);
-            updateMicrosoftUI(false);
+            console.error('Error checking Google Calendar status:', error);
+            const statusMessage = document.getElementById('calendarStatusMessage');
+            statusMessage.innerHTML = `
+                <i class="bi bi-x-circle-fill text-danger me-2"></i>
+                <strong>Error</strong> - Unable to check calendar status.
+            `;
+            statusMessage.parentElement.classList.remove('alert-info');
+            statusMessage.parentElement.classList.add('alert-danger');
         }
     }
 
-    function updateMicrosoftUI(connected, state = null) {
-        const btn = document.getElementById('microsoftIntegrationBtn');
-        const btnText = document.getElementById('microsoftBtnText');
-        const btnBadge = document.getElementById('microsoftBtnBadge');
-
-        if (state === 'not_configured') {
-            btn.classList.remove('btn-success', 'btn-outline-primary');
-            btn.classList.add('btn-outline-warning');
-            btn.disabled = true;
-            btnText.textContent = 'Microsoft Outlook';
-            btnBadge.textContent = 'Not Configured';
-            btnBadge.classList.remove('bg-primary', 'bg-success');
-            btnBadge.classList.add('bg-warning');
-            
-            btn.title = 'Microsoft integration not configured. Please check setup guide.';
-            return;
-        }
-
-        if (connected) {
-            btn.classList.remove('btn-outline-primary', 'btn-outline-warning');
-            btn.classList.add('btn-success');
-            btn.disabled = false;
-            btnText.textContent = 'Microsoft Outlook';
-            btnBadge.textContent = 'Connected';
-            btnBadge.classList.remove('bg-primary', 'bg-warning');
-            btnBadge.classList.add('bg-success');
-            btn.title = 'Microsoft Outlook connected. Click to disconnect.';
-            
-            // Add disconnect functionality
-            btn.onclick = function() {
-                if (confirm('Are you sure you want to disconnect Microsoft Outlook?')) {
-                    disconnectMicrosoft();
-                }
-            };
-        } else {
-            btn.classList.remove('btn-success', 'btn-outline-warning');
-            btn.classList.add('btn-outline-primary');
-            btn.disabled = false;
-            btnText.textContent = 'Microsoft Outlook';
-            btnBadge.textContent = 'Connect';
-            btnBadge.classList.remove('bg-success', 'bg-warning');
-            btnBadge.classList.add('bg-primary');
-            btn.title = 'Connect to Microsoft Outlook';
-            
-            // Add connect functionality
-            btn.onclick = function() {
-                window.location.href = '/auth/microsoft';
-            };
-        }
-    }
-
-    async function disconnectMicrosoft() {
+    // Refresh calendar button
+    document.getElementById('refreshCalendarBtn').addEventListener('click', async function() {
+        const btn = this;
+        const originalText = btn.innerHTML;
+        
+        btn.disabled = true;
+        btn.innerHTML = '<i class="bi bi-arrow-clockwise me-2 spinner-border spinner-border-sm"></i>Refreshing...';
+        
         try {
-            const response = await fetch('/api/microsoft/disconnect', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-            
-            const data = await response.json();
-            if (data.success) {
-                microsoftConnected = false;
-                microsoftEvents = [];
-                updateMicrosoftUI(false);
-                updateCalendarWithEvents(); // Refresh calendar display
-                showNotification('Microsoft Outlook disconnected successfully', 'success');
-            } else {
-                showNotification('Failed to disconnect Microsoft Outlook', 'error');
-            }
+            await checkGoogleCalendarStatus();
+            showNotification('Calendar refreshed successfully!', 'success');
         } catch (error) {
-            console.error('Error disconnecting Microsoft:', error);
-            showNotification('Error disconnecting Microsoft Outlook', 'error');
+            showNotification('Failed to refresh calendar', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
         }
-    }
+    });
 
-    async function loadMicrosoftEvents() {
-        if (!microsoftConnected) return;
+    async function loadGoogleCalendarEvents() {
+        if (!googleConnected) return;
 
         try {
             const startDate = new Date(currentYear, currentMonth, 1).toISOString();
             const endDate = new Date(currentYear, currentMonth + 1, 0).toISOString();
             
-            const response = await fetch(`/api/microsoft/events?start=${startDate}&end=${endDate}`);
+            console.log('📅 Loading events for:', `${currentMonth + 1}/${currentYear}`);
+            console.log('📅 Date range:', startDate, 'to', endDate);
+            
+            const response = await fetch(`/api/google/calendar/events?start=${startDate}&end=${endDate}`);
             const data = await response.json();
             
+            console.log('📊 API Response:', data);
+            
             if (data.success) {
-                microsoftEvents = data.events;
+                googleEvents = data.events || [];
+                console.log(`🎉 Loaded ${googleEvents.length} events:`, googleEvents);
                 updateCalendarWithEvents();
                 updateEventCount();
+                
+                // Show user feedback
+                if (googleEvents.length === 0) {
+                    showNotification(`No events found for ${monthNames[currentMonth]} ${currentYear}`, 'info');
+                } else {
+                    showNotification(`Loaded ${googleEvents.length} event(s) for ${monthNames[currentMonth]}`, 'success');
+                }
+            } else {
+                console.error('❌ API Error:', data);
+                showNotification('Failed to load calendar events', 'error');
             }
         } catch (error) {
-            console.error('Error loading Microsoft events:', error);
-            showNotification('Failed to load Microsoft events', 'error');
+            console.error('❌ Error loading Google Calendar events:', error);
+            showNotification('Failed to load Google Calendar events', 'error');
         }
     }
 
     function updateCalendarWithEvents() {
+        console.log('🎨 Updating calendar with events:', googleEvents);
+        
         // Clear existing event indicators
         document.querySelectorAll('.event-indicator').forEach(el => el.remove());
         
-        microsoftEvents.forEach(event => {
+        if (!googleEvents || googleEvents.length === 0) {
+            console.log('📭 No events to display');
+            return;
+        }
+        
+        let eventsAdded = 0;
+        googleEvents.forEach((event, index) => {
+            console.log(`📅 Processing event ${index + 1}:`, event);
+            
             const eventDate = new Date(event.start);
+            console.log(`📅 Event date: ${eventDate}, Current month: ${currentMonth}, Current year: ${currentYear}`);
+            
             if (eventDate.getMonth() === currentMonth && eventDate.getFullYear() === currentYear) {
                 const dayCell = findDayCell(eventDate.getDate());
+                console.log(`📅 Found day cell for day ${eventDate.getDate()}:`, dayCell ? 'Yes' : 'No');
+                
                 if (dayCell && !dayCell.classList.contains('empty-cell')) {
                     addEventIndicator(dayCell, event);
+                    eventsAdded++;
+                    console.log(`✅ Added event indicator for: ${event.title}`);
                 }
             }
         });
+        
+        console.log(`🎉 Added ${eventsAdded} event indicators to calendar`);
     }
 
     function findDayCell(day) {
@@ -525,33 +702,340 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function addEventIndicator(cell, event) {
+        // Create a more attractive event indicator
         const indicator = document.createElement('div');
         indicator.className = 'event-indicator';
         indicator.style.cssText = `
             position: absolute;
-            bottom: 4px;
-            left: 4px;
-            right: 4px;
-            height: 4px;
-            background-color: #0066cc;
-            border-radius: 2px;
-            font-size: 0.7rem;
-            overflow: hidden;
+            bottom: 2px;
+            left: 2px;
+            right: 2px;
+            height: 8px;
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            border-radius: 4px;
+            border: 1px solid rgba(255,255,255,0.3);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            cursor: pointer;
+            transition: all 0.2s ease;
         `;
-        indicator.title = `${event.title} (${new Date(event.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})})`;
+        
+        // Add hover effect
+        indicator.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-1px)';
+            this.style.boxShadow = '0 2px 6px rgba(0,0,0,0.3)';
+        });
+        
+        indicator.addEventListener('mouseleave', function() {
+            this.style.transform = '';
+            this.style.boxShadow = '0 1px 3px rgba(0,0,0,0.2)';
+        });
+        
+        // Add click event to view event details
+        indicator.addEventListener('click', function(e) {
+            e.stopPropagation();
+            showEventDetails(event);
+        });
+        
+        // Format time for tooltip
+        let timeDisplay = '';
+        if (!event.allDay) {
+            const eventTime = new Date(event.start);
+            const endTime = new Date(event.end);
+            timeDisplay = `\n🕐 ${eventTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - ${endTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+        } else {
+            timeDisplay = '\n📅 All day';
+        }
+        
+        indicator.title = `${event.title}${timeDisplay}${event.location ? '\n📍 ' + event.location : ''}\n\nClick to view details`;
         cell.appendChild(indicator);
+        
+        // Add event count if there are multiple events
+        const existingIndicators = cell.querySelectorAll('.event-indicator');
+        if (existingIndicators.length > 1) {
+            const countBadge = document.createElement('div');
+            countBadge.className = 'event-count-badge';
+            countBadge.style.cssText = `
+                position: absolute;
+                top: 2px;
+                right: 2px;
+                background: #dc3545;
+                color: white;
+                border-radius: 50%;
+                width: 16px;
+                height: 16px;
+                font-size: 10px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: bold;
+                border: 1px solid white;
+            `;
+            countBadge.textContent = existingIndicators.length;
+            cell.appendChild(countBadge);
+        }
     }
 
     function updateEventCount() {
         const eventCountElement = document.querySelector('.col-6 .h5');
         if (eventCountElement) {
-            const currentMonthEvents = microsoftEvents.filter(event => {
+            const currentMonthEvents = googleEvents.filter(event => {
                 const eventDate = new Date(event.start);
                 return eventDate.getMonth() === currentMonth && eventDate.getFullYear() === currentYear;
             });
             eventCountElement.textContent = currentMonthEvents.length;
         }
+        
+        // Update upcoming events display
+        updateUpcomingEventsList();
     }
+
+    function updateUpcomingEventsList() {
+        const eventsContainer = document.getElementById('upcomingEventsContainer');
+        const noEventsMessage = document.getElementById('noEventsMessage');
+        const eventsList = document.getElementById('eventsList');
+        const eventCountBadge = document.querySelector('.card-header .badge');
+        
+        if (!googleEvents || googleEvents.length === 0) {
+            noEventsMessage.style.display = 'block';
+            eventsList.style.display = 'none';
+            if (eventCountBadge) eventCountBadge.textContent = '0 events';
+            return;
+        }
+        
+        // Get upcoming events (next 7 days)
+        const now = new Date();
+        const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+        
+        const upcomingEvents = googleEvents
+            .filter(event => {
+                const eventDate = new Date(event.start);
+                return eventDate >= now && eventDate <= nextWeek;
+            })
+            .sort((a, b) => new Date(a.start) - new Date(b.start))
+            .slice(0, 5); // Show max 5 events
+        
+        if (upcomingEvents.length === 0) {
+            noEventsMessage.style.display = 'block';
+            eventsList.style.display = 'none';
+            if (eventCountBadge) eventCountBadge.textContent = '0 upcoming';
+        } else {
+            noEventsMessage.style.display = 'none';
+            eventsList.style.display = 'block';
+            if (eventCountBadge) eventCountBadge.textContent = `${upcomingEvents.length} upcoming`;
+            
+            // Generate events HTML
+            eventsList.innerHTML = upcomingEvents.map(event => {
+                const eventDate = new Date(event.start);
+                const isToday = eventDate.toDateString() === now.toDateString();
+                const isTomorrow = eventDate.toDateString() === new Date(now.getTime() + 24 * 60 * 60 * 1000).toDateString();
+                
+                let dateDisplay = eventDate.toLocaleDateString();
+                if (isToday) dateDisplay = 'Today';
+                else if (isTomorrow) dateDisplay = 'Tomorrow';
+                
+                let timeDisplay = '';
+                if (!event.allDay) {
+                    const endTime = new Date(event.end);
+                    timeDisplay = `${eventDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - ${endTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+                } else {
+                    timeDisplay = 'All day';
+                }
+                
+                return `
+                    <div class="event-item mb-3 p-3 border rounded cursor-pointer" onclick="showEventDetails(${JSON.stringify(event).replace(/"/g, '&quot;')})">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1 text-primary">${event.title}</h6>
+                                <small class="text-muted d-block">
+                                    <i class="bi bi-calendar me-1"></i>${dateDisplay}
+                                </small>
+                                <small class="text-muted d-block">
+                                    <i class="bi bi-clock me-1"></i>${timeDisplay}
+                                </small>
+                                ${event.location ? `<small class="text-muted d-block"><i class="bi bi-geo-alt me-1"></i>${event.location}</small>` : ''}
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-primary">Google</span>
+                            </div>
+                        </div>
+                        ${event.description ? `<div class="mt-2"><small class="text-muted">${event.description.substring(0, 100)}${event.description.length > 100 ? '...' : ''}</small></div>` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+    }
+
+    function showEventDetails(event) {
+        // Store the event for potential editing/deleting
+        currentEventForEdit = event;
+        window.currentEventForEdit = event; // Also store globally
+        
+        const modal = new bootstrap.Modal(document.getElementById('viewEventModal'));
+        const content = document.getElementById('eventDetailsContent');
+        
+        const eventDate = new Date(event.start);
+        const endDate = new Date(event.end);
+        
+        let timeDisplay = '';
+        if (!event.allDay) {
+            timeDisplay = `${eventDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - ${endDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+        } else {
+            timeDisplay = 'All day';
+        }
+        
+        content.innerHTML = `
+            <div class="row">
+                <div class="col-12 mb-4">
+                    <h4 class="text-primary mb-3">${event.title}</h4>
+                    
+                    <div class="mb-3">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-calendar3 me-2 text-muted"></i>
+                            <strong>Date:</strong>
+                            <span class="ms-2">${eventDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                        </div>
+                        
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-clock me-2 text-muted"></i>
+                            <strong>Time:</strong>
+                            <span class="ms-2">${timeDisplay}</span>
+                        </div>
+                        
+                        ${event.location ? `
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="bi bi-geo-alt me-2 text-muted"></i>
+                                <strong>Location:</strong>
+                                <span class="ms-2">${event.location}</span>
+                            </div>
+                        ` : ''}
+                        
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-tag me-2 text-muted"></i>
+                            <strong>Source:</strong>
+                            <span class="badge bg-success ms-2">Google Calendar</span>
+                        </div>
+                    </div>
+                    
+                    ${event.description ? `
+                        <div class="mb-3">
+                            <strong class="d-block mb-2">Description:</strong>
+                            <div class="p-3 bg-light rounded">${event.description}</div>
+                        </div>
+                    ` : ''}
+                    
+                    <div class="mt-4 p-3 bg-info bg-opacity-10 rounded">
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle me-1"></i>
+                            This event is from your Google Calendar. You can edit or delete it using the buttons below.
+                        </small>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        modal.show();
+    }
+
+    // Original functions moved to global scope at end of file - see window.createEvent, etc.
+    
+    // Make functions available globally first
+    // (moved outside DOMContentLoaded - functions defined at bottom of file)
+    
+    // Form handling for all-day toggle
+    function initializeFormHandlers() {
+        // Handle create event modal all-day toggle
+        const allDayCheckbox = document.getElementById('allDay');
+        const timeFields = document.querySelectorAll('#startTime, #endTime');
+        const timeLabels = document.querySelectorAll('label[for="startTime"], label[for="endTime"]');
+        
+        if (allDayCheckbox) {
+            allDayCheckbox.addEventListener('change', function() {
+                timeFields.forEach(field => {
+                    field.style.display = this.checked ? 'none' : 'block';
+                    field.required = !this.checked;
+                });
+                timeLabels.forEach(label => {
+                    label.style.display = this.checked ? 'none' : 'block';
+                });
+            });
+        }
+        
+        // Handle edit event modal all-day toggle
+        const editAllDayCheckbox = document.getElementById('editAllDay');
+        const editTimeFields = document.querySelectorAll('#editStartTime, #editEndTime');
+        const editTimeLabels = document.querySelectorAll('label[for="editStartTime"], label[for="editEndTime"]');
+        
+        if (editAllDayCheckbox) {
+            editAllDayCheckbox.addEventListener('change', function() {
+                editTimeFields.forEach(field => {
+                    field.style.display = this.checked ? 'none' : 'block';
+                    field.required = !this.checked;
+                });
+                editTimeLabels.forEach(label => {
+                    label.style.display = this.checked ? 'none' : 'block';
+                });
+            });
+        }
+        
+        // Set default dates to today
+        const today = new Date().toISOString().split('T')[0];
+        const startDateField = document.getElementById('startDate');
+        const endDateField = document.getElementById('endDate');
+        
+        if (startDateField && !startDateField.value) {
+            startDateField.value = today;
+        }
+        if (endDateField && !endDateField.value) {
+            endDateField.value = today;
+        }
+        
+        // Set default times
+        const now = new Date();
+        const currentTime = now.toTimeString().slice(0, 5);
+        const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000).toTimeString().slice(0, 5);
+        
+        const startTimeField = document.getElementById('startTime');
+        const endTimeField = document.getElementById('endTime');
+        
+        if (startTimeField && !startTimeField.value) {
+            startTimeField.value = currentTime;
+        }
+        if (endTimeField && !endTimeField.value) {
+            endTimeField.value = oneHourLater;
+        }
+    }
+
+    // Helper function for displaying alerts
+    function showAlert(message, type) {
+        const alertContainer = document.getElementById('alertContainer');
+        const alertId = 'alert-' + Date.now();
+        
+        const alertHTML = `
+            <div id="${alertId}" class="alert alert-${type} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+        
+        alertContainer.innerHTML = alertHTML;
+        
+        // Auto-dismiss after 10 seconds (longer for error messages with buttons)
+        setTimeout(() => {
+            const alertElement = document.getElementById(alertId);
+            if (alertElement) {
+                const alert = new bootstrap.Alert(alertElement);
+                alert.close();
+            }
+        }, type === 'danger' ? 10000 : 5000);
+    }
+    
+    // Assign functions to global scope for access by window functions
+    window.showAlert = showAlert;
+    window.loadGoogleCalendarEvents = loadGoogleCalendarEvents;
+    window.currentEventForEdit = currentEventForEdit;
+
+    // Initialize form handlers
+    initializeFormHandlers();
 
     function showNotification(message, type = 'info') {
         // Create notification element
@@ -574,20 +1058,346 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 5000);
     }
 
-    // Check for connection status in URL parameters
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('connected') === 'microsoft') {
-        showNotification('Microsoft Outlook connected successfully!', 'success');
-        // Clean up URL
-        window.history.replaceState({}, document.title, window.location.pathname);
-    } else if (urlParams.get('error') === 'microsoft_auth_failed') {
-        showNotification('Failed to connect Microsoft Outlook. Please try again.', 'error');
-        // Clean up URL
-        window.history.replaceState({}, document.title, window.location.pathname);
-    } else if (urlParams.get('error') === 'microsoft_not_configured') {
-        showNotification('Microsoft integration is not configured. Please check the setup guide.', 'warning');
-        // Clean up URL
-        window.history.replaceState({}, document.title, window.location.pathname);
+    // Auto-refresh calendar events every 5 minutes if connected
+    setInterval(() => {
+        if (googleConnected) {
+            loadGoogleCalendarEvents();
+        }
+    }, 5 * 60 * 1000); // 5 minutes
+    
+    // Function to re-authorize calendar with write permissions
+    function reauthorizeCalendar() {
+        // Redirect to public site Google OAuth to get updated permissions
+        window.location.href = 'http://localhost:3000/auth/google';
+    }
+    
+    // Function to check if user has write permissions and show notice if needed
+    function checkWritePermissions() {
+        // We'll show the reauthorize notice if users get permission errors
+        // This will be triggered when they try to create/edit events
+        const notice = document.getElementById('reauthorizeNotice');
+        if (notice) {
+            notice.style.display = 'block';
+        }
     }
 });
+
+// Global variables needed by the event handling functions
+let currentEventForEdit = null;
+let showAlert, loadGoogleCalendarEvents; // Will be assigned from DOMContentLoaded functions
+
+// Make functions globally available for onclick handlers (outside DOMContentLoaded)
+window.createEvent = function() {
+    const form = document.getElementById('createEventForm');
+    if (!form) {
+        alert('Form not found!');
+        return;
+    }
+    
+    const formData = new FormData(form);
+    
+    const startDate = formData.get('startDate');
+    const startTime = formData.get('startTime');
+    const endDate = formData.get('endDate');
+    const endTime = formData.get('endTime');
+    const isAllDay = formData.get('allDay') === 'on';
+    
+    let start, end;
+    
+    if (isAllDay) {
+        start = new Date(startDate).toISOString().split('T')[0];
+        end = new Date(endDate || startDate).toISOString().split('T')[0];
+    } else {
+        start = new Date(`${startDate}T${startTime}`).toISOString();
+        end = new Date(`${endDate || startDate}T${endTime}`).toISOString();
+    }
+    
+    const eventData = {
+        title: formData.get('title'),
+        description: formData.get('description'),
+        location: formData.get('location'),
+        start: start,
+        end: end,
+        allDay: isAllDay
+    };
+    
+    // Show loading state
+    const submitBtn = document.querySelector('#addEventModal .btn-primary');
+    const originalText = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creating...';
+    
+    fetch('/calendar/create-event', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(eventData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Hide modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('addEventModal'));
+            modal.hide();
+            
+            // Reset form
+            form.reset();
+            
+            // Show success message - use existing showAlert function if available
+            if (typeof window.showAlert === 'function') {
+                window.showAlert('Event created successfully!', 'success');
+            } else {
+                alert('Event created successfully!');
+            }
+            
+            // Reload events if function exists
+            if (typeof window.loadGoogleCalendarEvents === 'function') {
+                window.loadGoogleCalendarEvents();
+            } else {
+                location.reload();
+            }
+        } else {
+            let errorMessage = 'Error creating event: ' + data.error;
+            
+                            // Check if it's a permission error
+                            if (data.error && (data.error.includes('permission') || data.error.includes('scope') || data.error.includes('forbidden'))) {
+                                errorMessage += '<br><br>You may need to re-authorize with calendar write permissions. <button type="button" class="btn btn-warning btn-sm mt-2" onclick="window.reauthorizeCalendar()">Re-authorize Now</button>';
+                            }            if (typeof window.showAlert === 'function') {
+                window.showAlert(errorMessage, 'danger');
+            } else {
+                alert(errorMessage.replace(/<[^>]*>/g, ''));
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error creating event:', error);
+        if (typeof window.showAlert === 'function') {
+            window.showAlert('Error creating event. Please try again.', 'danger');
+        } else {
+            alert('Error creating event. Please try again.');
+        }
+    })
+    .finally(() => {
+        // Reset button
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+    });
+};
+
+window.editEventFromView = function() {
+    // This will be implemented to work with the global currentEventForEdit variable
+    if (typeof window.currentEventForEdit === 'undefined' || !window.currentEventForEdit) {
+        alert('No event selected for editing');
+        return;
+    }
+    
+    // Hide the view modal
+    const viewModal = bootstrap.Modal.getInstance(document.getElementById('viewEventModal'));
+    if (viewModal) viewModal.hide();
+    
+    // Populate edit form with current event data
+    document.getElementById('editEventId').value = window.currentEventForEdit.id;
+    document.getElementById('editTitle').value = window.currentEventForEdit.title;
+    document.getElementById('editLocation').value = window.currentEventForEdit.location || '';
+    document.getElementById('editDescription').value = window.currentEventForEdit.description || '';
+    
+    // Parse dates
+    const startDate = new Date(window.currentEventForEdit.start);
+    const endDate = new Date(window.currentEventForEdit.end);
+    
+    if (window.currentEventForEdit.allDay) {
+        // For all-day events
+        document.getElementById('editStartDate').value = window.currentEventForEdit.start;
+        document.getElementById('editEndDate').value = window.currentEventForEdit.end;
+        document.getElementById('editAllDay').checked = true;
+        const timeFields = document.getElementById('editTimeFields');
+        if (timeFields) timeFields.style.display = 'none';
+    } else {
+        // For timed events
+        document.getElementById('editStartDate').value = startDate.toISOString().split('T')[0];
+        document.getElementById('editEndDate').value = endDate.toISOString().split('T')[0];
+        document.getElementById('editStartTime').value = startDate.toTimeString().slice(0, 5);
+        document.getElementById('editEndTime').value = endDate.toTimeString().slice(0, 5);
+        document.getElementById('editAllDay').checked = false;
+        const timeFields = document.getElementById('editTimeFields');
+        if (timeFields) timeFields.style.display = 'block';
+    }
+    
+    // Show edit modal
+    const editModal = new bootstrap.Modal(document.getElementById('editEventModal'));
+    editModal.show();
+};
+
+window.deleteEventFromView = function() {
+    if (typeof window.currentEventForEdit === 'undefined' || !window.currentEventForEdit) {
+        alert('No event selected for deletion');
+        return;
+    }
+    
+    if (confirm('Are you sure you want to delete this event? This action cannot be undone.')) {
+        // Show loading state
+        const deleteBtn = document.querySelector('[onclick="deleteEventFromView()"]');
+        let originalText = 'Delete Event';
+        if (deleteBtn) {
+            originalText = deleteBtn.innerHTML;
+            deleteBtn.disabled = true;
+            deleteBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Deleting...';
+        }
+        
+        fetch(`/calendar/delete-event/${window.currentEventForEdit.id}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Hide modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('viewEventModal'));
+                if (modal) modal.hide();
+                
+                // Show success message
+                if (typeof window.showAlert === 'function') {
+                    window.showAlert('Event deleted successfully!', 'success');
+                } else {
+                    alert('Event deleted successfully!');
+                }
+                
+                // Reload events
+                if (typeof window.loadGoogleCalendarEvents === 'function') {
+                    window.loadGoogleCalendarEvents();
+                } else {
+                    location.reload();
+                }
+            } else {
+                if (typeof window.showAlert === 'function') {
+                    window.showAlert('Error deleting event: ' + data.error, 'danger');
+                } else {
+                    alert('Error deleting event: ' + data.error);
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error deleting event:', error);
+            if (typeof window.showAlert === 'function') {
+                window.showAlert('Error deleting event. Please try again.', 'danger');
+            } else {
+                alert('Error deleting event. Please try again.');
+            }
+        })
+        .finally(() => {
+            // Reset button
+            if (deleteBtn) {
+                deleteBtn.disabled = false;
+                deleteBtn.innerHTML = originalText;
+            }
+        });
+    }
+};
+
+window.updateEvent = function() {
+    const form = document.getElementById('editEventForm');
+    if (!form) {
+        alert('Edit form not found!');
+        return;
+    }
+    
+    const formData = new FormData(form);
+    
+    const eventId = formData.get('eventId');
+    const startDate = formData.get('startDate');
+    const startTime = formData.get('startTime');
+    const endDate = formData.get('endDate');
+    const endTime = formData.get('endTime');
+    const isAllDay = formData.get('allDay') === 'on';
+    
+    let start, end;
+    
+    if (isAllDay) {
+        start = new Date(startDate).toISOString().split('T')[0];
+        end = new Date(endDate || startDate).toISOString().split('T')[0];
+    } else {
+        start = new Date(`${startDate}T${startTime}`).toISOString();
+        end = new Date(`${endDate || startDate}T${endTime}`).toISOString();
+    }
+    
+    const eventData = {
+        title: formData.get('title'),
+        description: formData.get('description'),
+        location: formData.get('location'),
+        start: start,
+        end: end,
+        allDay: isAllDay
+    };
+    
+    // Show loading state
+    const submitBtn = document.querySelector('#editEventModal .btn-warning');
+    if (submitBtn) {
+        const originalText = submitBtn.textContent;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Updating...';
+    }
+    
+    fetch(`/calendar/update-event/${eventId}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(eventData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Hide modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('editEventModal'));
+            if (modal) modal.hide();
+            
+            // Reset form
+            form.reset();
+            
+            // Show success message
+            if (typeof window.showAlert === 'function') {
+                window.showAlert('Event updated successfully!', 'success');
+            } else {
+                alert('Event updated successfully!');
+            }
+            
+            // Reload events
+            if (typeof window.loadGoogleCalendarEvents === 'function') {
+                window.loadGoogleCalendarEvents();
+            } else {
+                location.reload();
+            }
+        } else {
+            if (typeof window.showAlert === 'function') {
+                window.showAlert('Error updating event: ' + data.error, 'danger');
+            } else {
+                alert('Error updating event: ' + data.error);
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error updating event:', error);
+        if (typeof window.showAlert === 'function') {
+            window.showAlert('Error updating event. Please try again.', 'danger');
+        } else {
+            alert('Error updating event. Please try again.');
+        }
+    })
+    .finally(() => {
+        // Reset button
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Update Event';
+        }
+    });
+};
+
+window.reauthorizeCalendar = function() {
+    // Redirect to public site Google OAuth to get updated permissions
+    window.location.href = 'http://localhost:3000/auth/google';
+};
+
 </script>
