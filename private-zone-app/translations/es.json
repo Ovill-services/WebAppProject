@@ -5,7 +5,10 @@
         "messages": "Mensajes",
         "settings": "Configuración",
         "logout": "Cerrar sesión",
-        "calendar": "Calendario"
+        "calendar": "Calendario",
+        "tasks": "Tareas",
+        "signOut": "Cerrar sesión",
+        "email": "Correo"
     },
     "profile": {
         "profileTitle": "Perfil",
@@ -242,8 +245,41 @@
         "syncApiNotAvailable": "La API de Google Tasks no está disponible. Por favor verifica si el servidor soporta la integración con Google Tasks.",
         "syncEndpointNotFound": "Endpoint de sincronización de Google Tasks no encontrado. Esta característica puede no estar implementada aún.",
         "syncAuthenticationError": "Error de autenticación. Por favor reconecta tu cuenta de Google.",
-        "syncServerError": "Error del servidor ocurrió durante la sincronización. Por favor intenta de nuevo más tarde.",
-        "syncNetworkError": "Error de red. Por favor verifica tu conexión a internet e intenta de nuevo.",
-        "syncUnknownError": "Un error inesperado ocurrió durante la sincronización. Por favor intenta de nuevo."
+        "syncServerError": "Error del servidor durante la sincronización. Inténtelo de nuevo más tarde.",
+        "syncNetworkError": "Error de red. Verifique su conexión a internet e inténtelo de nuevo.",
+        "syncUnknownError": "Ocurrió un error inesperado durante la sincronización. Inténtelo de nuevo."
+    },
+    "email": {
+        "title": "Correo",
+        "inbox": "Bandeja de entrada",
+        "refresh": "Actualizar",
+        "compose": "Redactar",
+        "allEmails": "Todos los correos",
+        "unread": "No leídos",
+        "read": "Leídos",
+        "important": "Importante",
+        "searchPlaceholder": "Buscar correos...",
+        "emailsTotal": "correos en total",
+        "loading": "Cargando correos...",
+        "noEmails": "No se encontraron correos",
+        "noEmailsDescription": "Su bandeja de entrada está vacía o no hay correos que coincidan con sus criterios de búsqueda.",
+        "composeEmail": "Redactar correo",
+        "to": "Para",
+        "toPlaceholder": "destinatario@ejemplo.com",
+        "cc": "CC",
+        "ccPlaceholder": "cc@ejemplo.com",
+        "bcc": "CCO",
+        "bccPlaceholder": "cco@ejemplo.com",
+        "subject": "Asunto",
+        "subjectPlaceholder": "Ingrese el asunto",
+        "message": "Mensaje",
+        "messagePlaceholder": "Escriba su mensaje aquí...",
+        "highPriority": "Marcar como alta prioridad",
+        "cancel": "Cancelar",
+        "send": "Enviar correo",
+        "viewEmail": "Ver correo",
+        "reply": "Responder",
+        "forward": "Reenviar",
+        "delete": "Eliminar"
     }
 }

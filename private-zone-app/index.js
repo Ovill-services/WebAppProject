@@ -492,18 +492,341 @@ app.get('/profile', requireAuth, async (req, res) => {
     console.log('Profile accessed by:', req.session.user);
 });
 
-app.get('/calendar', requireAuth, (req, res) => {
-    res.render('index.ejs', {
-        page: 'calendar',
-        user: req.session.user
-    });
+app.get('/calendar', requireAuth, async (req, res) => {
+    try {
+        // Get complete user data from database
+        const query = 'SELECT * FROM users WHERE username = $1';
+        const result = await db.query(query, [req.session.user.email]);
+        
+        let userData = req.session.user;
+        if (result.rows.length > 0) {
+            const dbUser = result.rows[0];
+            userData = {
+                name: dbUser.name,
+                email: dbUser.username,
+                phone: dbUser.phone || '',
+                bio: dbUser.bio || '',
+                jobTitle: dbUser.job_title || '',
+                company: dbUser.company || '',
+                skills: dbUser.skills || '',
+                avatar_url: dbUser.avatar_url || null
+            };
+        }
+        
+        res.render('index.ejs', {
+            page: 'calendar',
+            user: userData
+        });
+    } catch (error) {
+        console.error('Error fetching user data for calendar:', error);
+        res.render('index.ejs', {
+            page: 'calendar',
+            user: req.session.user
+        });
+    }
 });
 
-app.get('/tasks', requireAuth, (req, res) => {
-    res.render('index.ejs', {
-        page: 'tasks',
-        user: req.session.user
-    });
+app.get('/tasks', requireAuth, async (req, res) => {
+    try {
+        // Get complete user data from database
+        const query = 'SELECT * FROM users WHERE username = $1';
+        const result = await db.query(query, [req.session.user.email]);
+        
+        let userData = req.session.user;
+        if (result.rows.length > 0) {
+            const dbUser = result.rows[0];
+            userData = {
+                name: dbUser.name,
+                email: dbUser.username,
+                phone: dbUser.phone || '',
+                bio: dbUser.bio || '',
+                jobTitle: dbUser.job_title || '',
+                company: dbUser.company || '',
+                skills: dbUser.skills || '',
+                avatar_url: dbUser.avatar_url || null
+            };
+        }
+        
+        res.render('index.ejs', {
+            page: 'tasks',
+            user: userData
+        });
+    } catch (error) {
+        console.error('Error fetching user data for tasks:', error);
+        res.render('index.ejs', {
+            page: 'tasks',
+            user: req.session.user
+        });
+    }
+});
+
+app.get('/email', requireAuth, async (req, res) => {
+    try {
+        // Get complete user data from database
+        const query = 'SELECT * FROM users WHERE username = $1';
+        const result = await db.query(query, [req.session.user.email]);
+        
+        let userData = req.session.user;
+        if (result.rows.length > 0) {
+            const dbUser = result.rows[0];
+            userData = {
+                name: dbUser.name,
+                email: dbUser.username,
+                phone: dbUser.phone || '',
+                bio: dbUser.bio || '',
+                jobTitle: dbUser.job_title || '',
+                company: dbUser.company || '',
+                skills: dbUser.skills || '',
+                avatar_url: dbUser.avatar_url || null
+            };
+        }
+        
+        res.render('index.ejs', {
+            page: 'email',
+            user: userData
+        });
+    } catch (error) {
+        console.error('Error fetching user data for email:', error);
+        res.render('index.ejs', {
+            page: 'email',
+            user: req.session.user
+        });
+    }
+});
+
+app.get('/email', requireAuth, async (req, res) => {
+    try {
+        // Get complete user data from database
+        const query = 'SELECT * FROM users WHERE username = $1';
+        const result = await db.query(query, [req.session.user.email]);
+        
+        let userData = req.session.user;
+        if (result.rows.length > 0) {
+            const dbUser = result.rows[0];
+            userData = {
+                name: dbUser.name,
+                email: dbUser.username,
+                phone: dbUser.phone || '',
+                bio: dbUser.bio || '',
+                jobTitle: dbUser.job_title || '',
+                company: dbUser.company || '',
+                skills: dbUser.skills || '',
+                avatar_url: dbUser.avatar_url || null
+            };
+        }
+        
+        res.render('index.ejs', {
+            page: 'email',
+            user: userData
+        });
+    } catch (error) {
+        console.error('Error fetching user data for email:', error);
+        res.render('index.ejs', {
+            page: 'email',
+            user: req.session.user
+        });
+    }
+});
+
+
+// Email API Routes
+// Get all emails for the authenticated user
+app.get('/api/emails', requireAuth, async (req, res) => {
+    try {
+        const { filter, search } = req.query;
+        let query = 'SELECT * FROM emails WHERE user_email = $1';
+        let params = [req.session.user.email];
+        
+        // Apply filters
+        if (filter === 'unread') {
+            query += ' AND is_read = FALSE';
+        } else if (filter === 'read') {
+            query += ' AND is_read = TRUE';
+        } else if (filter === 'important') {
+            query += ' AND is_important = TRUE';
+        }
+        
+        // Apply search
+        if (search) {
+            query += ' AND (subject ILIKE $' + (params.length + 1) + ' OR sender_email ILIKE $' + (params.length + 1) + ' OR body ILIKE $' + (params.length + 1) + ')';
+            params.push(`%${search}%`);
+        }
+        
+        query += ' ORDER BY created_at DESC';
+        
+        const result = await db.query(query, params);
+        res.json({
+            success: true,
+            emails: result.rows
+        });
+    } catch (error) {
+        console.error('Error fetching emails:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching emails'
+        });
+    }
+});
+
+// Send/Save email
+app.post('/api/emails', requireAuth, async (req, res) => {
+    try {
+        const { to, cc, bcc, subject, body, isImportant, isDraft } = req.body;
+        
+        if (!to || !subject || !body) {
+            return res.status(400).json({
+                success: false,
+                message: 'To, subject, and body are required'
+            });
+        }
+        
+        const query = `
+            INSERT INTO emails (user_email, sender_email, recipient_email, cc_emails, bcc_emails, subject, body, is_important, is_draft, email_type)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            RETURNING *
+        `;
+        
+        const values = [
+            req.session.user.email, // user_email (owner)
+            req.session.user.email, // sender_email
+            to, // recipient_email
+            cc || null, // cc_emails
+            bcc || null, // bcc_emails
+            subject,
+            body,
+            isImportant || false,
+            isDraft || false,
+            isDraft ? 'draft' : 'sent'
+        ];
+        
+        const result = await db.query(query, values);
+        
+        res.json({
+            success: true,
+            message: isDraft ? 'Draft saved successfully' : 'Email sent successfully',
+            email: result.rows[0]
+        });
+    } catch (error) {
+        console.error('Error sending/saving email:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error sending email'
+        });
+    }
+});
+
+// Mark email as read/unread
+app.put('/api/emails/:id/read', requireAuth, async (req, res) => {
+    try {
+        const emailId = parseInt(req.params.id);
+        const { isRead } = req.body;
+        
+        const query = 'UPDATE emails SET is_read = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 AND user_email = $3 RETURNING *';
+        const result = await db.query(query, [isRead, emailId, req.session.user.email]);
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Email not found'
+            });
+        }
+        
+        res.json({
+            success: true,
+            email: result.rows[0]
+        });
+    } catch (error) {
+        console.error('Error updating email read status:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error updating email'
+        });
+    }
+});
+
+// Mark email as important/unimportant
+app.put('/api/emails/:id/important', requireAuth, async (req, res) => {
+    try {
+        const emailId = parseInt(req.params.id);
+        const { isImportant } = req.body;
+        
+        const query = 'UPDATE emails SET is_important = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 AND user_email = $3 RETURNING *';
+        const result = await db.query(query, [isImportant, emailId, req.session.user.email]);
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Email not found'
+            });
+        }
+        
+        res.json({
+            success: true,
+            email: result.rows[0]
+        });
+    } catch (error) {
+        console.error('Error updating email importance:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error updating email'
+        });
+    }
+});
+
+// Delete email
+app.delete('/api/emails/:id', requireAuth, async (req, res) => {
+    try {
+        const emailId = parseInt(req.params.id);
+        
+        const query = 'DELETE FROM emails WHERE id = $1 AND user_email = $2 RETURNING *';
+        const result = await db.query(query, [emailId, req.session.user.email]);
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Email not found'
+            });
+        }
+        
+        res.json({
+            success: true,
+            message: 'Email deleted successfully'
+        });
+    } catch (error) {
+        console.error('Error deleting email:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error deleting email'
+        });
+    }
+});
+
+// Get single email
+app.get('/api/emails/:id', requireAuth, async (req, res) => {
+    try {
+        const emailId = parseInt(req.params.id);
+        
+        const query = 'SELECT * FROM emails WHERE id = $1 AND user_email = $2';
+        const result = await db.query(query, [emailId, req.session.user.email]);
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Email not found'
+            });
+        }
+        
+        res.json({
+            success: true,
+            email: result.rows[0]
+        });
+    } catch (error) {
+        console.error('Error fetching email:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching email'
+        });
+    }
 });
 
 // Profile update route

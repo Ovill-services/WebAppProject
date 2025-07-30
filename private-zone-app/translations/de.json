@@ -5,7 +5,10 @@
         "messages": "Nachrichten",
         "settings": "Einstellungen",
         "logout": "Abmelden",
-        "calendar": "Kalender"
+        "calendar": "Kalender",
+        "tasks": "Aufgaben",
+        "signOut": "Abmelden",
+        "email": "E-Mail"
     },
     "profile": {
         "profileTitle": "Profil",
@@ -245,5 +248,38 @@
         "syncServerError": "Serverfehler während der Synchronisation aufgetreten. Bitte versuchen Sie es später erneut.",
         "syncNetworkError": "Netzwerkfehler. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.",
         "syncUnknownError": "Ein unerwarteter Fehler ist während der Synchronisation aufgetreten. Bitte versuchen Sie es erneut."
+    },
+    "email": {
+        "title": "E-Mail",
+        "inbox": "Posteingang",
+        "refresh": "Aktualisieren",
+        "compose": "Verfassen",
+        "allEmails": "Alle E-Mails",
+        "unread": "Ungelesen",
+        "read": "Gelesen",
+        "important": "Wichtig",
+        "searchPlaceholder": "E-Mails suchen...",
+        "emailsTotal": "E-Mails insgesamt",
+        "loading": "E-Mails laden...",
+        "noEmails": "Keine E-Mails gefunden",
+        "noEmailsDescription": "Ihr Posteingang ist leer oder es gibt keine E-Mails, die Ihren Suchkriterien entsprechen.",
+        "composeEmail": "E-Mail verfassen",
+        "to": "An",
+        "toPlaceholder": "empfaenger@beispiel.com",
+        "cc": "CC",
+        "ccPlaceholder": "cc@beispiel.com",
+        "bcc": "BCC",
+        "bccPlaceholder": "bcc@beispiel.com",
+        "subject": "Betreff",
+        "subjectPlaceholder": "Betreff eingeben",
+        "message": "Nachricht",
+        "messagePlaceholder": "Geben Sie hier Ihre Nachricht ein...",
+        "highPriority": "Als hohe Priorität markieren",
+        "cancel": "Abbrechen",
+        "send": "E-Mail senden",
+        "viewEmail": "E-Mail anzeigen",
+        "reply": "Antworten",
+        "forward": "Weiterleiten",
+        "delete": "Löschen"
     }
 }

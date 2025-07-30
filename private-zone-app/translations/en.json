@@ -5,7 +5,10 @@
         "messages": "Messages",
         "settings": "Settings",
         "logout": "Logout",
-        "calendar": "Calendar"
+        "calendar": "Calendar",
+        "tasks": "Tasks",
+        "signOut": "Sign out",
+        "email": "Email"
     },
     "profile": {
         "profileTitle": "Profile",
@@ -245,5 +248,38 @@
         "syncServerError": "Server error occurred while syncing. Please try again later.",
         "syncNetworkError": "Network error. Please check your internet connection and try again.",
         "syncUnknownError": "An unexpected error occurred during sync. Please try again."
+    },
+    "email": {
+        "title": "Email",
+        "inbox": "Inbox",
+        "refresh": "Refresh",
+        "compose": "Compose",
+        "allEmails": "All Emails",
+        "unread": "Unread",
+        "read": "Read",
+        "important": "Important",
+        "searchPlaceholder": "Search emails...",
+        "emailsTotal": "emails total",
+        "loading": "Loading emails...",
+        "noEmails": "No emails found",
+        "noEmailsDescription": "Your inbox is empty or no emails match your search criteria.",
+        "composeEmail": "Compose Email",
+        "to": "To",
+        "toPlaceholder": "recipient@example.com",
+        "cc": "CC",
+        "ccPlaceholder": "cc@example.com",
+        "bcc": "BCC",
+        "bccPlaceholder": "bcc@example.com",
+        "subject": "Subject",
+        "subjectPlaceholder": "Enter subject",
+        "message": "Message",
+        "messagePlaceholder": "Enter your message here...",
+        "highPriority": "Mark as high priority",
+        "cancel": "Cancel",
+        "send": "Send Email",
+        "viewEmail": "View Email",
+        "reply": "Reply",
+        "forward": "Forward",
+        "delete": "Delete"
     }
 }
