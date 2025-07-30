@@ -3,7 +3,7 @@
 
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1 class="mb-0">
-                <i class="bi bi-check2-square text-primary me-3"></i><span>Tasks</span>
+                <i class="bi bi-check2-square text-primary me-3"></i><span data-translate="tasks.title">Tasks</span>
             </h1>
             <div class="text-muted">
                 <i class="bi bi-clock me-1"></i>
@@ -12,29 +12,22 @@
         </div>
 
         <!-- Add New Task Card -->
-        <div class="card mb-4 shadow-sm">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">
-                    <i class="bi bi-plus-circle me-2"></i>Add New Task
+        <div class="card mb-4 shadow-sm border-0">
+            <div class="card-header bg-gradient-primary text-white py-3">
+                <h5 class="mb-0 d-flex align-items-center fw-bold">
+                    <i class="bi bi-plus-circle me-2"></i><span data-translate="tasks.addNewTask">Add New Task</span>
                 </h5>
             </div>
             <div class="card-body">
-                <form id="addTaskForm">
+                                <form id="addTaskForm">
                     <div class="row">
-                        <div class="col-md-6">
-                            <input type="text" class="form-control" id="taskInput" placeholder="Enter your task..." required>
+                        <div class="col-md-9">
+                            <input type="text" class="form-control" id="taskInput" data-translate-placeholder="tasks.enterTask" placeholder="Enter your task..." required>
                         </div>
+
                         <div class="col-md-3">
-                            <select class="form-select" id="taskSource">
-                                <option value="user">Manual Entry</option>
-                                <option value="google_tasks">Google Tasks</option>
-                                <option value="microsoft_todo">Microsoft To Do</option>
-                                <option value="calendar_integration">Calendar</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <button type="submit" class="btn btn-primary w-100">
-                                <i class="bi bi-plus-lg me-1"></i>Add Task
+                            <button type="submit" class="btn btn-primary btn-lg w-100 d-flex align-items-center justify-content-center">
+                                <i class="bi bi-plus-lg me-2"></i><span data-translate="tasks.addTask">Add Task</span>
                             </button>
                         </div>
                     </div>
@@ -43,18 +36,122 @@
         </div>
 
         <!-- Tasks List -->
-        <div class="card shadow-sm">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="bi bi-list-task me-2"></i>My Tasks
-                </h5>
+        <div class="row">
+            <!-- Quick Actions -->
+            <div class="col-lg-4 mb-4">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header bg-success text-white py-3">
+                        <h6 class="mb-0 d-flex align-items-center fw-bold">
+                            <i class="bi bi-lightning-charge me-2"></i><span data-translate="tasks.quickActions">Quick Actions</span>
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-3">
+                            <button class="btn btn-outline-primary btn-lg d-flex align-items-center justify-content-center" onclick="location.reload()">
+                                <i class="bi bi-arrow-clockwise me-2"></i>
+                                <span data-translate="tasks.sync">Sync</span>
+                            </button>
+                            <button class="btn btn-outline-success btn-lg d-flex align-items-center justify-content-center" onclick="document.getElementById('taskInput').focus()">
+                                <i class="bi bi-plus-circle me-2"></i>
+                                <span data-translate="tasks.quickAddTask">Quick Add Task</span>
+                            </button>
+                            <button class="btn btn-outline-info btn-lg d-flex align-items-center justify-content-center" onclick="markAllCompleted()">
+                                <i class="bi bi-check-all me-2"></i>
+                                <span data-translate="tasks.markAllDone">Mark All Done</span>
+                            </button>
+                        </div>
+                        
+                        <!-- Mini Stats -->
+                        <hr class="my-4">
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <div class="small text-muted" data-translate="tasks.total">Total</div>
+                                <div class="h5 mb-0 text-primary" id="totalTasksCount">0</div>
+                                <div class="small" data-translate="tasks.tasks">Tasks</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="small text-muted" data-translate="tasks.completed">Completed</div>
+                                <div class="h5 mb-0 text-success" id="completedTasksCount">0</div>
+                                <div class="small" data-translate="tasks.done">Done</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
+
+            <!-- Tasks List -->
+            <div class="col-lg-8 mb-4">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header bg-info text-white py-3 d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 d-flex align-items-center fw-bold">
+                            <i class="bi bi-list-task me-2"></i><span data-translate="tasks.myTasks">My Tasks</span>
+                        </h5>
+                        <span class="badge bg-light text-info fw-bold" id="taskCountBadge">0 <span data-translate="tasks.tasks">tasks</span></span>
+                    </div>
             <div class="card-body">
                 <div id="tasksList">
                     <!-- Tasks will be dynamically added here -->
-                    <div class="text-center text-muted py-4">
+                                        <div class="text-center text-muted py-4">
                         <i class="bi bi-clipboard-check display-1 mb-3"></i>
-                        <p class="mb-0">No tasks yet. Add your first task above!</p>
+                        <p class="mb-0" data-translate="tasks.noTasksYet">No tasks yet. Add your first task above!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        
+    </div>
+</div>
+                </div>
+            </div>
+        </div>
+
+        </div>
+
+        <!-- Google Tasks Integration -->
+        <div class="row">
+            <div class="col-2">
+            </div>
+            <div class="col-10">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-warning text-dark py-3">
+                        <h6 class="mb-0 d-flex align-items-center">
+                            <i class="bi bi-puzzle me-2"></i><span data-translate="tasks.googleTasksIntegration">Google Tasks Integration</span>
+                        </h6>
+                    </div>
+                    <div class="card-body text-center py-5">
+                        <div class="mb-4">
+                            <i class="bi bi-check-circle display-4 text-success"></i>
+                        </div>
+                        <h5 class="mb-3" data-translate="tasks.googleTasksIntegration">Google Tasks Integration</h5>
+                        <p class="text-muted mb-4 col-md-8 mx-auto" data-translate="tasks.googleTasksDescription">
+                            Your Google Tasks can be automatically synced when you log in with Google! All your tasks are imported and managed in one place.
+                        </p>
+                        
+                        <div class="row justify-content-center">
+                            <div class="col-md-8">
+                                <div class="alert alert-info d-flex align-items-center" role="alert" id="tasksIntegrationAlert">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    <div id="tasksStatusMessage" data-translate="tasks.checkingConnection">
+                                        Checking Google Tasks connection...
+                                    </div>
+                                </div>
+                                
+                                <div class="d-flex flex-wrap justify-content-center gap-3" id="tasksActions">
+                                    <button class="btn btn-success btn-lg" id="refreshTasksBtn" onclick="window.refreshGoogleTasks()">
+                                        <i class="bi bi-arrow-clockwise me-2"></i>
+                                        <span data-translate="tasks.refreshGoogleTasks">Refresh Google Tasks</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <small class="text-muted">
+                                <i class="bi bi-shield-check me-1"></i>
+                                <span data-translate="tasks.secureIntegrations">All integrations are secure and encrypted</span>
+                            </small>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -67,8 +164,172 @@
 
 
 
+<!-- SweetAlert2 CSS and JS -->
+<link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        // Translation helper functions
+        function t(key, params = {}) {
+            if (typeof LanguageManager !== 'undefined' && LanguageManager.isLoaded) {
+                let translation = LanguageManager.t(key);
+                // Replace parameters in translation
+                Object.keys(params).forEach(param => {
+                    translation = translation.replace(`{${param}}`, params[param]);
+                });
+                return translation;
+            }
+            // Fallback to English if LanguageManager is not available
+            const fallbackTranslations = {
+                'tasks.taskAdded': 'Task Added!',
+                'tasks.taskAddedMessage': 'has been added to your tasks.',
+                'tasks.taskCompleted': 'Task Completed!',
+                'tasks.taskUnmarked': 'Task Unmarked',
+                'tasks.taskMarkedIncomplete': 'Task marked as incomplete',
+                'tasks.greatJob': 'Great job! 🎉',
+                'tasks.taskUpdated': 'Task Updated!',
+                'tasks.taskUpdatedMessage': 'Your task has been successfully updated.',
+                'tasks.deleteTaskConfirm': 'Delete Task?',
+                'tasks.deleteTaskMessage': 'Are you sure you want to delete "{taskName}"? This action cannot be undone.',
+                'tasks.yesDeleteIt': 'Yes, delete it!',
+                'tasks.deleted': 'Deleted!',
+                'tasks.taskDeleted': 'Your task has been deleted.',
+                'tasks.error': 'Error!',
+                'tasks.errorAddingTask': 'There was an error adding the task. Please try again.',
+                'tasks.errorUpdatingTask': 'There was an error updating the task. Please try again.',
+                'tasks.errorDeletingTask': 'There was an error deleting the task. Please try again.',
+                'tasks.noTasksToMark': 'No tasks to mark as completed!',
+                'tasks.allDone': 'All Done!',
+                'tasks.allTasksCompleted': 'All tasks are already completed! 🎉',
+                'tasks.markAllCompleted': 'Mark All as Completed?',
+                'tasks.markAllCompletedMessage': 'This will mark {count} task(s) as completed. Are you sure?',
+                'tasks.yesMarkAllDone': 'Yes, mark all done!',
+                'tasks.cancel': 'Cancel',
+                'tasks.markingTasks': 'Marking Tasks...',
+                'tasks.markingTasksMessage': 'Please wait while we update your tasks.',
+                'tasks.success': 'Success!',
+                'tasks.markedTasksCompleted': 'Marked {count} task(s) as completed! 🎉',
+                'tasks.errorMarkingTasks': 'There was an error marking tasks as completed. Please try again.'
+            };
+            
+            let translation = fallbackTranslations[key] || key;
+            Object.keys(params).forEach(param => {
+                translation = translation.replace(`{${param}}`, params[param]);
+            });
+            return translation;
+        }
+
+        // Theme-aware SweetAlert2 configuration
+        function getSweetAlertTheme() {
+            const htmlElement = document.documentElement;
+            const currentTheme = htmlElement.getAttribute('data-bs-theme');
+            return currentTheme === 'dark' ? 'dark' : 'light';
+        }
+
+        function getThemeColors() {
+            const theme = getSweetAlertTheme();
+            
+            if (theme === 'dark') {
+                return {
+                    popup: '#2d3748',
+                    text: '#e2e8f0',
+                    confirmButton: '#4299e1',
+                    cancelButton: '#a0aec0',
+                    success: '#48bb78',
+                    error: '#f56565',
+                    warning: '#ed8936',
+                    info: '#4299e1',
+                    question: '#9f7aea'
+                };
+            } else {
+                return {
+                    popup: '#ffffff',
+                    text: '#2d3748',
+                    confirmButton: '#3182ce',
+                    cancelButton: '#718096',
+                    success: '#38a169',
+                    error: '#e53e3e',
+                    warning: '#dd6b20',
+                    info: '#3182ce',
+                    question: '#805ad5'
+                };
+            }
+        }
+
+        function getThemeAwareSwalConfig(type = 'default') {
+            const colors = getThemeColors();
+            const theme = getSweetAlertTheme();
+            
+            const baseConfig = {
+                background: colors.popup,
+                color: colors.text,
+                customClass: {
+                    popup: `swal-${theme}-popup`,
+                    title: `swal-${theme}-title`,
+                    content: `swal-${theme}-content`,
+                    confirmButton: 'btn',
+                    cancelButton: 'btn'
+                },
+                buttonsStyling: false
+            };
+
+            // Type-specific configurations
+            switch (type) {
+                case 'success':
+                    return {
+                        ...baseConfig,
+                        confirmButtonColor: colors.success,
+                        customClass: {
+                            ...baseConfig.customClass,
+                            confirmButton: 'btn btn-success'
+                        }
+                    };
+                case 'error':
+                    return {
+                        ...baseConfig,
+                        confirmButtonColor: colors.error,
+                        customClass: {
+                            ...baseConfig.customClass,
+                            confirmButton: 'btn btn-danger'
+                        }
+                    };
+                case 'warning':
+                    return {
+                        ...baseConfig,
+                        confirmButtonColor: colors.error,
+                        cancelButtonColor: colors.cancelButton,
+                        customClass: {
+                            ...baseConfig.customClass,
+                            confirmButton: 'btn btn-danger',
+                            cancelButton: 'btn btn-secondary'
+                        }
+                    };
+                case 'info':
+                    return {
+                        ...baseConfig,
+                        confirmButtonColor: colors.info,
+                        customClass: {
+                            ...baseConfig.customClass,
+                            confirmButton: 'btn btn-primary'
+                        }
+                    };
+                case 'question':
+                    return {
+                        ...baseConfig,
+                        confirmButtonColor: colors.success,
+                        cancelButtonColor: colors.cancelButton,
+                        customClass: {
+                            ...baseConfig.customClass,
+                            confirmButton: 'btn btn-success',
+                            cancelButton: 'btn btn-secondary'
+                        }
+                    };
+                default:
+                    return baseConfig;
+            }
+        }
+
         // Time update functionality
         function updateTime() {
             const now = new Date();
@@ -142,20 +403,210 @@
             }
         }
 
+        // Google Tasks integration functions
+        async function checkGoogleTasksStatus() {
+            try {
+                const data = await apiRequest('/api/google/tasks/status');
+                const statusMessage = document.getElementById('tasksStatusMessage');
+                
+                if (data && data.connected === true) {
+                    const connectedText = t('tasks.googleTasksConnected');
+                    const connectedMessage = t('tasks.googleTasksConnectedMessage');
+                    statusMessage.innerHTML = `
+                        <i class="bi bi-check-circle-fill text-success me-2"></i>
+                        <strong>${connectedText}</strong> ${connectedMessage}
+                    `;
+                    statusMessage.parentElement.classList.remove('alert-info', 'alert-warning', 'alert-danger');
+                    statusMessage.parentElement.classList.add('alert-success');
+                    return true;
+                } else {
+                    const notConnectedText = t('tasks.googleTasksNotConnected');
+                    const notConnectedMessage = t('tasks.googleTasksNotConnectedMessage');
+                    statusMessage.innerHTML = `
+                        <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>
+                        <strong>${notConnectedText}</strong> - ${notConnectedMessage}
+                    `;
+                    statusMessage.parentElement.classList.remove('alert-info', 'alert-success', 'alert-danger');
+                    statusMessage.parentElement.classList.add('alert-warning');
+                    return false;
+                }
+            } catch (error) {
+                console.error('Error checking Google Tasks status:', error);
+                const statusMessage = document.getElementById('tasksStatusMessage');
+                
+                // If the API endpoint doesn't exist, assume not connected
+                if (error.message.includes('404') || error.message.includes('fetch is not defined')) {
+                    console.log('Google Tasks API not available');
+                    const comingSoonText = t('tasks.googleTasksComingSoon');
+                    const inDevelopmentText = t('tasks.googleTasksInDevelopment');
+                    statusMessage.innerHTML = `
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>${comingSoonText}</strong> ${inDevelopmentText}
+                    `;
+                    statusMessage.parentElement.classList.remove('alert-success', 'alert-warning', 'alert-danger');
+                    statusMessage.parentElement.classList.add('alert-info');
+                    return false;
+                }
+                
+                const errorText = t('tasks.googleTasksError');
+                statusMessage.innerHTML = `
+                    <i class="bi bi-x-circle-fill text-danger me-2"></i>
+                    <strong>${errorText}</strong>
+                `;
+                statusMessage.parentElement.classList.remove('alert-info', 'alert-success', 'alert-warning');
+                statusMessage.parentElement.classList.add('alert-danger');
+                return false;
+            }
+        }
+
+        async function syncFromGoogleTasks() {
+            try {
+                // Check if Google Tasks is connected first
+                const isConnected = await checkGoogleTasksStatus();
+                if (!isConnected) {
+                    showNotification(t('syncNotConnected'), 'error');
+                    return;
+                }
+                
+                showNotification(t('syncingFromGoogle'), 'info');
+                
+                const data = await apiRequest('/api/google/tasks/sync', {
+                    method: 'POST'
+                });
+                
+                if (data && data.syncedCount !== undefined) {
+                    showNotification(t('syncSuccessful', { count: data.syncedCount }), 'success');
+                    loadTasks(); // Reload all tasks to show synced ones
+                } else {
+                    showNotification(t('syncCompleted'), 'info');
+                    loadTasks();
+                }
+            } catch (error) {
+                console.error('Error syncing from Google Tasks:', error);
+                
+                // Provide more specific error messages using translations
+                let errorMessage;
+                if (error.message.includes('fetch is not defined')) {
+                    errorMessage = t('syncApiNotAvailable');
+                } else if (error.message.includes('404')) {
+                    errorMessage = t('syncEndpointNotFound');
+                } else if (error.message.includes('401') || error.message.includes('403')) {
+                    errorMessage = t('syncAuthenticationError');
+                } else if (error.message.includes('500')) {
+                    errorMessage = t('syncServerError');
+                } else if (error.message.includes('network') || error.message.includes('Network')) {
+                    errorMessage = t('syncNetworkError');
+                } else if (error.message) {
+                    // For HTTP error! status: messages, categorize by status code
+                    const statusMatch = error.message.match(/status:\s*(\d+)/);
+                    if (statusMatch) {
+                        const status = parseInt(statusMatch[1]);
+                        if (status >= 500) {
+                            errorMessage = t('syncServerError');
+                        } else if (status === 401 || status === 403) {
+                            errorMessage = t('syncAuthenticationError');
+                        } else if (status === 404) {
+                            errorMessage = t('syncEndpointNotFound');
+                        } else {
+                            errorMessage = t('syncUnknownError');
+                        }
+                    } else {
+                        errorMessage = t('syncUnknownError');
+                    }
+                } else {
+                    errorMessage = t('syncUnknownError');
+                }
+                
+                showNotification(errorMessage, 'error');
+            }
+        }
+
+        async function pushTaskToGoogle(taskId) {
+            const isConnected = await checkGoogleTasksStatus();
+            if (!isConnected) {
+                showNotification('Google Tasks integration not found. Please connect your Google account first.', 'error');
+                return;
+            }
+            
+            try {
+                showNotification('Pushing task to Google Tasks...', 'info');
+                await apiRequest('/api/google/tasks/push', {
+                    method: 'POST',
+                    body: JSON.stringify({ taskId: parseInt(taskId) })
+                });
+                
+                showNotification('Task successfully pushed to Google Tasks!', 'success');
+                loadTasks(); // Reload to update task source
+            } catch (error) {
+                console.error('Error pushing task to Google Tasks:', error);
+            }
+        }
+
         function renderTasks() {
             const tasksList = document.getElementById('tasksList');
             
+            // Update stats
+            const totalTasks = tasks.length;
+            const completedTasks = tasks.filter(t => t.completed).length;
+            
+            document.getElementById('totalTasksCount').textContent = totalTasks;
+            document.getElementById('completedTasksCount').textContent = completedTasks;
+            
+            // Update task count badge with translation
+            const tasksText = (typeof LanguageManager !== 'undefined' && LanguageManager.isLoaded) 
+                ? LanguageManager.t('tasks.tasks') 
+                : 'tasks';
+            document.getElementById('taskCountBadge').innerHTML = `${totalTasks} <span data-translate="tasks.tasks">${tasksText}</span>`;
+            
             if (tasks.length === 0) {
+                const noTasksText = (typeof LanguageManager !== 'undefined' && LanguageManager.isLoaded) 
+                    ? LanguageManager.t('tasks.noTasks') 
+                    : 'No tasks yet';
+                const tasksWillAppearText = (typeof LanguageManager !== 'undefined' && LanguageManager.isLoaded) 
+                    ? LanguageManager.t('tasks.tasksWillAppear') 
+                    : 'Your tasks will appear here as you add them';
+                const syncFromGoogleText = (typeof LanguageManager !== 'undefined' && LanguageManager.isLoaded) 
+                    ? LanguageManager.t('tasks.syncFromGoogle') 
+                    : 'Sync from Google Tasks';
+                    
                 tasksList.innerHTML = `
-                    <div class="text-center text-muted py-4">
-                        <i class="bi bi-clipboard-check display-1 mb-3"></i>
-                        <p class="mb-0">No tasks yet. Add your first task above!</p>
+                    <div class="text-center text-muted py-5">
+                        <div class="mb-4">
+                            <i class="bi bi-clipboard-check display-1 text-muted opacity-50"></i>
+                        </div>
+                        <h5 class="text-muted mb-2" data-translate="tasks.noTasks">${noTasksText}</h5>
+                        <p class="text-muted mb-4" data-translate="tasks.tasksWillAppear">${tasksWillAppearText}</p>
+                        <button class="btn btn-outline-primary" onclick="syncFromGoogleTasks()">
+                            <i class="bi bi-arrow-down-circle me-2"></i><span data-translate="tasks.syncFromGoogle">${syncFromGoogleText}</span>
+                        </button>
                     </div>
                 `;
                 return;
             }
 
-            tasksList.innerHTML = tasks.map(task => `
+            // Sort tasks: incomplete tasks first, then completed tasks
+            // Within each group, maintain original order (most recent first)
+            const sortedTasks = [...tasks].sort((a, b) => {
+                // If completion status is different, put incomplete first
+                if (a.completed !== b.completed) {
+                    return a.completed ? 1 : -1;
+                }
+                // If both have same completion status, maintain original order
+                // (since tasks array is already in chronological order with newest first)
+                return 0;
+            });
+
+            const createdText = (typeof LanguageManager !== 'undefined' && LanguageManager.isLoaded) 
+                ? LanguageManager.t('tasks.created') 
+                : 'Created';
+            const editTaskText = (typeof LanguageManager !== 'undefined' && LanguageManager.isLoaded) 
+                ? LanguageManager.t('tasks.editTask') 
+                : 'Edit Task';
+            const deleteTaskText = (typeof LanguageManager !== 'undefined' && LanguageManager.isLoaded) 
+                ? LanguageManager.t('tasks.deleteTask') 
+                : 'Delete Task';
+
+            tasksList.innerHTML = sortedTasks.map(task => `
                 <div class="task-item border-bottom py-3 ${task.completed ? 'task-completed' : ''}" data-task-id="${task.id}">
                     <div class="d-flex align-items-center">
                         <div class="form-check me-3">
@@ -163,16 +614,16 @@
                         </div>
                         <div class="flex-grow-1">
                             <span class="task-text ${task.completed ? 'text-decoration-line-through text-muted' : ''}">${escapeHtml(task.text)}</span>
-                            <div class="d-flex align-items-center gap-2 mt-1">
-                                <small class="text-muted">Created: ${new Date(task.created_at).toLocaleDateString()}</small>
+                            <div class="d-flex align-items-center gap-2 mt-1 flex-wrap">
+                                <small class="text-muted">${createdText}: ${new Date(task.created_at).toLocaleDateString()}</small>
                                 <span class="source-badge badge ${getSourceBadgeClass(task.source)}">${getSourceDisplayName(task.source)}</span>
                             </div>
                         </div>
-                        <div class="ms-auto">
-                            <button class="btn btn-sm btn-outline-warning task-edit" data-task-id="${task.id}">
+                        <div class="ms-auto d-flex gap-1">
+                            <button class="btn btn-sm btn-outline-warning task-edit" data-task-id="${task.id}" title="${editTaskText}">
                                 <i class="bi bi-pen"></i>
                             </button>
-                            <button class="btn btn-sm btn-outline-danger delete-task" data-task-id="${task.id}">
+                            <button class="btn btn-sm btn-outline-danger delete-task" data-task-id="${task.id}" title="${deleteTaskText}">
                                 <i class="bi bi-trash"></i>
                             </button>
                         </div>
@@ -183,13 +634,25 @@
 
         // Helper function to get source display name
         function getSourceDisplayName(source) {
-            const sourceNames = {
-                'user': 'Manual',
-                'google_tasks': 'Google Tasks',
-                'microsoft_todo': 'Microsoft To Do',
-                'calendar_integration': 'Calendar'
-            };
-            return sourceNames[source] || 'Unknown';
+            // Use translations if available, fall back to default
+            if (typeof LanguageManager !== 'undefined' && LanguageManager.isLoaded) {
+                const sourceNames = {
+                    'user': LanguageManager.t('tasks.manual'),
+                    'google_tasks': LanguageManager.t('tasks.googleTasks'),
+                    'microsoft_todo': LanguageManager.t('tasks.microsoftToDo'),
+                    'calendar_integration': LanguageManager.t('tasks.calendar')
+                };
+                return sourceNames[source] || 'Unknown';
+            } else {
+                // Fallback to English
+                const sourceNames = {
+                    'user': 'Manual',
+                    'google_tasks': 'Google Tasks',
+                    'microsoft_todo': 'Microsoft To Do',
+                    'calendar_integration': 'Calendar'
+                };
+                return sourceNames[source] || 'Unknown';
+            }
         }
 
         // Helper function to get source badge class
@@ -220,9 +683,28 @@
                 
                 tasks.unshift(data.task); // Add to beginning of array
                 renderTasks();
-                showNotification('Task added successfully!', 'success');
+                
+                // Show success with SweetAlert2
+                const successConfig = getThemeAwareSwalConfig('success');
+                Swal.fire({
+                    title: t('tasks.taskAdded'),
+                    text: `"${taskText}" ${t('tasks.taskAddedMessage')}`,
+                    icon: 'success',
+                    timer: 2000,
+                    showConfirmButton: false,
+                    position: 'top-end',
+                    toast: true,
+                    ...successConfig
+                });
             } catch (error) {
                 console.error('Error adding task:', error);
+                const errorConfig = getThemeAwareSwalConfig('error');
+                Swal.fire({
+                    title: t('tasks.error'),
+                    text: t('tasks.errorAddingTask'),
+                    icon: 'error',
+                    ...errorConfig
+                });
             }
         }
 
@@ -244,9 +726,28 @@
                 }
                 
                 renderTasks();
-                showNotification('Task updated successfully!', 'success');
+                
+                // Show toast notification
+                const successConfig = getThemeAwareSwalConfig('success');
+                Swal.fire({
+                    title: task.completed ? t('tasks.taskUnmarked') : t('tasks.taskCompleted'),
+                    text: task.completed ? t('tasks.taskMarkedIncomplete') : t('tasks.greatJob'),
+                    icon: task.completed ? 'info' : 'success',
+                    timer: 1500,
+                    showConfirmButton: false,
+                    position: 'top-end',
+                    toast: true,
+                    ...successConfig
+                });
             } catch (error) {
                 console.error('Error toggling task:', error);
+                const errorConfig = getThemeAwareSwalConfig('error');
+                Swal.fire({
+                    title: t('tasks.error'),
+                    text: t('tasks.errorUpdatingTask'),
+                    icon: 'error',
+                    ...errorConfig
+                });
             }
         }
 
@@ -259,9 +760,16 @@
                 
                 tasks = tasks.filter(t => t.id !== parseInt(taskId));
                 renderTasks();
-                showNotification('Task deleted successfully!', 'success');
+                // Note: Success message is shown by SweetAlert2 in the event listener
             } catch (error) {
                 console.error('Error deleting task:', error);
+                const errorConfig = getThemeAwareSwalConfig('error');
+                Swal.fire({
+                    title: t('tasks.error'),
+                    text: t('tasks.errorDeletingTask'),
+                    icon: 'error',
+                    ...errorConfig
+                });
             }
         }
 
@@ -280,9 +788,28 @@
                 }
                 
                 renderTasks();
-                showNotification('Task updated successfully!', 'success');
+                
+                // Show toast notification
+                const successConfig = getThemeAwareSwalConfig('success');
+                Swal.fire({
+                    title: t('tasks.taskUpdated'),
+                    text: t('tasks.taskUpdatedMessage'),
+                    icon: 'success',
+                    timer: 1500,
+                    showConfirmButton: false,
+                    position: 'top-end',
+                    toast: true,
+                    ...successConfig
+                });
             } catch (error) {
                 console.error('Error editing task:', error);
+                const errorConfig = getThemeAwareSwalConfig('error');
+                Swal.fire({
+                    title: t('tasks.error'),
+                    text: t('tasks.errorUpdatingTask'),
+                    icon: 'error',
+                    ...errorConfig
+                });
             }
         }
 
@@ -307,11 +834,13 @@
             
             const saveBtn = document.createElement('button');
             saveBtn.className = 'btn btn-sm btn-success me-2';
-            saveBtn.innerHTML = '<i class="bi bi-check-lg"></i> Save';
+            const saveText = t('tasks.save');
+            saveBtn.innerHTML = `<i class="bi bi-check-lg"></i> ${saveText}`;
             
             const cancelBtn = document.createElement('button');
             cancelBtn.className = 'btn btn-sm btn-secondary';
-            cancelBtn.innerHTML = '<i class="bi bi-x-lg"></i> Cancel';
+            const cancelText = t('tasks.cancel');
+            cancelBtn.innerHTML = `<i class="bi bi-x-lg"></i> ${cancelText}`;
 
             buttonContainer.appendChild(saveBtn);
             buttonContainer.appendChild(cancelBtn);
@@ -376,12 +905,12 @@
             const taskInput = document.getElementById('taskInput');
             const taskSource = document.getElementById('taskSource');
             const taskText = taskInput.value.trim();
-            const source = taskSource.value;
+            const source = taskSource ? taskSource.value : 'user';
             
             if (taskText) {
                 addTask(taskText, source);
                 taskInput.value = '';
-                taskSource.value = 'user'; // Reset to default
+                if (taskSource) taskSource.value = 'user'; // Reset to default
             }
         });
 
@@ -391,35 +920,357 @@
             if (e.target.classList.contains('task-checkbox')) {
                 toggleTask(taskId);
             } else if (e.target.classList.contains('delete-task') || e.target.parentElement.classList.contains('delete-task')) {
-                if (confirm('Are you sure you want to delete this task?')) {
-                    deleteTask(taskId);
-                }
+                // Use SweetAlert2 for delete confirmation
+                const task = tasks.find(t => t.id === parseInt(taskId));
+                const taskText = task ? task.text : 'this task';
+                
+                const themeConfig = getThemeAwareSwalConfig('warning');
+                
+                Swal.fire({
+                    title: t('tasks.deleteTaskConfirm'),
+                    text: t('tasks.deleteTaskMessage', { taskName: taskText }),
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: `<i class="bi bi-trash"></i> ${t('tasks.yesDeleteIt')}`,
+                    cancelButtonText: `<i class="bi bi-x-circle"></i> ${t('tasks.cancel')}`,
+                    ...themeConfig
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        deleteTask(taskId);
+                        
+                        const successConfig = getThemeAwareSwalConfig('success');
+                        Swal.fire({
+                            title: t('tasks.deleted'),
+                            text: t('tasks.taskDeleted'),
+                            icon: 'success',
+                            timer: 2000,
+                            showConfirmButton: false,
+                            position: 'top-end',
+                            toast: true,
+                            ...successConfig
+                        });
+                    }
+                });
             } else if (e.target.classList.contains('task-edit') || e.target.parentElement.classList.contains('task-edit')) {
                 startEditTask(taskId);
             }
         });
 
+        // Function to apply translations to all elements
+        function applyTranslations() {
+            // Apply translations to elements with data-translate attribute
+            document.querySelectorAll('[data-translate]').forEach(element => {
+                const key = element.getAttribute('data-translate');
+                if (typeof LanguageManager !== 'undefined' && LanguageManager.isLoaded) {
+                    element.textContent = LanguageManager.t(key);
+                }
+            });
+            
+            // Apply translations to placeholders
+            document.querySelectorAll('[data-translate-placeholder]').forEach(element => {
+                const key = element.getAttribute('data-translate-placeholder');
+                if (typeof LanguageManager !== 'undefined' && LanguageManager.isLoaded) {
+                    element.placeholder = LanguageManager.t(key);
+                }
+            });
+            
+            // Re-render tasks to apply translations to dynamic content
+            if (tasks.length > 0) {
+                renderTasks();
+            }
+        }
+
         // Initial load
         loadTasks();
+        
+        // Apply translations when LanguageManager is ready
+        if (typeof LanguageManager !== 'undefined') {
+            if (LanguageManager.isLoaded) {
+                applyTranslations();
+            } else {
+                // Wait for translations to load
+                const checkTranslations = () => {
+                    if (LanguageManager.isLoaded) {
+                        applyTranslations();
+                    } else {
+                        setTimeout(checkTranslations, 100);
+                    }
+                };
+                checkTranslations();
+            }
+        }
+        
+        // Global functions (accessible from onclick handlers)
+        window.refreshGoogleTasks = async function() {
+            const btn = document.getElementById('refreshTasksBtn');
+            const originalText = btn ? btn.innerHTML : '';
+            
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="bi bi-arrow-clockwise me-2 spinner-border spinner-border-sm"></i>Syncing...';
+            }
+            
+            try {
+                showNotification('Refreshing Google Tasks...', 'info');
+                
+                // First check if Google Tasks integration is available
+                const isConnected = await checkGoogleTasksStatus();
+                
+                if (!isConnected) {
+                    showNotification('Google Tasks not connected. Please set up Google integration first.', 'warning');
+                    return;
+                }
+                
+                // Try to sync tasks
+                await syncFromGoogleTasks();
+                
+                // Update status display
+                await checkGoogleTasksIntegrationStatus();
+                
+                showNotification('Google Tasks synced successfully!', 'success');
+            } catch (error) {
+                console.error('Error refreshing Google Tasks:', error);
+                
+                // Show appropriate error message
+                if (error.message.includes('404')) {
+                    showNotification('Google Tasks API not yet implemented. This feature is coming soon!', 'info');
+                } else if (error.message.includes('401') || error.message.includes('403')) {
+                    showNotification('Authentication required. Please connect your Google account.', 'warning');
+                } else {
+                    showNotification('Unable to sync Google Tasks at the moment. Please try again later.', 'error');
+                }
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                }
+            }
+        };
+        
+        // Check Google Tasks integration status on page load
+        checkGoogleTasksIntegrationStatus();
+
+        async function checkGoogleTasksIntegrationStatus() {
+            try {
+                const isConnected = await checkGoogleTasksStatus();
+                // The checkGoogleTasksStatus function already handles the UI updates
+            } catch (error) {
+                console.error('Error checking Google Tasks integration status:', error);
+                const statusMessage = document.getElementById('tasksStatusMessage');
+                
+                statusMessage.innerHTML = `
+                    <i class="bi bi-x-circle-fill text-danger me-2"></i>
+                    <strong>Error</strong> - Unable to check Google Tasks connection status.
+                `;
+                statusMessage.parentElement.classList.remove('alert-info', 'alert-success', 'alert-warning');
+                statusMessage.parentElement.classList.add('alert-danger');
+            }
+        }
+
+        // Mark all tasks as completed
+        async function markAllCompleted() {
+            if (tasks.length === 0) {
+                const infoConfig = getThemeAwareSwalConfig('info');
+                Swal.fire({
+                    title: t('tasks.noTasksToMark'),
+                    text: t('tasks.noTasksToMark'),
+                    icon: 'info',
+                    ...infoConfig
+                });
+                return;
+            }
+            
+            const incompleteTasks = tasks.filter(t => !t.completed);
+            if (incompleteTasks.length === 0) {
+                const successConfig = getThemeAwareSwalConfig('success');
+                Swal.fire({
+                    title: t('tasks.allDone'),
+                    text: t('tasks.allTasksCompleted'),
+                    icon: 'success',
+                    ...successConfig
+                });
+                return;
+            }
+            
+            // Use SweetAlert2 for mark all confirmation
+            const questionConfig = getThemeAwareSwalConfig('question');
+            Swal.fire({
+                title: t('tasks.markAllCompleted'),
+                text: t('tasks.markAllCompletedMessage', { count: incompleteTasks.length }),
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: `<i class="bi bi-check-all"></i> ${t('tasks.yesMarkAllDone')}`,
+                cancelButtonText: `<i class="bi bi-x-circle"></i> ${t('tasks.cancel')}`,
+                ...questionConfig
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    try {
+                        // Show loading state
+                        const loadingConfig = getThemeAwareSwalConfig('info');
+                        Swal.fire({
+                            title: t('tasks.markingTasks'),
+                            text: t('tasks.markingTasksMessage'),
+                            icon: 'info',
+                            allowOutsideClick: false,
+                            allowEscapeKey: false,
+                            showConfirmButton: false,
+                            didOpen: () => {
+                                Swal.showLoading();
+                            },
+                            ...loadingConfig
+                        });
+                        
+                        for (const task of incompleteTasks) {
+                            await apiRequest(`/api/tasks/${task.id}`, {
+                                method: 'PUT',
+                                body: JSON.stringify({ completed: true })
+                            });
+                            
+                            // Update local task
+                            const taskIndex = tasks.findIndex(t => t.id === task.id);
+                            if (taskIndex !== -1) {
+                                tasks[taskIndex].completed = true;
+                            }
+                        }
+                        
+                        renderTasks();
+                        
+                        // Show success message
+                        const successConfig = getThemeAwareSwalConfig('success');
+                        Swal.fire({
+                            title: t('tasks.success'),
+                            text: t('tasks.markedTasksCompleted', { count: incompleteTasks.length }),
+                            icon: 'success',
+                            timer: 3000,
+                            showConfirmButton: false,
+                            ...successConfig
+                        });
+                    } catch (error) {
+                        console.error('Error marking tasks as completed:', error);
+                        const errorConfig = getThemeAwareSwalConfig('error');
+                        Swal.fire({
+                            title: t('tasks.error'),
+                            text: t('tasks.errorMarkingTasks'),
+                            icon: 'error',
+                            ...errorConfig
+                        });
+                    }
+                }
+            });
+        }
+
+        // Make functions globally available
+        window.markAllCompleted = markAllCompleted;
+        window.syncFromGoogleTasks = syncFromGoogleTasks;
+        
+        // Debug function to test button
+        window.testButton = function() {
+            console.log('Button test clicked!');
+            showNotification('Button is working perfectly!', 'success');
+        };
+        
+        // Temporary function to simulate connected state (for testing)
+        window.simulateConnectedState = function() {
+            const statusMessage = document.getElementById('tasksStatusMessage');
+            
+            statusMessage.innerHTML = `
+                <i class="bi bi-check-circle-fill text-success me-2"></i>
+                <strong>Google Tasks Connected!</strong> Your tasks are automatically synced.
+            `;
+            statusMessage.parentElement.classList.remove('alert-info', 'alert-warning', 'alert-danger');
+            statusMessage.parentElement.classList.add('alert-success');
+            
+            showNotification('Simulated connected state - this shows how it will look when the backend is ready!', 'info');
+        };
+        
+        // Fallback function for when API isn't ready
+        window.mockGoogleTasksSync = function() {
+            showNotification('Google Tasks sync simulation - this will connect to real Google Tasks when the backend is ready!', 'info');
+            
+            // Simulate adding a test task
+            const testTask = {
+                id: Date.now(),
+                text: 'Sample Google Task (synced)',
+                source: 'google_tasks',
+                completed: false,
+                created_at: new Date().toISOString()
+            };
+            
+            tasks.unshift(testTask);
+            renderTasks();
+            showNotification('Test Google Task added! Real sync coming soon.', 'success');
+        };
+        
+        // Add click event listener as backup
+        document.addEventListener('click', function(e) {
+            if (e.target && e.target.id === 'refreshTasksBtn') {
+                e.preventDefault();
+                console.log('Refresh button clicked via event listener');
+                window.refreshGoogleTasks();
+            }
+        });
+
+        // Test function to demonstrate theme-aware alerts (for development)
+        window.testThemeAwareAlerts = function() {
+            const currentTheme = getSweetAlertTheme();
+            console.log('Current theme:', currentTheme);
+            
+            const testConfig = getThemeAwareSwalConfig('info');
+            Swal.fire({
+                title: t('tasks.themeTest'),
+                text: t('tasks.themeTestMessage', { theme: currentTheme }),
+                icon: 'info',
+                ...testConfig
+            });
+        };
+
+        // Theme observer to update SweetAlert2 when theme changes
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.type === 'attributes' && mutation.attributeName === 'data-bs-theme') {
+                    // Theme changed - SweetAlert2 will automatically pick up the new theme on next use
+                    console.log('Theme changed to:', document.documentElement.getAttribute('data-bs-theme'));
+                }
+            });
+        });
+
+        // Start observing theme changes
+        observer.observe(document.documentElement, {
+            attributes: true,
+            attributeFilter: ['data-bs-theme']
+        });
     });
 </script>
 
 <style>
     .task-item {
-        transition: opacity 0.3s ease;
+        transition: all 0.3s ease;
+        border-radius: 8px;
+        margin-bottom: 8px;
+        padding: 12px;
+        border: 1px solid #e9ecef !important;
+    }
+    
+    .task-item:hover {
+        background-color: #3d4144;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     }
     
     .task-completed {
         opacity: 0.7;
+        background-color: #696d6e;
     }
     
     .task-text {
         font-size: 1.1rem;
+        font-weight: 500;
     }
     
     .task-edit-input {
         font-size: 1.1rem !important;
         border: 2px solid #007bff;
+        border-radius: 8px;
     }
     
     .task-edit-input:focus {
@@ -429,52 +1280,347 @@
     
     .source-badge {
         font-size: 0.75rem;
-        font-weight: 500;
-        border-radius: 4px;
+        font-weight: 600;
+        border-radius: 6px;
+        padding: 4px 8px;
     }
     
     .source-badge.bg-primary {
-        background-color: #0d6efd !important;
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%) !important;
+        color: white !important;
     }
     
     .source-badge.bg-success {
-        background-color: #198754 !important;
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%) !important;
+        color: white !important;
     }
     
     .source-badge.bg-info {
-        background-color: #0dcaf0 !important;
-        color: #000 !important;
+        background: linear-gradient(135deg, #17a2b8 0%, #6f42c1 100%) !important;
+        color: white !important;
     }
     
     .source-badge.bg-warning {
-        background-color: #ffc107 !important;
+        background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%) !important;
         color: #000 !important;
     }
     
     .card {
-        border: none;
-        border-radius: 10px;
+        border: none !important;
+        border-radius: 12px !important;
+        overflow: hidden;
     }
     
     .card-header {
-        border-radius: 10px 10px 0 0 !important;
+        border-radius: 12px 12px 0 0 !important;
+        font-weight: 600;
+    }
+    
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%) !important;
+    }
+    
+    .bg-success {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%) !important;
+    }
+    
+    .bg-gradient-success {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%) !important;
+    }
+    
+    .bg-info {
+        background: linear-gradient(135deg, #17a2b8 0%, #6f42c1 100%) !important;
     }
     
     .btn {
         border-radius: 8px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-lg {
+        padding: 12px 20px;
+        font-weight: 600;
+        border-radius: 8px;
+    }
+    
+    .btn-lg:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .btn-sm {
+        padding: 6px 12px;
+        border-radius: 6px;
     }
     
     .form-control, .form-select {
         border-radius: 8px;
+        border: 1px solid #ced4da;
+        transition: all 0.2s ease;
     }
     
+    .form-control:focus, .form-select:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        transform: scale(1.01);
+    }
+    
+    .shadow-sm {
+        box-shadow: 0 0.125rem 0.75rem rgba(0, 0, 0, 0.08) !important;
+    }
+    
+    .h5 {
+        font-weight: 700;
+    }
+    
+    .display-1 {
+        font-size: 4rem;
+    }
+    
+    .rounded-3 {
+        border-radius: 12px !important;
+    }
+    
+    .badge {
+        font-size: 0.75rem;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-weight: 600;
+    }
+    
+    .bi {
+        vertical-align: -0.125em;
+    }
+    
+    /* Notification styling */
+    .alert {
+        border-radius: 8px;
+        border: none;
+        font-weight: 500;
+    }
+    
+    /* Task action buttons */
     .task-item .btn-group {
         gap: 5px;
     }
     
+    /* Mobile responsive */
     @media (max-width: 768px) {
         .col-md-6, .col-md-3 {
-            margin-bottom: 10px;
+            margin-bottom: 15px;
         }
+        
+        .task-item {
+            padding: 8px;
+        }
+        
+        .task-text {
+            font-size: 1rem;
+        }
+        
+        .btn-lg {
+            padding: 10px 16px;
+            font-size: 0.9rem;
+        }
+        
+        .d-flex.gap-1 {
+            flex-direction: column;
+            gap: 0.25rem !important;
+        }
+        
+        .d-flex.gap-1 .btn {
+            width: 100%;
+        }
+    }
+    
+    /* Loading animations */
+    .spinner-border-sm {
+        width: 1rem;
+        height: 1rem;
+    }
+    
+    /* Empty state styling */
+    .text-muted.opacity-50 {
+        opacity: 0.5 !important;
+    }
+    
+    /* Form enhancements */
+    .form-check-input:checked {
+        background-color: #28a745;
+        border-color: #28a745;
+    }
+    
+    .form-check-input:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.25rem rgba(0, 123, 255, 0.25);
+    }
+    
+    /* SweetAlert2 Custom Styling */
+    .swal2-popup {
+        border-radius: 12px !important;
+        font-family: inherit !important;
+    }
+    
+    .swal2-title {
+        font-weight: 700 !important;
+        color: #212529 !important;
+    }
+    
+    .swal2-content {
+        color: #6c757d !important;
+        font-size: 1rem !important;
+    }
+    
+    .swal2-icon {
+        border: none !important;
+    }
+    
+    .swal2-icon.swal2-warning {
+        color: #f39c12 !important;
+        border-color: #f39c12 !important;
+    }
+    
+    .swal2-icon.swal2-success {
+        color: #27ae60 !important;
+        border-color: #27ae60 !important;
+    }
+    
+    .swal2-icon.swal2-error {
+        color: #e74c3c !important;
+        border-color: #e74c3c !important;
+    }
+    
+    .swal2-icon.swal2-info {
+        color: #3498db !important;
+        border-color: #3498db !important;
+    }
+    
+    .swal2-icon.swal2-question {
+        color: #9b59b6 !important;
+        border-color: #9b59b6 !important;
+    }
+    
+    .swal-success-popup {
+        border-left: 4px solid #27ae60 !important;
+    }
+    
+    /* Dark Theme SweetAlert2 Styling */
+    .swal-dark-popup {
+        background: #2d3748 !important;
+        border: 1px solid #4a5568 !important;
+    }
+    
+    .swal-dark-title {
+        color: #e2e8f0 !important;
+    }
+    
+    .swal-dark-content {
+        color: #cbd5e0 !important;
+    }
+    
+    /* Light Theme SweetAlert2 Styling */
+    .swal-light-popup {
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+    }
+    
+    .swal-light-title {
+        color: #2d3748 !important;
+    }
+    
+    .swal-light-content {
+        color: #4a5568 !important;
+    }
+    
+    /* Dark theme adjustments */
+    [data-bs-theme="dark"] .swal2-popup {
+        background: #2d3748 !important;
+        border: 1px solid #4a5568 !important;
+    }
+    
+    [data-bs-theme="dark"] .swal2-title {
+        color: #e2e8f0 !important;
+    }
+    
+    [data-bs-theme="dark"] .swal2-content {
+        color: #cbd5e0 !important;
+    }
+    
+    [data-bs-theme="dark"] .swal2-close {
+        color: #e2e8f0 !important;
+    }
+    
+    [data-bs-theme="dark"] .swal2-close:hover {
+        color: #ffffff !important;
+    }
+    
+    /* Dark theme icon adjustments */
+    [data-bs-theme="dark"] .swal2-icon.swal2-warning {
+        color: #ed8936 !important;
+        border-color: #ed8936 !important;
+    }
+    
+    [data-bs-theme="dark"] .swal2-icon.swal2-success {
+        color: #48bb78 !important;
+        border-color: #48bb78 !important;
+    }
+    
+    [data-bs-theme="dark"] .swal2-icon.swal2-error {
+        color: #f56565 !important;
+        border-color: #f56565 !important;
+    }
+    
+    [data-bs-theme="dark"] .swal2-icon.swal2-info {
+        color: #4299e1 !important;
+        border-color: #4299e1 !important;
+    }
+    
+    [data-bs-theme="dark"] .swal2-icon.swal2-question {
+        color: #9f7aea !important;
+        border-color: #9f7aea !important;
+    }
+    
+    /* Custom button styling for SweetAlert2 */
+    .swal2-actions .btn {
+        margin: 0 5px !important;
+        padding: 8px 16px !important;
+        border-radius: 6px !important;
+        font-weight: 500 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+    }
+    
+    .swal2-actions .btn i {
+        font-size: 0.9rem;
+    }
+    
+    .swal2-loader {
+        border-color: #007bff transparent #007bff transparent !important;
+    }
+    
+    [data-bs-theme="dark"] .swal2-loader {
+        border-color: #4299e1 transparent #4299e1 transparent !important;
+    }
+    
+    /* Toast notifications styling */
+    .swal2-toast {
+        border-radius: 8px !important;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important;
+    }
+    
+    [data-bs-theme="dark"] .swal2-toast {
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3) !important;
+    }
+    
+    .swal2-toast .swal2-title {
+        font-size: 1rem !important;
+        margin: 0 !important;
+    }
+    
+    .swal2-toast .swal2-content {
+        font-size: 0.875rem !important;
+        margin: 0 !important;
     }
 </style>

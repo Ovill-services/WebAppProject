@@ -8,6 +8,7 @@ import pgSession from 'connect-pg-simple';
 import multer from 'multer';
 import fs from 'fs';
 import dotenv from 'dotenv';
+import fetch from 'node-fetch';
 import { GoogleCalendarService } from './services/googleCalendarService.js';
 
 // Load environment variables
@@ -866,12 +867,183 @@ app.post('/api/tasks/bulk', requireAuth, async (req, res) => {
     }
 });
 
+// Google Tasks integration (placeholder for future implementation)
 
-//TODO - add google tasks integration
+// Get Google Tasks integration status
+app.get('/api/google/tasks/status', requireAuth, async (req, res) => {
+    try {
+        const result = await db.query(
+            'SELECT is_active, created_at, task_info FROM google_tasks_integration WHERE user_email = $1 AND is_active = true',
+            [req.session.user.email]
+        );
+        
+        const isConnected = result.rows.length > 0;
+        res.json({ 
+            connected: isConnected,
+            connectedSince: isConnected ? result.rows[0].created_at : null,
+            taskInfo: isConnected ? result.rows[0].task_info : null
+        });
+    } catch (error) {
+        console.error('Error checking Google Tasks status:', error);
+        res.status(500).json({ 
+            connected: false,
+            error: 'Failed to check status' 
+        });
+    }
+});
 
+// Sync tasks from Google Tasks
+app.post('/api/google/tasks/sync', requireAuth, async (req, res) => {
+    try {
+        // Get user's Google Tasks tokens
+        const tokenResult = await db.query(
+            'SELECT access_token, refresh_token, expires_at FROM google_tasks_integration WHERE user_email = $1 AND is_active = true',
+            [req.session.user.email]
+        );
+        
+        if (tokenResult.rows.length === 0) {
+            return res.status(401).json({ error: 'Google Tasks integration not found' });
+        }
+        
+        let { access_token, refresh_token, expires_at } = tokenResult.rows[0];
+        
+        // Check if token needs refresh
+        if (expires_at && new Date() >= new Date(expires_at)) {
+            // You'll need to implement token refresh for Google Tasks
+            // Similar to your calendar refresh logic
+        }
+        
+        // Fetch tasks from Google Tasks API
+        const response = await fetch('https://tasks.googleapis.com/tasks/v1/lists/@default/tasks', {
+            headers: {
+                'Authorization': `Bearer ${access_token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Google Tasks API error: ${response.status}`);
+        }
+        
+        const googleTasks = await response.json();
+        
+        // Store/update tasks in your database
+        const syncedTasks = [];
+        for (const googleTask of googleTasks.items || []) {
+            // Check if task already exists
+            const existingTask = await db.query(
+                'SELECT id FROM tasks WHERE google_task_id = $1 AND user_email = $2',
+                [googleTask.id, req.session.user.email]
+            );
+            
+            if (existingTask.rows.length === 0) {
+                // Insert new task
+                const insertResult = await db.query(
+                    'INSERT INTO tasks (user_email, text, completed, source, google_task_id, created_at) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+                    [
+                        req.session.user.email,
+                        googleTask.title,
+                        googleTask.status === 'completed',
+                        'google_tasks',
+                        googleTask.id,
+                        new Date()
+                    ]
+                );
+                syncedTasks.push(insertResult.rows[0]);
+            } else {
+                // Update existing task
+                const updateResult = await db.query(
+                    'UPDATE tasks SET text = $1, completed = $2, updated_at = $3 WHERE google_task_id = $4 AND user_email = $5 RETURNING *',
+                    [
+                        googleTask.title,
+                        googleTask.status === 'completed',
+                        new Date(),
+                        googleTask.id,
+                        req.session.user.email
+                    ]
+                );
+                syncedTasks.push(updateResult.rows[0]);
+            }
+        }
+        
+        res.json({ 
+            success: true, 
+            syncedCount: syncedTasks.length,
+            tasks: syncedTasks
+        });
+        
+    } catch (error) {
+        console.error('Error syncing Google Tasks:', error);
+        res.status(500).json({ error: 'Failed to sync Google Tasks' });
+    }
+});
 
-
-
+// Push task to Google Tasks
+app.post('/api/google/tasks/push', requireAuth, async (req, res) => {
+    try {
+        const { taskId } = req.body;
+        
+        // Get the task
+        const taskResult = await db.query(
+            'SELECT * FROM tasks WHERE id = $1 AND user_email = $2',
+            [taskId, req.session.user.email]
+        );
+        
+        if (taskResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Task not found' });
+        }
+        
+        const task = taskResult.rows[0];
+        
+        // Get user's Google Tasks tokens
+        const tokenResult = await db.query(
+            'SELECT access_token, refresh_token FROM google_tasks_integration WHERE user_email = $1 AND is_active = true',
+            [req.session.user.email]
+        );
+        
+        if (tokenResult.rows.length === 0) {
+            return res.status(401).json({ error: 'Google Tasks integration not found' });
+        }
+        
+        const { access_token } = tokenResult.rows[0];
+        
+        // Create task in Google Tasks
+        const googleTaskData = {
+            title: task.text,
+            status: task.completed ? 'completed' : 'needsAction'
+        };
+        
+        const response = await fetch('https://tasks.googleapis.com/tasks/v1/lists/@default/tasks', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${access_token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(googleTaskData)
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Google Tasks API error: ${response.status}`);
+        }
+        
+        const createdGoogleTask = await response.json();
+        
+        // Update local task with Google Task ID
+        await db.query(
+            'UPDATE tasks SET google_task_id = $1, source = $2 WHERE id = $3',
+            [createdGoogleTask.id, 'google_tasks', taskId]
+        );
+        
+        res.json({ 
+            success: true, 
+            googleTaskId: createdGoogleTask.id
+        });
+        
+    } catch (error) {
+        console.error('Error pushing task to Google Tasks:', error);
+        res.status(500).json({ error: 'Failed to push task to Google Tasks' });
+    }
+});
 
 // Logout route
 app.get('/logout', (req, res) => {

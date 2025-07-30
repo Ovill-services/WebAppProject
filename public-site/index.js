@@ -127,43 +127,66 @@ passport.use(new GoogleStrategy({
     // Store Google Calendar tokens if available
     if (accessToken && profile.emails && profile.emails[0]) {
       try {
+        // Set expiresAt if available, otherwise null
+        let expiresAt = null;
+        if (typeof accessToken.expires_in === 'number') {
+          expiresAt = moment().add(accessToken.expires_in, 'seconds').toISOString();
+        } else if (typeof accessToken.expiry_date === 'number') {
+          expiresAt = moment(accessToken.expiry_date).toISOString();
+        }
+
+
+        let calendarInfo = {};
+        let taskInfo = {};
+
+        // If you have expires_in or expiry_date from the OAuth provider, use them.
+        // Otherwise, expiresAt will be null.
+
         // Store calendar integration tokens
         const calendarIntegrationQuery = `
           INSERT INTO google_calendar_integration (user_email, access_token, refresh_token, expires_at, scope, calendar_info)
           VALUES ($1, $2, $3, $4, $5, $6)
-          ON CONFLICT (user_email) 
-          DO UPDATE SET 
-            access_token = EXCLUDED.access_token,
-            refresh_token = EXCLUDED.refresh_token,
-            expires_at = EXCLUDED.expires_at,
-            scope = EXCLUDED.scope,
-            calendar_info = EXCLUDED.calendar_info,
-            updated_at = CURRENT_TIMESTAMP,
-            is_active = true
         `;
         
-        // Calculate expiry date (Google tokens typically expire in 1 hour)
-        const expiresAt = new Date(Date.now() + 3600 * 1000); // 1 hour from now
-        
-        const calendarInfo = {
-          id: profile.emails[0].value,
-          summary: `${profile.displayName}'s Calendar`,
-          timeZone: 'America/New_York'
-        };
+        // Delete existing record first, then insert new one
+        const deleteCalendarQuery = 'DELETE FROM google_calendar_integration WHERE user_email = $1';
+        await db.query(deleteCalendarQuery, [profile.emails[0].value]);
         
         await db.query(calendarIntegrationQuery, [
           profile.emails[0].value,
           accessToken,
           refreshToken || null,
           expiresAt,
-          'https://www.googleapis.com/auth/calendar.readonly',
+          'https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/tasks',
           JSON.stringify(calendarInfo)
         ]);
         
         console.log('✅ Google Calendar integration stored for user:', profile.emails[0].value);
-      } catch (calendarError) {
-        console.error('⚠️ Error storing calendar integration:', calendarError);
-        // Don't fail the login if calendar storage fails
+        
+        // Store Google Tasks integration tokens
+        const tasksIntegrationQuery = `
+          INSERT INTO google_tasks_integration (user_email, access_token, refresh_token, expires_at, scope, task_info)
+          VALUES ($1, $2, $3, $4, $5, $6)
+        `;
+        
+        // Delete existing record first, then insert new one
+        const deleteTasksQuery = 'DELETE FROM google_tasks_integration WHERE user_email = $1';
+        await db.query(deleteTasksQuery, [profile.emails[0].value]);
+        
+        await db.query(tasksIntegrationQuery, [
+          profile.emails[0].value,
+          accessToken,
+          refreshToken || null,
+          expiresAt,
+          'https://www.googleapis.com/auth/tasks',
+          JSON.stringify(taskInfo)
+        ]);
+        
+        console.log('✅ Google Tasks integration stored for user:', profile.emails[0].value);
+        
+      } catch (integrationError) {
+        console.error('⚠️ Error storing Google integrations:', integrationError);
+        // Don't fail the login if integration storage fails
       }
     }
     
@@ -205,7 +228,12 @@ app.set('views', path.join(__dirname, 'views'));
 // Google OAuth routes
 app.get('/auth/google',
   passport.authenticate('google', { 
-    scope: ['profile', 'email', 'https://www.googleapis.com/auth/calendar'] 
+    scope: [
+      'profile', 
+      'email', 
+      'https://www.googleapis.com/auth/calendar',
+      'https://www.googleapis.com/auth/tasks'
+    ] 
   })
 );
 
