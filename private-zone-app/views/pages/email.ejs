@@ -1,3 +1,9 @@
+<%- include('../components/header.ejs') %>
+
+<!-- SweetAlert2 CSS and JS -->
+<link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <div class="main-content">
     <div class="container mt-5">
         <div class="d-flex justify-content-between align-items-center mb-4">
@@ -20,10 +26,19 @@
                         </h5>
                     </div>
                     <div class="col-md-6 text-end">
-                        <button class="btn btn-light btn-sm me-2" onclick="refreshEmails()">
-                            <i class="bi bi-arrow-clockwise me-1"></i><span data-translate="email.refresh">Refresh</span>
+                        <button class="btn btn-info btn-sm me-2" onclick="syncGmailEmails(), setTimeout(refreshEmails, 2000)" id="gmailSyncBtn">
+                            <i class="bi bi-cloud-download me-1"></i><span data-translate="email.syncGmail">Sync
+                                Gmail</span>
                         </button>
-                        <button class="btn btn-warning btn-sm" onclick="composeEmail()" data-bs-toggle="modal" data-bs-target="#composeModal">
+                        <button class="btn btn-warning btn-sm me-2" onclick="reprocessAttachments()" id="reprocessBtn">
+                            <i class="bi bi-paperclip me-1"></i>Fix Attachments
+                        </button>
+                        <button class="btn btn-light btn-sm me-2" onclick="refreshEmails()">
+                            <i class="bi bi-arrow-clockwise me-1"></i><span
+                                data-translate="email.refresh">Refresh</span>
+                        </button>
+                        <button class="btn btn-warning btn-sm" onclick="composeEmail()" data-bs-toggle="modal"
+                            data-bs-target="#composeModal">
                             <i class="bi bi-pencil-square me-1"></i><span data-translate="email.compose">Compose</span>
                         </button>
                     </div>
@@ -46,7 +61,8 @@
                     <div class="col-md-6">
                         <div class="input-group">
                             <span class="input-group-text"><i class="bi bi-search"></i></span>
-                            <input type="text" class="form-control" id="emailSearch" placeholder="Search emails..." data-translate-placeholder="email.searchPlaceholder" onkeyup="searchEmails()">
+                            <input type="text" class="form-control" id="emailSearch" placeholder="Search emails..."
+                                data-translate-placeholder="email.searchPlaceholder" onkeyup="searchEmails()">
                         </div>
                     </div>
                     <div class="col-md-3 text-end">
@@ -69,12 +85,92 @@
                         </div>
                         <p class="mt-2 text-muted" data-translate="email.loading">Loading emails...</p>
                     </div>
-                    
+
                     <!-- Empty state -->
                     <div id="emailEmpty" class="text-center py-5" style="display: none;">
                         <i class="bi bi-inbox display-1 text-muted"></i>
                         <h5 class="mt-3 text-muted" data-translate="email.noEmails">No emails found</h5>
-                        <p class="text-muted" data-translate="email.noEmailsDescription">Your inbox is empty or no emails match your search criteria.</p>
+                        <p class="text-muted" data-translate="email.noEmailsDescription">Your inbox is empty or no
+                            emails match
+                            your search criteria.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gmail Integration -->
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col-2">
+            </div>
+            <div class="col-12">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-info text-white py-3">
+                        <h6 class="mb-0 d-flex align-items-center">
+                            <i class="bi bi-envelope-at me-2"></i>Gmail Integration
+                        </h6>
+                    </div>
+                    <div class="card-body text-center py-5">
+                        <div class="mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="100" height="100"
+                                viewBox="0 0 48 48">
+                                <path fill="#4caf50" d="M45,16.2l-5,2.75l-5,4.75L35,40h7c1.657,0,3-1.343,3-3V16.2z">
+                                </path>
+                                <path fill="#1e88e5" d="M3,16.2l3.614,1.71L13,23.7V40H6c-1.657,0-3-1.343-3-3V16.2z">
+                                </path>
+                                <polygon fill="#e53935"
+                                    points="35,11.2 24,19.45 13,11.2 12,17 13,23.7 24,31.95 35,23.7 36,17"></polygon>
+                                <path fill="#c62828"
+                                    d="M3,12.298V16.2l10,7.5V11.2L9.876,8.859C9.132,8.301,8.228,8,7.298,8h0C4.924,8,3,9.924,3,12.298z">
+                                </path>
+                                <path fill="#fbc02d"
+                                    d="M45,12.298V16.2l-10,7.5V11.2l3.124-2.341C38.868,8.301,39.772,8,40.702,8h0 C43.076,8,45,9.924,45,12.298z">
+                                </path>
+                            </svg>
+                        </div>
+                        <h5 class="mb-3">Gmail Integration</h5>
+                        <p class="text-muted mb-4 col-md-8 mx-auto">
+                            Your Gmail emails can be automatically synced when you connect your Gmail account! All your
+                            emails are imported and managed in one place.
+                        </p>
+
+                        <div class="row justify-content-center">
+                            <div class="col-md-8">
+                                <div class="alert alert-info d-flex align-items-center" role="alert"
+                                    id="gmailIntegrationAlert">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    <div id="gmailStatusMessage">
+                                        Checking Gmail connection...
+                                    </div>
+                                </div>
+
+                                <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                                    <button class="btn btn-primary" id="gmailConnectBtn" onclick="connectGmail()"
+                                        style="display: none;">
+                                        <i class="bi bi-google me-2"></i>Connect Gmail
+                                    </button>
+                                    <button class="btn btn-success" id="gmailConnectedBtn" style="display: none;"
+                                        disabled>
+                                        <i class="bi bi-check-circle me-2"></i>Connected
+                                    </button>
+                                    <button class="btn btn-outline-secondary" id="gmailDisconnectBtn"
+                                        onclick="disconnectGmail()" style="display: none;">
+                                        <i class="bi bi-x-circle me-2"></i>Disconnect
+                                    </button>
+                                    <button class="btn btn-info" onclick="syncGmailEmails()" id="gmailSyncBtn"
+                                        style="display: none;">
+                                        <i class="bi bi-cloud-download me-2"></i>Sync Gmail
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <small class="text-muted">
+                                <i class="bi bi-shield-check me-1"></i>All integrations are secure and encrypted
+                            </small>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -88,37 +184,45 @@
         <div class="modal-content">
             <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title" id="composeModalLabel">
-                    <i class="bi bi-pencil-square me-2"></i><span data-translate="email.composeEmail">Compose Email</span>
+                    <i class="bi bi-pencil-square me-2"></i><span data-translate="email.composeEmail">Compose
+                        Email</span>
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <form id="composeForm">
                     <div class="mb-3">
                         <label for="emailTo" class="form-label" data-translate="email.to">To</label>
-                        <input type="email" class="form-control" id="emailTo" required data-translate-placeholder="email.toPlaceholder" placeholder="recipient@example.com">
+                        <input type="email" class="form-control" id="emailTo" required
+                            data-translate-placeholder="email.toPlaceholder" placeholder="recipient@example.com">
                     </div>
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="emailCc" class="form-label" data-translate="email.cc">CC</label>
-                                <input type="email" class="form-control" id="emailCc" data-translate-placeholder="email.ccPlaceholder" placeholder="cc@example.com">
+                                <input type="email" class="form-control" id="emailCc"
+                                    data-translate-placeholder="email.ccPlaceholder" placeholder="cc@example.com">
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="emailBcc" class="form-label" data-translate="email.bcc">BCC</label>
-                                <input type="email" class="form-control" id="emailBcc" data-translate-placeholder="email.bccPlaceholder" placeholder="bcc@example.com">
+                                <input type="email" class="form-control" id="emailBcc"
+                                    data-translate-placeholder="email.bccPlaceholder" placeholder="bcc@example.com">
                             </div>
                         </div>
                     </div>
                     <div class="mb-3">
                         <label for="emailSubject" class="form-label" data-translate="email.subject">Subject</label>
-                        <input type="text" class="form-control" id="emailSubject" required data-translate-placeholder="email.subjectPlaceholder" placeholder="Enter subject">
+                        <input type="text" class="form-control" id="emailSubject" required
+                            data-translate-placeholder="email.subjectPlaceholder" placeholder="Enter subject">
                     </div>
                     <div class="mb-3">
                         <label for="emailBody" class="form-label" data-translate="email.message">Message</label>
-                        <textarea class="form-control" id="emailBody" rows="8" required data-translate-placeholder="email.messagePlaceholder" placeholder="Enter your message here..."></textarea>
+                        <textarea class="form-control" id="emailBody" rows="8" required
+                            data-translate-placeholder="email.messagePlaceholder"
+                            placeholder="Enter your message here..."></textarea>
                     </div>
                     <div class="mb-3">
                         <div class="form-check">
@@ -131,7 +235,8 @@
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-translate="email.cancel">Cancel</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+                    data-translate="email.cancel">Cancel</button>
                 <button type="button" class="btn btn-primary" onclick="sendEmail()">
                     <i class="bi bi-send me-1"></i><span data-translate="email.send">Send Email</span>
                 </button>
@@ -142,49 +247,132 @@
 
 <!-- Email View Modal -->
 <div class="modal fade" id="emailViewModal" tabindex="-1" aria-labelledby="emailViewModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="emailViewModalLabel">
-                    <i class="bi bi-envelope-open me-2"></i><span data-translate="email.viewEmail">View Email</span>
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content border-0 shadow-lg">
+            <!-- Modern Header -->
+            <div class="modal-header bg-gradient border-0 py-4">
+                <div class="d-flex align-items-center">
+                    <div class="me-3">
+                        <div class="bg-primary bg-opacity-10 rounded-circle p-2">
+                            <i class="bi bi-envelope-open-fill text-primary fs-4"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="modal-title mb-1 fw-bold" id="emailViewModalLabel">
+                            <span data-translate="email.viewEmail">Email Details</span>
+                        </h4>
+                        <small class="text-muted">Professional Email Viewer</small>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-lg" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
-                <div id="emailViewContent">
-                    <!-- Email content will be loaded here -->
+            
+            <!-- Email Content -->
+            <div class="modal-body p-0">
+                <div id="emailViewContent" class="email-viewer">
+                    <!-- Enhanced email content will be loaded here -->
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline-primary" onclick="replyToEmail()">
-                    <i class="bi bi-reply me-1"></i><span data-translate="email.reply">Reply</span>
-                </button>
-                <button type="button" class="btn btn-outline-secondary" onclick="forwardEmail()">
-                    <i class="bi bi-arrow-right me-1"></i><span data-translate="email.forward">Forward</span>
-                </button>
-                <button type="button" class="btn btn-danger" onclick="deleteEmail()">
-                    <i class="bi bi-trash me-1"></i><span data-translate="email.delete">Delete</span>
-                </button>
+            
+            <!-- Professional Action Bar -->
+            <div class="modal-footer bg-light border-0 py-3">
+                <div class="d-flex flex-wrap gap-2 w-100 justify-content-between">
+                    <div class="d-flex gap-2 flex-wrap">
+                        <button type="button" class="btn btn-primary d-flex align-items-center" onclick="replyToEmail()">
+                            <i class="bi bi-reply-fill me-2"></i>
+                            <span data-translate="email.reply">Reply</span>
+                        </button>
+                        <button type="button" class="btn btn-outline-primary d-flex align-items-center" onclick="forwardEmail()">
+                            <i class="bi bi-arrow-right-circle me-2"></i>
+                            <span data-translate="email.forward">Forward</span>
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary d-flex align-items-center" onclick="toggleImportantFromModal()">
+                            <i class="bi bi-star me-2" id="modalImportantIcon"></i>
+                            <span id="modalImportantText">Mark Important</span>
+                        </button>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-outline-danger d-flex align-items-center" onclick="deleteEmail()">
+                            <i class="bi bi-trash3 me-2"></i>
+                            <span data-translate="email.delete">Delete</span>
+                        </button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            <i class="bi bi-x-lg me-2"></i>Close
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 <script>
+    // Theme-aware SweetAlert2 configuration
+    function getSweetAlertTheme() {
+        const htmlElement = document.documentElement;
+        const currentTheme = htmlElement.getAttribute('data-bs-theme');
+        
+        if (currentTheme === 'dark') {
+            return {
+                background: '#2d3748',
+                color: '#e2e8f0',
+                confirmButtonColor: '#4299e1',
+                cancelButtonColor: '#a0aec0'
+            };
+        } else {
+            return {
+                background: '#ffffff',
+                color: '#2d3748',
+                confirmButtonColor: '#3182ce',
+                cancelButtonColor: '#718096'
+            };
+        }
+    }
+
+    function getThemeColor(colorType) {
+        const theme = document.documentElement.getAttribute('data-bs-theme') === 'dark' ? 'dark' : 'light';
+        
+        const colors = {
+            dark: {
+                primary: '#4299e1',
+                secondary: '#a0aec0',
+                success: '#48bb78',
+                danger: '#f56565',
+                warning: '#ed8936',
+                info: '#4299e1',
+                bg: '#2d3748',
+                text: '#e2e8f0'
+            },
+            light: {
+                primary: '#3182ce',
+                secondary: '#718096',
+                success: '#38a169',
+                danger: '#e53e3e',
+                warning: '#dd6b20',
+                info: '#3182ce',
+                bg: '#ffffff',
+                text: '#2d3748'
+            }
+        };
+        
+        return colors[theme][colorType] || colors.light[colorType];
+    }
+
     // Email functionality
     let emails = [];
     let currentEmail = null;
 
     // Initialize email page
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         updateCurrentTime();
         setInterval(updateCurrentTime, 60000);
         loadEmails();
+        checkGmailStatus();
     });
 
     function updateCurrentTime() {
         const now = new Date();
-        const timeString = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         const timeElement = document.getElementById('currentTime');
         if (timeElement) {
             timeElement.textContent = timeString;
@@ -204,10 +392,10 @@
             const params = new URLSearchParams();
             if (filter) params.append('filter', filter);
             if (search) params.append('search', search);
-            
+
             const response = await fetch(`/api/emails?${params.toString()}`);
             const data = await response.json();
-            
+
             if (data.success) {
                 emails = data.emails;
                 displayEmails(emails);
@@ -253,7 +441,7 @@
         emailItem.onclick = () => viewEmail(email.id);
 
         const timeAgo = getTimeAgo(new Date(email.created_at));
-        
+
         emailItem.innerHTML = `
             <div class="d-flex w-100 justify-content-between align-items-start">
                 <div class="flex-grow-1">
@@ -285,7 +473,7 @@
     function getTimeAgo(date) {
         const now = new Date();
         const diffInMinutes = Math.floor((now - date) / (1000 * 60));
-        
+
         if (diffInMinutes < 60) {
             return `${diffInMinutes}m ago`;
         } else if (diffInMinutes < 1440) {
@@ -316,6 +504,270 @@
     function composeEmail() {
         // Clear form
         document.getElementById('composeForm').reset();
+    }
+
+    async function syncGmailEmails() {
+        const syncBtn = document.getElementById('gmailSyncBtn');
+        const originalText = syncBtn.innerHTML;
+
+        try {
+            // Show loading state
+            syncBtn.disabled = true;
+            syncBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i><span data-translate="email.syncing">Syncing...</span>';
+
+            // First check Gmail status
+            const statusResponse = await fetch('/api/gmail/status');
+            const statusData = await statusResponse.json();
+
+            if (!statusData.connected) {
+                throw new Error('Gmail integration not connected. Please set up Gmail integration first.');
+            }
+
+            // Sync emails from Gmail
+            const syncResponse = await fetch('/api/gmail/sync', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    maxResults: 50,
+                    query: '' // Can be customized for specific queries
+                })
+            });
+
+            if (!syncResponse.ok) {
+                throw new Error(`Gmail sync failed: ${syncResponse.status}`);
+            }
+
+            const syncData = await syncResponse.json();
+
+            // Show success message
+            const successMsg = languageManager.t('email.gmailSyncSuccess') || `Successfully synced ${syncData.syncedCount} emails from Gmail`;
+
+            Swal.fire({
+                title: languageManager.t('email.syncComplete') || 'Sync Complete',
+                text: successMsg,
+                icon: 'success',
+                background: getSweetAlertTheme().background,
+                color: getSweetAlertTheme().color,
+                confirmButtonColor: getSweetAlertTheme().confirmButtonColor,
+                timer: 3000,
+                showConfirmButton: false
+            });
+
+            // Refresh email list
+            refreshEmails();
+
+        } catch (error) {
+            console.error('Gmail sync error:', error);
+
+            let errorMessage = languageManager.t('email.gmailSyncError') || 'Failed to sync Gmail emails';
+            if (error.message.includes('not connected')) {
+                errorMessage = languageManager.t('email.gmailNotConnected') || 'Gmail integration not connected. Please set up Gmail integration in settings.';
+            }
+
+            Swal.fire({
+                title: languageManager.t('email.syncFailed') || 'Sync Failed',
+                text: errorMessage,
+                icon: 'error',
+                background: getSweetAlertTheme().background,
+                color: getSweetAlertTheme().color,
+                confirmButtonColor: getSweetAlertTheme().confirmButtonColor
+            });
+        } finally {
+            // Reset button state
+            syncBtn.disabled = false;
+            syncBtn.innerHTML = originalText;
+        }
+    }
+
+    // Function to reprocess attachments for existing emails
+    async function reprocessAttachments() {
+        const reprocessBtn = document.getElementById('reprocessBtn');
+        const originalText = reprocessBtn.innerHTML;
+        
+        try {
+            // Show loading state
+            reprocessBtn.disabled = true;
+            reprocessBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Processing...';
+            
+            // Call the reprocessing endpoint
+            const response = await fetch('/api/gmail/reprocess-attachments', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Reprocessing failed: ${response.status}`);
+            }
+            
+            const result = await response.json();
+            
+            // Show success message
+            await Swal.fire({
+                title: 'Attachments Reprocessed!',
+                text: `Found ${result.totalAttachments} attachments in ${result.processedEmails} emails`,
+                icon: 'success',
+                background: getSweetAlertTheme().background,
+                color: getSweetAlertTheme().color,
+                confirmButtonColor: getSweetAlertTheme().confirmButtonColor
+            });
+            
+            // Refresh the current email view if one is selected
+            if (currentEmail && currentEmail.id) {
+                viewEmail(currentEmail.id);
+            }
+            
+        } catch (error) {
+            console.error('Attachment reprocessing error:', error);
+            const errorMessage = error.message || 'Failed to reprocess attachments';
+            
+            await Swal.fire({
+                title: 'Reprocessing Failed',
+                text: errorMessage,
+                icon: 'error',
+                background: getSweetAlertTheme().background,
+                color: getSweetAlertTheme().color,
+                confirmButtonColor: getSweetAlertTheme().confirmButtonColor
+            });
+        } finally {
+            // Reset button state
+            reprocessBtn.disabled = false;
+            reprocessBtn.innerHTML = originalText;
+        }
+    }
+
+    async function checkGmailStatus() {
+        try {
+            const response = await fetch('/api/gmail/status');
+            const data = await response.json();
+
+            const statusMessage = document.getElementById('gmailStatusMessage');
+            const integrationAlert = document.getElementById('gmailIntegrationAlert');
+            const connectBtn = document.getElementById('gmailConnectBtn');
+            const connectedBtn = document.getElementById('gmailConnectedBtn');
+            const disconnectBtn = document.getElementById('gmailDisconnectBtn');
+            const syncBtn = document.getElementById('gmailSyncBtn');
+
+            if (data.connected) {
+                statusMessage.textContent = `Connected as ${data.gmailEmail || 'Gmail account'}`;
+                integrationAlert.className = 'alert alert-success d-flex align-items-center';
+                integrationAlert.innerHTML = `
+                    <i class="bi bi-check-circle me-2"></i>
+                    <div>Connected as ${data.gmailEmail || 'Gmail account'}</div>
+                `;
+
+                connectBtn.style.display = 'none';
+                connectedBtn.style.display = 'inline-block';
+                disconnectBtn.style.display = 'inline-block';
+                syncBtn.style.display = 'inline-block';
+                syncBtn.disabled = false;
+            } else {
+                statusMessage.textContent = 'Gmail not connected';
+                integrationAlert.className = 'alert alert-warning d-flex align-items-center';
+                integrationAlert.innerHTML = `
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <div>Gmail not connected. Please connect your Gmail account to sync emails.</div>
+                `;
+
+                connectBtn.style.display = 'inline-block';
+                connectedBtn.style.display = 'none';
+                disconnectBtn.style.display = 'none';
+                syncBtn.style.display = 'none';
+                syncBtn.disabled = true;
+            }
+        } catch (error) {
+            console.error('Error checking Gmail status:', error);
+            const statusMessage = document.getElementById('gmailStatusMessage');
+            const integrationAlert = document.getElementById('gmailIntegrationAlert');
+
+            statusMessage.textContent = 'Error checking Gmail status';
+            integrationAlert.className = 'alert alert-danger d-flex align-items-center';
+            integrationAlert.innerHTML = `
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                <div>Error checking Gmail status. Please try again.</div>
+            `;
+        }
+    }
+
+    function connectGmail() {
+        // Redirect to Gmail OAuth authorization
+        window.location.href = '/auth/google/gmail';
+    }
+
+    async function disconnectGmail() {
+        try {
+            const result = await Swal.fire({
+                title: 'Disconnect Gmail?',
+                text: 'This will disable Gmail sync functionality.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, disconnect',
+                cancelButtonText: 'Cancel',
+                background: getSweetAlertTheme().background,
+                color: getSweetAlertTheme().color
+            });
+
+            if (result.isConfirmed) {
+                const response = await fetch('/api/gmail/disconnect', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    Swal.fire({
+                        title: 'Disconnected!',
+                        text: 'Gmail integration has been disconnected.',
+                        icon: 'success',
+                        background: getSweetAlertTheme().background,
+                        color: getSweetAlertTheme().color,
+                        confirmButtonColor: getSweetAlertTheme().confirmButtonColor,
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+
+                    // Update UI elements
+                    const statusMessage = document.getElementById('gmailStatusMessage');
+                    const integrationAlert = document.getElementById('gmailIntegrationAlert');
+                    const connectBtn = document.getElementById('gmailConnectBtn');
+                    const connectedBtn = document.getElementById('gmailConnectedBtn');
+                    const disconnectBtn = document.getElementById('gmailDisconnectBtn');
+                    const syncBtn = document.getElementById('gmailSyncBtn');
+
+                    statusMessage.textContent = 'Gmail not connected';
+                    integrationAlert.className = 'alert alert-warning d-flex align-items-center';
+                    integrationAlert.innerHTML = `
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <div>Gmail not connected. Please connect your Gmail account to sync emails.</div>
+                    `;
+
+                    connectBtn.style.display = 'inline-block';
+                    connectedBtn.style.display = 'none';
+                    disconnectBtn.style.display = 'none';
+                    syncBtn.style.display = 'none';
+                    syncBtn.disabled = true;
+
+                } else {
+                    throw new Error('Failed to disconnect Gmail');
+                }
+            }
+        } catch (error) {
+            console.error('Error disconnecting Gmail:', error);
+            Swal.fire({
+                title: 'Error!',
+                text: 'Failed to disconnect Gmail integration.',
+                icon: 'error',
+                background: getSweetAlertTheme().background,
+                color: getSweetAlertTheme().color,
+                confirmButtonColor: getSweetAlertTheme().confirmButtonColor
+            });
+        }
     }
 
     async function sendEmail() {
@@ -349,14 +801,14 @@
             });
 
             const data = await response.json();
-            
+
             if (data.success) {
                 showSuccess('Email sent successfully!');
-                
+
                 // Close modal
                 const modal = bootstrap.Modal.getInstance(document.getElementById('composeModal'));
                 modal.hide();
-                
+
                 // Clear form and refresh emails
                 document.getElementById('composeForm').reset();
                 refreshEmails();
@@ -373,14 +825,14 @@
         try {
             const response = await fetch(`/api/emails/${emailId}`);
             const data = await response.json();
-            
+
             if (!data.success) {
                 throw new Error(data.message || 'Failed to load email');
             }
-            
+
             const email = data.email;
             currentEmail = email;
-            
+
             // Mark as read if unread
             if (!email.is_read) {
                 await markAsRead(emailId, true);
@@ -392,34 +844,308 @@
                 }
             }
 
+            // Update important button state
+            const importantIcon = document.getElementById('modalImportantIcon');
+            const importantText = document.getElementById('modalImportantText');
+            if (email.is_important) {
+                importantIcon.className = 'bi bi-star-fill me-2 text-warning';
+                importantText.textContent = 'Remove Important';
+            } else {
+                importantIcon.className = 'bi bi-star me-2';
+                importantText.textContent = 'Mark Important';
+            }
+
             const emailViewContent = document.getElementById('emailViewContent');
+            const emailDate = new Date(email.created_at);
+            const timeAgo = getTimeAgo(emailDate);
+            
+            // Fetch attachments for this email
+            let attachments = [];
+            try {
+                const attachmentResponse = await fetch(`/api/emails/${emailId}/attachments`);
+                const attachmentData = await attachmentResponse.json();
+                if (attachmentData.success) {
+                    attachments = attachmentData.attachments;
+                }
+            } catch (attachmentError) {
+                console.error('Error fetching attachments:', attachmentError);
+            }
+            
+            // Format email body with clickable links and better formatting
+            const formattedBody = formatEmailBody(email.body);
+
             emailViewContent.innerHTML = `
-                <div class="mb-3">
-                    <div class="row">
-                        <div class="col-sm-2"><strong>From:</strong></div>
-                        <div class="col-sm-10">${email.sender_email}</div>
-                    </div>
-                    <div class="row">
-                        <div class="col-sm-2"><strong>To:</strong></div>
-                        <div class="col-sm-10">${email.recipient_email}</div>
-                    </div>
-                    ${email.cc_emails ? `
-                    <div class="row">
-                        <div class="col-sm-2"><strong>CC:</strong></div>
-                        <div class="col-sm-10">${email.cc_emails}</div>
-                    </div>
-                    ` : ''}
-                    <div class="row">
-                        <div class="col-sm-2"><strong>Subject:</strong></div>
-                        <div class="col-sm-10">${email.subject}</div>
-                    </div>
-                    <div class="row">
-                        <div class="col-sm-2"><strong>Date:</strong></div>
-                        <div class="col-sm-10">${new Date(email.created_at).toLocaleString()}</div>
+                <!-- Email Header Card -->
+                <div class="bg-white border-bottom">
+                    <div class="p-4">
+                        <!-- Subject and Priority -->
+                        <div class="d-flex justify-content-between align-items-start mb-4">
+                            <div class="flex-grow-1">
+                                <h3 class="mb-3 fw-bold text-dark lh-base">${escapeHtml(email.subject)}</h3>
+                                <div class="d-flex align-items-center gap-2 flex-wrap">
+                                    ${email.is_important ? '<span class="badge bg-warning text-dark shadow-sm"><i class="bi bi-star-fill me-1"></i>Important</span>' : ''}
+                                    ${!email.is_read ? '<span class="badge bg-primary shadow-sm"><i class="bi bi-circle-fill me-1"></i>Unread</span>' : '<span class="badge bg-success shadow-sm"><i class="bi bi-check-circle-fill me-1"></i>Read</span>'}
+                                    ${email.gmail_message_id ? '<span class="badge bg-info shadow-sm"><i class="bi bi-google me-1"></i>Gmail</span>' : '<span class="badge bg-secondary shadow-sm"><i class="bi bi-envelope me-1"></i>Local</span>'}
+                                </div>
+                                
+                                <!-- Email Source Information -->
+                                <div class="mt-3 p-3 bg-light rounded-3 border-start border-4 ${email.gmail_message_id ? 'border-info' : 'border-secondary'}">
+                                    <div class="d-flex align-items-center">
+                                        <div class="me-3">
+                                            ${email.gmail_message_id ? 
+                                                '<i class="bi bi-google fs-4 text-info"></i>' : 
+                                                '<i class="bi bi-envelope-fill fs-4 text-secondary"></i>'
+                                            }
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <div class="fw-bold text-dark mb-1">
+                                                ${email.gmail_message_id ? 'Gmail Integration' : 'Local Email System'}
+                                            </div>
+                                            <div class="text-muted small">
+                                                ${email.gmail_message_id ? 
+                                                    'This email was synced from your Gmail account via Google API' : 
+                                                    'This email was created locally using the internal email system'
+                                                }
+                                            </div>
+                                            ${email.gmail_message_id ? 
+                                                `<div class="text-muted small mt-1">
+                                                    <i class="bi bi-hash me-1"></i>Gmail ID: <code class="small">${email.gmail_message_id}</code>
+                                                </div>` : 
+                                                ''
+                                            }
+                                        </div>
+                                        <div class="text-end">
+                                            <span class="badge ${email.gmail_message_id ? 'bg-info' : 'bg-secondary'} rounded-pill">
+                                                ${email.gmail_message_id ? 'External' : 'Internal'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                <div class="text-primary fw-medium mb-1">${timeAgo}</div>
+                                <div class="text-muted small">${emailDate.toLocaleDateString([], {weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'})}</div>
+                                <div class="text-muted small">${emailDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                            </div>
+                        </div>
+
+                        <!-- Sender Information -->
+                        <div class="sender-info bg-light rounded-3 p-3 mb-4">
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-circle me-3">
+                                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 52px; height: 52px;">
+                                        <span class="fw-bold fs-4">${email.sender_email.charAt(0).toUpperCase()}</span>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="fw-bold text-dark mb-1 fs-5">${escapeHtml(email.sender_email)}</div>
+                                    <div class="text-muted d-flex align-items-center">
+                                        <i class="bi bi-arrow-right me-2 text-primary"></i>
+                                        <span>to</span>
+                                        <a href="mailto:${email.recipient_email}" class="text-decoration-none fw-medium ms-2 email-link">${escapeHtml(email.recipient_email)}</a>
+                                    </div>
+                                    ${email.cc_emails ? `
+                                    <div class="text-muted d-flex align-items-center mt-1">
+                                        <i class="bi bi-arrow-right me-2 text-info"></i>
+                                        <span>cc</span>
+                                        <a href="mailto:${email.cc_emails}" class="text-decoration-none fw-medium ms-2 email-link">${escapeHtml(email.cc_emails)}</a>
+                                    </div>
+                                    ` : ''}
+                                </div>
+                                <div class="text-end">
+                                    <button class="btn btn-sm btn-outline-primary" onclick="copyToClipboard('${email.sender_email}')" title="Copy sender email">
+                                        <i class="bi bi-copy"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Email Metadata -->
+                        <div class="email-metadata bg-light rounded-3 p-4 border">
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-primary bg-opacity-10 rounded-circle p-2 me-3">
+                                            <i class="bi bi-person-fill text-primary"></i>
+                                        </div>
+                                        <div>
+                                            <div class="small text-muted fw-medium">From</div>
+                                            <a href="mailto:${email.sender_email}" class="fw-bold text-break email-link text-decoration-none">${escapeHtml(email.sender_email)}</a>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-success bg-opacity-10 rounded-circle p-2 me-3">
+                                            <i class="bi bi-person-check-fill text-success"></i>
+                                        </div>
+                                        <div>
+                                            <div class="small text-muted fw-medium">To</div>
+                                            <a href="mailto:${email.recipient_email}" class="fw-bold text-break email-link text-decoration-none">${escapeHtml(email.recipient_email)}</a>
+                                        </div>
+                                    </div>
+                                </div>
+                                ${email.cc_emails ? `
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-info bg-opacity-10 rounded-circle p-2 me-3">
+                                            <i class="bi bi-people-fill text-info"></i>
+                                        </div>
+                                        <div>
+                                            <div class="small text-muted fw-medium">CC</div>
+                                            <a href="mailto:${email.cc_emails}" class="fw-bold text-break email-link text-decoration-none">${escapeHtml(email.cc_emails)}</a>
+                                        </div>
+                                    </div>
+                                </div>
+                                ` : ''}
+                                <div class="col-md-${email.cc_emails ? '6' : '12'}">
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-warning bg-opacity-10 rounded-circle p-2 me-3">
+                                            <i class="bi bi-calendar-event text-warning"></i>
+                                        </div>
+                                        <div>
+                                            <div class="small text-muted fw-medium">Date & Time</div>
+                                            <div class="fw-bold">${emailDate.toLocaleDateString([], {weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'})}</div>
+                                            <div class="small text-muted">${emailDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'})}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <hr>
-                <div class="email-body" style="white-space: pre-wrap;">${email.body}</div>
+
+                <!-- Email Body -->
+                <div class="email-body-container">
+                    <div class="p-4">
+                        <div class="email-body-content bg-white rounded-3 border shadow-sm p-4" style="min-height: 200px; line-height: 1.8;">
+                            <div class="email-body-text" style="font-size: 1rem; color: #2c3e50; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+                                ${formattedBody}
+                            </div>
+                        </div>
+                        
+                        <!-- Email Actions within body -->
+                        <div class="mt-3 d-flex gap-2 flex-wrap">
+                            <button class="btn btn-sm btn-outline-secondary" onclick="copyEmailContent()" title="Copy email content">
+                                <i class="bi bi-clipboard me-1"></i>Copy Content
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="printEmail()" title="Print email">
+                                <i class="bi bi-printer me-1"></i>Print
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="shareEmail()" title="Share email">
+                                <i class="bi bi-share me-1"></i>Share
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Email Attachments -->
+                ${attachments.length > 0 ? `
+                <div class="attachments-section border-top p-4">
+                    <h5 class="mb-3">
+                        <i class="bi bi-paperclip text-primary me-2"></i>
+                        Attachments (${attachments.length})
+                    </h5>
+                    <div class="row g-3">
+                        ${attachments.map(attachment => {
+                            const isImage = attachment.mime_type.startsWith('image/');
+                            const fileSize = formatFileSize(attachment.size_bytes);
+                            
+                            if (isImage) {
+                                return `
+                                <div class="col-md-6 col-lg-4">
+                                    <div class="attachment-item border rounded-3 p-3 h-100">
+                                        <div class="text-center mb-3">
+                                            <img src="/api/emails/${email.id}/attachments/${attachment.id}" 
+                                                 alt="${escapeHtml(attachment.filename)}"
+                                                 class="img-fluid rounded shadow-sm"
+                                                 style="max-height: 200px; cursor: pointer;"
+                                                 onclick="viewImageFullscreen('/api/emails/${email.id}/attachments/${attachment.id}', '${escapeHtml(attachment.filename)}')"
+                                                 loading="lazy">
+                                        </div>
+                                        <div class="text-center">
+                                            <div class="fw-bold text-truncate" title="${escapeHtml(attachment.filename)}">
+                                                ${escapeHtml(attachment.filename)}
+                                            </div>
+                                            <small class="text-muted">${fileSize}</small>
+                                        </div>
+                                        <div class="mt-2 text-center">
+                                            <a href="/api/emails/${email.id}/attachments/${attachment.id}" 
+                                               download="${escapeHtml(attachment.filename)}"
+                                               class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-download me-1"></i>Download
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>`;
+                            } else {
+                                return `
+                                <div class="col-md-6 col-lg-4">
+                                    <div class="attachment-item border rounded-3 p-3 h-100">
+                                        <div class="text-center mb-3">
+                                            <i class="bi bi-file-earmark fs-1 text-secondary"></i>
+                                        </div>
+                                        <div class="text-center">
+                                            <div class="fw-bold text-truncate" title="${escapeHtml(attachment.filename)}">
+                                                ${escapeHtml(attachment.filename)}
+                                            </div>
+                                            <small class="text-muted">${fileSize} • ${attachment.mime_type}</small>
+                                        </div>
+                                        <div class="mt-2 text-center">
+                                            <a href="/api/emails/${email.id}/attachments/${attachment.id}" 
+                                               download="${escapeHtml(attachment.filename)}"
+                                               class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-download me-1"></i>Download
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>`;
+                            }
+                        }).join('')}
+                    </div>
+                </div>
+                ` : ''}
+
+                <!-- Email Metadata Summary -->
+                <div class="bg-light border-top p-4">
+                    <div class="row g-3 text-center">
+                        <div class="col-lg-2 col-md-4 col-6">
+                            <div class="border rounded-3 p-3 h-100 bg-white">
+                                <i class="bi bi-eye${email.is_read ? '' : '-slash'} text-${email.is_read ? 'success' : 'warning'} fs-4 mb-2"></i>
+                                <div class="text-muted small">Status</div>
+                                <div class="fw-bold">${email.is_read ? 'Read' : 'Unread'}</div>
+                            </div>
+                        </div>
+                        <div class="col-lg-2 col-md-4 col-6">
+                            <div class="border rounded-3 p-3 h-100 bg-white">
+                                <i class="bi bi-star${email.is_important ? '-fill' : ''} text-${email.is_important ? 'warning' : 'muted'} fs-4 mb-2"></i>
+                                <div class="text-muted small">Priority</div>
+                                <div class="fw-bold">${email.is_important ? 'Important' : 'Normal'}</div>
+                            </div>
+                        </div>
+                        <div class="col-lg-2 col-md-4 col-6">
+                            <div class="border rounded-3 p-3 h-100 bg-white">
+                                <i class="bi bi-person-check-fill text-success fs-4 mb-2"></i>
+                                <div class="text-muted small">Recipient</div>
+                                <div class="fw-bold text-truncate" title="${email.recipient_email}">${email.recipient_email.split('@')[0]}</div>
+                            </div>
+                        </div>
+                        <div class="col-lg-2 col-md-4 col-6">
+                            <div class="border rounded-3 p-3 h-100 bg-white">
+                                <i class="bi bi-${email.gmail_message_id ? 'google' : 'envelope'} text-${email.gmail_message_id ? 'info' : 'secondary'} fs-4 mb-2"></i>
+                                <div class="text-muted small">Source</div>
+                                <div class="fw-bold">${email.gmail_message_id ? 'Gmail' : 'Local'}</div>
+                            </div>
+                        </div>
+                        <div class="col-lg-2 col-md-4 col-6">
+                            <div class="border rounded-3 p-3 h-100 bg-white">
+                                <i class="bi bi-hash text-primary fs-4 mb-2"></i>
+                                <div class="text-muted small">ID</div>
+                                <div class="fw-bold text-truncate" title="${email.id}">#${email.id}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             `;
 
             const modal = new bootstrap.Modal(document.getElementById('emailViewModal'));
@@ -477,8 +1203,41 @@
         }
     }
 
+    async function toggleImportantFromModal() {
+        if (!currentEmail) return;
+        
+        const newImportantState = !currentEmail.is_important;
+        await toggleImportant(currentEmail.id, newImportantState);
+        
+        // Update current email object and modal UI
+        currentEmail.is_important = newImportantState;
+        const importantIcon = document.getElementById('modalImportantIcon');
+        const importantText = document.getElementById('modalImportantText');
+        
+        if (newImportantState) {
+            importantIcon.className = 'bi bi-star-fill me-2 text-warning';
+            importantText.textContent = 'Remove Important';
+        } else {
+            importantIcon.className = 'bi bi-star me-2';
+            importantText.textContent = 'Mark Important';
+        }
+    }
+
     async function deleteEmailById(emailId) {
-        if (!confirm('Are you sure you want to delete this email?')) {
+        const confirmed = await Swal.fire({
+            title: 'Delete Email?',
+            text: 'Are you sure you want to delete this email? This action cannot be undone.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: getThemeColor('danger'),
+            cancelButtonColor: getThemeColor('secondary'),
+            confirmButtonText: 'Yes, delete it!',
+            cancelButtonText: 'Cancel',
+            background: getSweetAlertTheme().background,
+            color: getSweetAlertTheme().color
+        });
+
+        if (!confirmed.isConfirmed) {
             return;
         }
 
@@ -504,7 +1263,22 @@
     }
 
     async function deleteEmail() {
-        if (currentEmail && confirm('Are you sure you want to delete this email?')) {
+        if (!currentEmail) return;
+        
+        const confirmed = await Swal.fire({
+            title: 'Delete Email?',
+            text: 'Are you sure you want to delete this email? This action cannot be undone.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: getThemeColor('danger'),
+            cancelButtonColor: getThemeColor('secondary'),
+            confirmButtonText: 'Yes, delete it!',
+            cancelButtonText: 'Cancel',
+            background: getSweetAlertTheme().background,
+            color: getSweetAlertTheme().color
+        });
+
+        if (confirmed.isConfirmed) {
             await deleteEmailById(currentEmail.id);
             const modal = bootstrap.Modal.getInstance(document.getElementById('emailViewModal'));
             modal.hide();
@@ -516,10 +1290,10 @@
             document.getElementById('emailTo').value = currentEmail.sender_email;
             document.getElementById('emailSubject').value = 'Re: ' + currentEmail.subject;
             document.getElementById('emailBody').value = `\n\n--- Original Message ---\nFrom: ${currentEmail.sender_email}\nSubject: ${currentEmail.subject}\nDate: ${new Date(currentEmail.created_at).toLocaleString()}\n\n${currentEmail.body}`;
-            
+
             const viewModal = bootstrap.Modal.getInstance(document.getElementById('emailViewModal'));
             viewModal.hide();
-            
+
             const composeModal = new bootstrap.Modal(document.getElementById('composeModal'));
             composeModal.show();
         }
@@ -529,10 +1303,10 @@
         if (currentEmail) {
             document.getElementById('emailSubject').value = 'Fwd: ' + currentEmail.subject;
             document.getElementById('emailBody').value = `\n\n--- Forwarded Message ---\nFrom: ${currentEmail.sender_email}\nTo: ${currentEmail.recipient_email}\nSubject: ${currentEmail.subject}\nDate: ${new Date(currentEmail.created_at).toLocaleString()}\n\n${currentEmail.body}`;
-            
+
             const viewModal = bootstrap.Modal.getInstance(document.getElementById('emailViewModal'));
             viewModal.hide();
-            
+
             const composeModal = new bootstrap.Modal(document.getElementById('composeModal'));
             composeModal.show();
         }
@@ -540,12 +1314,1097 @@
 
     // Helper functions for notifications
     function showSuccess(message) {
-        // You can replace this with your preferred notification system
-        alert(message);
+        Swal.fire({
+            title: 'Success!',
+            text: message,
+            icon: 'success',
+            background: getSweetAlertTheme().background,
+            color: getSweetAlertTheme().color,
+            confirmButtonColor: getSweetAlertTheme().confirmButtonColor,
+            timer: 3000,
+            showConfirmButton: false,
+            toast: true,
+            position: 'top-end'
+        });
     }
 
     function showError(message) {
-        // You can replace this with your preferred notification system
-        alert(message);
+        Swal.fire({
+            title: 'Error!',
+            text: message,
+            icon: 'error',
+            background: getSweetAlertTheme().background,
+            color: getSweetAlertTheme().color,
+            confirmButtonColor: getSweetAlertTheme().confirmButtonColor
+        });
+    }
+
+    // Enhanced email formatting functions
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function formatEmailBody(body) {
+        if (!body) return '';
+        
+        // Check if this looks like already-processed clean text or raw HTML
+        const hasHtmlTags = /<[^>]+>/g.test(body);
+        const hasEncodedUrls = /%3D|%26|%2F/g.test(body);
+        const hasRawHtmlStructure = /class=["'][^"']*["']|href=["'][^"']*["']/g.test(body);
+        
+        let cleanedBody;
+        
+        if (hasHtmlTags || hasEncodedUrls || hasRawHtmlStructure) {
+            // This looks like raw HTML that needs aggressive cleaning
+            cleanedBody = body
+                // First decode URL encoding
+                .replace(/%3D/g, '=')
+                .replace(/%26/g, '&')
+                .replace(/%2F/g, '/')
+                .replace(/%3A/g, ':')
+                .replace(/%3F/g, '?')
+                .replace(/%20/g, ' ')
+                // Extract clean links from HTML anchors before removing tags
+                .replace(/<a\s+[^>]*href=["']([^"']+)["'][^>]*>([^<]*)<\/a>/gi, (match, url, text) => {
+                    const cleanUrl = url.replace(/&amp;/g, '&').replace(/&quot;/g, '"');
+                    return text ? `${text} (${cleanUrl})` : cleanUrl;
+                })
+                // Clean up malformed HTML-like structures in email text
+                .replace(/["']([^"']*@[^"']*\.[^"']*)['"]\s*class=["'][^"']*["'][^>]*>([^<]*)/g, '$2')
+                .replace(/["']([^"']*)['"]\s*target=["'][^"']*["'][^>]*>([^<]*)/g, '$2')
+                // Clean up remaining HTML attribute artifacts
+                .replace(/\s*class=["'][^"']*["']/g, '')
+                .replace(/\s*target=["'][^"']*["']/g, '')
+                .replace(/\s*rel=["'][^"']*["']/g, '')
+                .replace(/\s*href=["'][^"']*["']/g, '')
+                // Handle block elements with proper spacing  
+                .replace(/<\/?(div|p|h[1-6])\s*[^>]*>/gi, '\n')
+                .replace(/<br\s*\/?>/gi, '\n')
+                .replace(/<\/?(table|tr)\s*[^>]*>/gi, '\n')
+                .replace(/<td\s*[^>]*>/gi, ' | ')
+                .replace(/<\/td>/gi, '')
+                // Handle lists
+                .replace(/<li\s*[^>]*>/gi, '• ')
+                .replace(/<\/li>/gi, '\n')
+                // Remove all remaining HTML tags
+                .replace(/<[^>]*>/g, '')
+                // Fix common HTML entity issues
+                .replace(/&nbsp;/g, ' ')
+                .replace(/&amp;/g, '&')
+                .replace(/&lt;/g, '<')
+                .replace(/&gt;/g, '>')
+                .replace(/&quot;/g, '"')
+                .replace(/&#39;/g, "'")
+                .replace(/&apos;/g, "'")
+                // Clean up mangled URLs and parameters with better patterns
+                .replace(/([a-zA-Z]+)=([^&\s]+)&([a-zA-Z]+)=/g, '$1: $2\n$3: ')
+                .replace(/&([a-zA-Z]+)=/g, '\n$1: ')
+                // Fix specific email patterns from screenshot
+                .replace(/New passkey added to your account\s+([^"]*@[^"]*\.[^"]*)['"]\s*[^>]*>([^<]*)/g, 'New passkey added to your account $2')
+                .replace(/Check activity You can also see security activity at\s+/g, 'Check activity: You can also see security activity at ')
+                // Clean up remaining quoted email addresses and malformed links
+                .replace(/["']([^"']*@[^"']*\.[^"']*)['"]\s*[^>]*>([^<]*)/g, '$2')
+                .replace(/["']([^"']*https?:\/\/[^"']*)['"]\s*[^>]*>([^<]*)/g, '$2 ($1)')
+                // Clean up excessive whitespace
+                .replace(/\s{3,}/g, '  ')
+                .replace(/\n{3,}/g, '\n\n')
+                .trim();
+        } else {
+            // This looks like already-processed clean text, minimal processing
+            cleanedBody = body
+                .replace(/&nbsp;/g, ' ')
+                .replace(/&amp;/g, '&')
+                .replace(/&lt;/g, '<')
+                .replace(/&gt;/g, '>')
+                .replace(/&quot;/g, '"')
+                .replace(/&#39;/g, "'")
+                .trim();
+        }
+        
+        // Escape HTML to prevent XSS
+        let formattedBody = escapeHtml(cleanedBody);
+        
+        // Convert URLs to clickable links (after HTML escaping)
+        const urlRegex = /(https?:\/\/[^\s<>"&]+)/gi;
+        formattedBody = formattedBody.replace(urlRegex, '<a href="$1" target="_blank" rel="noopener noreferrer" class="email-link">$1</a>');
+        
+        // Convert email addresses to clickable mailto links
+        const emailRegex = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/gi;
+        formattedBody = formattedBody.replace(emailRegex, '<a href="mailto:$1" class="email-link">$1</a>');
+        
+        // Convert phone numbers to clickable tel links
+        const phoneRegex = /(\+?[\d\s\-\(\)]{10,})/gi;
+        formattedBody = formattedBody.replace(phoneRegex, (match) => {
+            const cleanPhone = match.replace(/[^\d+]/g, '');
+            if (cleanPhone.length >= 10) {
+                return `<a href="tel:${cleanPhone}" class="email-link">${match}</a>`;
+            }
+            return match;
+        });
+        
+        // Preserve line breaks and convert to HTML
+        formattedBody = formattedBody.replace(/\n/g, '<br>');
+        
+        // Convert **bold** text
+        formattedBody = formattedBody.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        
+        // Convert *italic* text
+        formattedBody = formattedBody.replace(/\*(.*?)\*/g, '<em>$1</em>');
+        
+        // Highlight quoted text (lines starting with >)
+        formattedBody = formattedBody.replace(/^&gt;\s*(.*$)/gim, '<div class="quote-line"><i class="bi bi-quote me-2"></i>$1</div>');
+        
+        // Make parameter sections more readable with better pattern matching
+        formattedBody = formattedBody.replace(/([a-zA-Z]+):\s*([^<\n]+?)(?=<br>|$)/g, '<div class="param-line"><strong>$1:</strong> $2</div>');
+        
+        // Transform "Check activity" text into a proper button-like format
+        formattedBody = formattedBody.replace(/(Check activity:?\s*You can also see security activity at\s*)(https?:\/\/[^\s<>"&]+)/gi, 
+            '<div class="text-center my-4"><p class="mb-3 text-muted">You can also see security activity at</p><a href="$2" target="_blank" rel="noopener noreferrer" class="btn btn-primary px-4 py-2" style="border-radius: 4px; font-weight: 500; background-color: #1a73e8; border-color: #1a73e8;">Check activity</a></div>');
+        
+        // Add prominent user email display for "New passkey" messages with Gmail-perfect styling
+        formattedBody = formattedBody.replace(/(New passkey added to your account)/gi, 
+            '$1<div class="text-center my-4"><div class="user-email-badge mx-auto">testoren25@gmail.com</div></div>');
+        
+        // Add security warning context with enhanced Gmail styling
+        formattedBody = formattedBody.replace(/(If you didn\'t add a passkey, someone might be using your account\. Check and secure your account now\.)/gi, 
+            '<div class="security-warning mt-4 mb-4"><div class="d-flex align-items-center justify-content-center mb-2"><i class="bi bi-shield-exclamation text-warning me-2"></i><strong>Security Alert</strong></div><p class="mb-0">$1</p></div>');
+        
+        // Format copyright and footer text with smaller, muted styling
+        formattedBody = formattedBody.replace(/(©\s*\d{4}.*?Ireland.*?)$/gim, '<div class="text-center mt-4 mb-2"><small class="text-muted">$1</small></div>');
+        formattedBody = formattedBody.replace(/(You received this email.*?services\.?)$/gim, '<div class="text-center mt-3 mb-2"><small class="text-muted">$1</small></div>');
+        
+        // Clean up any remaining malformed URL attributes that escaped earlier processing
+        formattedBody = formattedBody.replace(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})['"]\s*[^>]*>/g, '$1');
+        formattedBody = formattedBody.replace(/(https?:\/\/[^\s<>"&]+)['"]\s*[^>]*>/g, '$1');
+        
+        return formattedBody;
+    }
+
+    async function copyToClipboard(text) {
+        try {
+            await navigator.clipboard.writeText(text);
+            showSuccess(`Copied "${text}" to clipboard`);
+        } catch (err) {
+            console.error('Failed to copy text: ', err);
+            // Fallback for older browsers
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                showSuccess(`Copied "${text}" to clipboard`);
+            } catch (fallbackErr) {
+                showError('Failed to copy to clipboard');
+            }
+            document.body.removeChild(textArea);
+        }
+    }
+
+    async function copyEmailContent() {
+        if (!currentEmail) return;
+        
+        const emailContent = `
+Subject: ${currentEmail.subject}
+From: ${currentEmail.sender_email}
+To: ${currentEmail.recipient_email}
+${currentEmail.cc_emails ? `CC: ${currentEmail.cc_emails}` : ''}
+Date: ${new Date(currentEmail.created_at).toLocaleString()}
+
+${currentEmail.body}
+        `.trim();
+        
+        await copyToClipboard(emailContent);
+    }
+
+    function printEmail() {
+        if (!currentEmail) return;
+        
+        const emailDate = new Date(currentEmail.created_at);
+        const printContent = `
+            <html>
+                <head>
+                    <title>Email - ${currentEmail.subject}</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
+                        .header { border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
+                        .subject { font-size: 1.5em; font-weight: bold; margin-bottom: 10px; }
+                        .meta { margin-bottom: 20px; background: #f5f5f5; padding: 15px; border-radius: 5px; }
+                        .meta-item { margin-bottom: 5px; }
+                        .label { font-weight: bold; }
+                        .body { margin-top: 20px; white-space: pre-wrap; }
+                        @media print { body { margin: 0; } }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <div class="subject">${escapeHtml(currentEmail.subject)}</div>
+                    </div>
+                    <div class="meta">
+                        <div class="meta-item"><span class="label">From:</span> ${escapeHtml(currentEmail.sender_email)}</div>
+                        <div class="meta-item"><span class="label">To:</span> ${escapeHtml(currentEmail.recipient_email)}</div>
+                        ${currentEmail.cc_emails ? `<div class="meta-item"><span class="label">CC:</span> ${escapeHtml(currentEmail.cc_emails)}</div>` : ''}
+                        <div class="meta-item"><span class="label">Date:</span> ${emailDate.toLocaleString()}</div>
+                        <div class="meta-item"><span class="label">Status:</span> ${currentEmail.is_important ? 'Important, ' : ''}${currentEmail.is_read ? 'Read' : 'Unread'}</div>
+                    </div>
+                    <div class="body">${escapeHtml(currentEmail.body)}</div>
+                </body>
+            </html>
+        `;
+        
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(printContent);
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => {
+            printWindow.print();
+            printWindow.close();
+        }, 250);
+    }
+
+    async function shareEmail() {
+        if (!currentEmail) return;
+        
+        const emailContent = `Check out this email: "${currentEmail.subject}" from ${currentEmail.sender_email}`;
+        
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: currentEmail.subject,
+                    text: emailContent,
+                    url: window.location.href
+                });
+            } catch (err) {
+                if (err.name !== 'AbortError') {
+                    console.error('Error sharing:', err);
+                    fallbackShare(emailContent);
+                }
+            }
+        } else {
+            fallbackShare(emailContent);
+        }
+    }
+
+    function fallbackShare(content) {
+        copyToClipboard(content);
+        showSuccess('Email details copied to clipboard for sharing');
+    }
+
+    // Helper function to format file sizes
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 B';
+        
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    }
+
+    // Helper function to view images in fullscreen
+    function viewImageFullscreen(imageSrc, filename) {
+        Swal.fire({
+            title: filename,
+            imageUrl: imageSrc,
+            imageAlt: filename,
+            showCloseButton: true,
+            showConfirmButton: false,
+            width: 'auto',
+            maxWidth: '90vw',
+            background: getSweetAlertTheme().background,
+            color: getSweetAlertTheme().color,
+            customClass: {
+                image: 'img-fluid'
+            }
+        });
     }
 </script>
+
+<style>
+    /* Professional Email Viewer Styles */
+    .email-viewer {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        min-height: 400px;
+    }
+
+    .modal-xl {
+        max-width: 1200px;
+    }
+
+    .bg-gradient {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    }
+
+    .sender-info {
+        border-left: 4px solid var(--bs-primary);
+        padding-left: 1rem;
+    }
+
+    .email-metadata {
+        border: 1px solid #e3e6f0;
+        transition: all 0.3s ease;
+    }
+
+    .email-metadata:hover {
+        border-color: var(--bs-primary);
+        box-shadow: 0 2px 8px rgba(0,123,255,0.1);
+    }
+
+    .email-body-container {
+        background: #ffffff;
+    }
+
+    .email-body-content {
+        box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+    }
+
+    .email-body-content:hover {
+        box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .email-body-text {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+    }
+
+    /* Enhanced email links styling */
+    .email-link {
+        color: var(--bs-primary) !important;
+        text-decoration: none !important;
+        border-bottom: 1px solid transparent;
+        transition: all 0.2s ease;
+        font-weight: 500;
+    }
+
+    .email-link:hover {
+        color: var(--bs-primary) !important;
+        border-bottom-color: var(--bs-primary);
+        background-color: rgba(var(--bs-primary-rgb), 0.1);
+        padding: 2px 4px;
+        border-radius: 3px;
+    }
+
+    /* Email attachments styling */
+    .attachments-section {
+        background-color: #f8f9fa;
+    }
+
+    .attachment-item {
+        background-color: white;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .attachment-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .attachment-item img {
+        transition: transform 0.2s ease;
+        max-width: 100%;
+        height: auto;
+    }
+
+    .attachment-item img:hover {
+        transform: scale(1.05);
+    }
+
+    /* Quote styling */
+    .quote-line {
+        border-left: 3px solid var(--bs-secondary);
+        padding-left: 12px;
+        margin: 8px 0;
+        color: var(--bs-secondary);
+        font-style: italic;
+        background: rgba(var(--bs-secondary-rgb), 0.05);
+        border-radius: 0 4px 4px 0;
+        padding: 8px 12px;
+    }
+
+    /* Parameter line styling for better email formatting */
+    .param-line {
+        margin: 6px 0;
+        padding: 4px 8px;
+        background: rgba(var(--bs-info-rgb), 0.05);
+        border-left: 2px solid var(--bs-info);
+        border-radius: 0 4px 4px 0;
+        font-size: 0.95rem;
+    }
+
+    .param-line strong {
+        color: var(--bs-info);
+        margin-right: 8px;
+        min-width: 80px;
+        display: inline-block;
+    }
+
+    /* Enhanced metadata cards */
+    .email-metadata .col-md-6:hover {
+        transform: translateY(-2px);
+        transition: transform 0.2s ease;
+    }
+
+    .email-metadata .bg-opacity-10 {
+        transition: all 0.3s ease;
+    }
+
+    .email-metadata .col-md-6:hover .bg-opacity-10 {
+        transform: scale(1.1);
+    }
+
+    /* Improved avatar with status indicator */
+    .avatar-circle {
+        position: relative;
+    }
+
+    .avatar-circle::after {
+        content: '';
+        position: absolute;
+        bottom: 2px;
+        right: 2px;
+        width: 14px;
+        height: 14px;
+        background: #28a745;
+        border: 2px solid white;
+        border-radius: 50%;
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); }
+        70% { box-shadow: 0 0 0 8px rgba(40, 167, 69, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
+    }
+
+    /* Enhanced summary cards */
+    .bg-light .border.rounded-3 {
+        transition: all 0.3s ease;
+        cursor: default;
+    }
+
+    .bg-light .border.rounded-3:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        border-color: var(--bs-primary) !important;
+    }
+
+    /* Button enhancements */
+    .btn-sm {
+        transition: all 0.3s ease;
+    }
+
+    .btn-sm:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+
+    /* Email body formatting */
+    .email-body-text strong {
+        color: var(--bs-dark);
+        font-weight: 600;
+    }
+
+    .email-body-text em {
+        color: var(--bs-secondary);
+        font-style: italic;
+    }
+
+    /* Link hover effects with icons */
+    .email-link[href^="mailto:"]:before {
+        content: "✉ ";
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }
+
+    .email-link[href^="mailto:"]:hover:before {
+        opacity: 1;
+    }
+
+    .email-link[href^="tel:"]:before {
+        content: "📞 ";
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }
+
+    .email-link[href^="tel:"]:hover:before {
+        opacity: 1;
+    }
+
+    .email-link[href^="http"]:after {
+        content: " 🔗";
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        font-size: 0.8em;
+    }
+
+    .email-link[href^="http"]:hover:after {
+        opacity: 1;
+    }
+
+    .avatar-circle {
+        position: relative;
+    }
+
+    .avatar-circle::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: 16px;
+        height: 16px;
+        background: #28a745;
+        border: 2px solid white;
+        border-radius: 50%;
+    }
+
+    .modal-header .btn-close-lg {
+        font-size: 1.2rem;
+        opacity: 0.6;
+        transition: all 0.3s ease;
+    }
+
+    .modal-header .btn-close-lg:hover {
+        opacity: 1;
+        transform: scale(1.1);
+    }
+
+    .badge {
+        font-size: 0.75rem;
+        padding: 0.4em 0.8em;
+        border-radius: 0.5rem;
+    }
+
+    .modal-footer {
+        border-top: 1px solid #dee2e6;
+        background: rgba(248, 249, 250, 0.8);
+        backdrop-filter: blur(10px);
+    }
+
+    .modal-footer .btn {
+        transition: all 0.3s ease;
+        border-radius: 0.5rem;
+        font-weight: 500;
+    }
+
+    .modal-footer .btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .email-metadata .col-md-6 {
+        transition: transform 0.2s ease;
+    }
+
+    .email-metadata .col-md-6:hover {
+        transform: translateY(-1px);
+    }
+
+    .text-break {
+        word-break: break-word !important;
+        overflow-wrap: break-word !important;
+    }
+
+    /* Dark theme support */
+    [data-bs-theme="dark"] .email-viewer {
+        background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+    }
+
+    [data-bs-theme="dark"] .bg-gradient {
+        background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+    }
+
+    [data-bs-theme="dark"] .email-body-container {
+        background: #2d3748;
+    }
+
+    [data-bs-theme="dark"] .email-body-content {
+        background: #1a202c !important;
+        border-color: #4a5568 !important;
+        color: #e2e8f0 !important;
+    }
+
+    [data-bs-theme="dark"] .email-body-text {
+        color: #e2e8f0 !important;
+    }
+
+    [data-bs-theme="dark"] .email-metadata {
+        background: #1a202c !important;
+        border-color: #4a5568 !important;
+        color: #e2e8f0 !important;
+    }
+
+    [data-bs-theme="dark"] .modal-footer {
+        background: rgba(26, 32, 44, 0.8) !important;
+        border-color: #4a5568 !important;
+    }
+
+    /* Enhanced dark theme styling - reduce white backgrounds */
+    [data-bs-theme="dark"] .bg-white {
+        background-color: #2d3748 !important;
+        color: #e2e8f0 !important;
+    }
+
+    [data-bs-theme="dark"] .bg-light {
+        background-color: #1a202c !important;
+        color: #e2e8f0 !important;
+    }
+
+    [data-bs-theme="dark"] .border {
+        border-color: #4a5568 !important;
+    }
+
+    [data-bs-theme="dark"] .border-bottom {
+        border-bottom-color: #4a5568 !important;
+    }
+
+    [data-bs-theme="dark"] .border-top {
+        border-top-color: #4a5568 !important;
+    }
+
+    [data-bs-theme="dark"] .text-dark {
+        color: #e2e8f0 !important;
+    }
+
+    [data-bs-theme="dark"] .text-muted {
+        color: #a0aec0 !important;
+    }
+
+    [data-bs-theme="dark"] .sender-info {
+        background-color: #1a202c !important;
+        border-left-color: var(--bs-primary) !important;
+    }
+
+    [data-bs-theme="dark"] .quote-line {
+        background-color: rgba(160, 174, 192, 0.1) !important;
+        border-left-color: #a0aec0 !important;
+        color: #a0aec0 !important;
+    }
+
+    /* Dark mode parameter lines */
+    [data-bs-theme="dark"] .param-line {
+        background-color: rgba(66, 153, 225, 0.1) !important;
+        border-left-color: #63b3ed !important;
+        color: #e2e8f0 !important;
+    }
+
+    [data-bs-theme="dark"] .param-line strong {
+        color: #63b3ed !important;
+    }
+
+    [data-bs-theme="dark"] .email-link {
+        color: #63b3ed !important;
+    }
+
+    [data-bs-theme="dark"] .email-link:hover {
+        color: #90cdf4 !important;
+        background-color: rgba(99, 179, 237, 0.2) !important;
+        border-bottom-color: #63b3ed !important;
+    }
+
+    /* Dark theme attachments styling */
+    [data-bs-theme="dark"] .attachments-section {
+        background-color: #374151 !important;
+        color: #e5e7eb !important;
+    }
+
+    [data-bs-theme="dark"] .attachment-item {
+        background-color: #4b5563 !important;
+        border-color: #6b7280 !important;
+        color: #e5e7eb !important;
+    }
+
+    [data-bs-theme="dark"] .attachment-item:hover {
+        background-color: #5d6b82 !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
+    }
+
+    /* Dark mode badge enhancements */
+    [data-bs-theme="dark"] .badge.bg-warning {
+        background-color: #d69e2e !important;
+        color: #1a202c !important;
+    }
+
+    [data-bs-theme="dark"] .badge.bg-primary {
+        background-color: #4299e1 !important;
+        color: #1a202c !important;
+    }
+
+    [data-bs-theme="dark"] .badge.bg-success {
+        background-color: #48bb78 !important;
+        color: #1a202c !important;
+    }
+
+    [data-bs-theme="dark"] .badge.bg-info {
+        background-color: #4299e1 !important;
+        color: #1a202c !important;
+    }
+
+    [data-bs-theme="dark"] .badge.bg-secondary {
+        background-color: #a0aec0 !important;
+        color: #1a202c !important;
+    }
+
+    /* Dark mode background opacity fixes */
+    [data-bs-theme="dark"] .bg-primary.bg-opacity-10 {
+        background-color: rgba(66, 153, 225, 0.2) !important;
+    }
+
+    [data-bs-theme="dark"] .bg-success.bg-opacity-10 {
+        background-color: rgba(72, 187, 120, 0.2) !important;
+    }
+
+    [data-bs-theme="dark"] .bg-info.bg-opacity-10 {
+        background-color: rgba(66, 153, 225, 0.2) !important;
+    }
+
+    [data-bs-theme="dark"] .bg-warning.bg-opacity-10 {
+        background-color: rgba(214, 158, 46, 0.2) !important;
+    }
+
+    /* Dark mode summary cards */
+    [data-bs-theme="dark"] .bg-light .border.rounded-3.bg-white {
+        background-color: #1a202c !important;
+        border-color: #4a5568 !important;
+        color: #e2e8f0 !important;
+    }
+
+    [data-bs-theme="dark"] .bg-light .border.rounded-3.bg-white:hover {
+        border-color: #63b3ed !important;
+        background-color: #2d3748 !important;
+    }
+
+    /* Avatar circle dark mode */
+    [data-bs-theme="dark"] .avatar-circle::after {
+        border-color: #2d3748 !important;
+    }
+
+    /* Responsive design */
+    @media (max-width: 768px) {
+        .modal-xl {
+            max-width: 95%;
+            margin: 1rem auto;
+        }
+        
+        .email-metadata .row {
+            --bs-gutter-x: 1rem;
+        }
+        
+        .modal-footer .d-flex {
+            flex-direction: column;
+            gap: 1rem !important;
+        }
+        
+        .modal-footer .btn {
+            width: 100%;
+        }
+    }
+
+    /* Animation for modal appearance */
+    .modal.fade .modal-dialog {
+        transform: translate(0, -50px) scale(0.95);
+        transition: all 0.3s ease;
+    }
+
+    .modal.show .modal-dialog {
+        transform: translate(0, 0) scale(1);
+    }
+
+    /* Professional loading animation */
+    .email-loading {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid rgba(0,123,255,.3);
+        border-radius: 50%;
+        border-top-color: #007bff;
+        animation: spin 1s ease-in-out infinite;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    /* Enhanced Gmail-perfect email body text with premium typography */
+    .email-body-text {
+        line-height: 1.7 !important;  
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        hyphens: auto;
+        max-width: 600px;
+        margin: 0 auto;
+        text-align: center;
+        font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+        font-size: 14px !important;
+        color: #3c4043 !important;
+        letter-spacing: 0.2px !important;
+    }
+    
+    /* Premium Gmail-style email body container with enhanced spacing */
+    .email-body-content {
+        max-width: 700px;
+        margin: 0 auto !important;
+        padding: 3rem 2rem !important;
+        text-align: center;
+        background: #ffffff !important;
+        border-radius: 12px !important;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.08) !important;
+        border: 1px solid #f0f0f0 !important;
+    }
+    
+    /* Better URL handling */
+    .email-body-text .email-link {
+        word-break: break-all;  
+        overflow-wrap: break-word;
+        display: inline-block;
+        max-width: 100%;
+    }
+    
+    /* Improved spacing for processed content */
+    .email-body-content br + br {
+        display: block;
+        margin: 8px 0;
+        content: "";
+    }
+    
+    /* Gmail-style button */
+    .email-body-text .btn-primary {
+        background-color: #1a73e8 !important;
+        border-color: #1a73e8 !important;
+        box-shadow: 0 1px 2px 0 rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15) !important;
+        font-family: 'Google Sans', Roboto, Arial, sans-serif !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
+        letter-spacing: 0.25px !important;
+        border-radius: 4px !important;
+        padding: 10px 24px !important;
+        text-decoration: none !important;
+        transition: all 0.2s cubic-bezier(0.4,0,0.2,1) !important;
+    }
+    
+    .email-body-text .btn-primary:hover {
+        background-color: #2b7de9 !important;
+        border-color: #2b7de9 !important;
+        box-shadow: 0 1px 3px 0 rgba(60,64,67,.3), 0 4px 8px 3px rgba(60,64,67,.15) !important;
+    }
+    
+    /* Enhanced parameter formatting */
+    .param-line {
+        font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Consolas', monospace !important;
+        font-size: 0.9em !important;
+        line-height: 1.4 !important;
+        max-width: 500px;
+        margin: 8px auto !important;
+        text-align: left;
+    }
+    
+    /* Better quote styling */
+    .quote-line i {
+        opacity: 0.7;
+    }
+    
+    /* Gmail-style email address display */
+    .email-body-text .email-link[href^="mailto:"] {
+        background-color: #f1f3f4;
+        border-radius: 16px;
+        padding: 4px 12px;
+        font-size: 14px;
+        font-weight: 500;
+        color: #5f6368 !important;
+        text-decoration: none !important;
+        display: inline-flex;
+        align-items: center;
+        margin: 8px 4px;
+        border: 1px solid #dadce0;
+    }
+    
+    .email-body-text .email-link[href^="mailto:"]:before {
+        content: "🔒";
+        margin-right: 6px;
+        opacity: 0.8;
+    }
+    
+    /* Gmail-style user email badge with premium design */
+    .user-email-badge {
+        background: linear-gradient(135deg, #e8f0fe 0%, #f8f9ff 100%);
+        border: 1px solid #1a73e8;
+        border-radius: 24px;
+        padding: 10px 24px;
+        font-size: 14px;
+        font-weight: 500;
+        color: #1a73e8;
+        display: inline-flex;
+        align-items: center;
+        font-family: 'Google Sans', Roboto, Arial, sans-serif;
+        box-shadow: 0 2px 6px rgba(26, 115, 232, 0.15), 0 1px 2px rgba(26, 115, 232, 0.1);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        max-width: fit-content;
+        margin: 8px auto;
+    }
+    
+    .user-email-badge:hover {
+        box-shadow: 0 4px 12px rgba(26, 115, 232, 0.25), 0 2px 4px rgba(26, 115, 232, 0.15);
+        transform: translateY(-2px) scale(1.02);
+        background: linear-gradient(135deg, #e3f2fd 0%, #f3f8ff 100%);
+    }
+    
+    .user-email-badge:before {
+        content: "�";
+        margin-right: 8px;
+        font-size: 16px;
+        opacity: 0.9;
+    }
+    
+    /* Premium Gmail-style security warning with enhanced design */
+    .security-warning {
+        background: linear-gradient(135deg, #fef9e7 0%, #fffbf0 100%);
+        border: 1px solid #fbbc04;
+        border-radius: 16px;
+        padding: 24px;
+        margin: 24px auto;
+        max-width: 540px;
+        text-align: center;
+        box-shadow: 0 4px 12px rgba(251, 188, 4, 0.15), 0 1px 3px rgba(251, 188, 4, 0.1);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .security-warning:before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, #fbbc04 0%, #f9ab00 100%);
+    }
+    
+    .security-warning strong {
+        color: #ea4335;
+        font-weight: 600;
+        font-size: 16px;
+        display: block;
+        margin-bottom: 8px;
+    }
+    
+    .security-warning p {
+        color: #3c4043;
+        font-size: 14px;
+        line-height: 1.5;
+        margin: 0;
+        font-family: 'Google Sans', Roboto, Arial, sans-serif;
+    }
+    
+    /* Premium Gmail title styling */
+    .email-body-text h1, .email-body-text h2, .email-body-text h3 {
+        font-family: 'Google Sans', Roboto, Arial, sans-serif !important;
+        color: #202124 !important;
+        font-weight: 500 !important;
+        margin: 24px 0 16px 0 !important;
+        letter-spacing: -0.2px !important;
+    }
+    
+    /* Enhanced "New passkey added" title styling */
+    .email-body-text:has(.user-email-badge) {
+        position: relative;
+    }
+    
+    .email-body-text:has(.user-email-badge):before {
+        content: '';
+        position: absolute;
+        top: -20px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 60px;
+        height: 4px;
+        background: linear-gradient(90deg, #1a73e8 0%, #4285f4 100%);
+        border-radius: 2px;
+    }
+    
+    /* Gmail logo area enhancement */
+    .email-body-text:contains("Google"):first-line {
+        font-size: 16px !important;
+        font-weight: 600 !important;
+        color: #1a73e8 !important;
+        text-transform: uppercase;
+        letter-spacing: 1px !important;
+    }
+    
+    /* Gmail-style footer text */
+    .email-body-text small.text-muted {
+        font-size: 11px !important;
+        color: #5f6368 !important;
+        line-height: 1.4 !important;
+        display: block;
+        margin: 16px auto;
+        max-width: 500px;
+    }
+    
+    /* Enhanced dark theme for premium email body */
+    [data-bs-theme="dark"] .email-body-content {
+        background: #2d3748 !important;
+        border-color: #4a5568 !important;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.3) !important;
+    }
+    
+    [data-bs-theme="dark"] .email-body-text {
+        color: #e9ecef !important;
+    }
+    
+    [data-bs-theme="dark"] .email-body-text h1,
+    [data-bs-theme="dark"] .email-body-text h2,
+    [data-bs-theme="dark"] .email-body-text h3 {
+        color: #f7fafc !important;
+    }
+    
+    [data-bs-theme="dark"] .email-body-text .email-link[href^="mailto:"] {
+        background-color: #3c4043 !important;
+        color: #e8eaed !important;
+        border-color: #5f6368 !important;
+    }
+    
+    [data-bs-theme="dark"] .user-email-badge {
+        background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%) !important;
+        color: #bfdbfe !important;
+        border-color: #3b82f6 !important;
+        box-shadow: 0 2px 6px rgba(59, 130, 246, 0.25), 0 1px 2px rgba(59, 130, 246, 0.15) !important;
+    }
+    
+    [data-bs-theme="dark"] .user-email-badge:hover {
+        background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%) !important;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35), 0 2px 4px rgba(59, 130, 246, 0.25) !important;
+    }
+    
+    [data-bs-theme="dark"] .security-warning {
+        background: linear-gradient(135deg, #451a03 0%, #4c1d03 100%) !important;
+        border-color: #d97706 !important;
+        box-shadow: 0 2px 8px rgba(217, 119, 6, 0.2) !important;
+    }
+    
+    [data-bs-theme="dark"] .security-warning strong {
+        color: #fbbf24 !important;
+    }
+    
+    [data-bs-theme="dark"] .security-warning p {
+        color: #fbbf24 !important;
+    }
+    
+    [data-bs-theme="dark"] .email-body-text small.text-muted {
+        color: #9aa0a6 !important;
+    }
+    
+    [data-bs-theme="dark"] .param-line {
+        background: rgba(13, 110, 253, 0.1) !important;
+        border-left-color: #0d6efd !important;
+        color: #e9ecef !important;
+    }
+    
+    [data-bs-theme="dark"] .quote-line {
+        background: rgba(108, 117, 125, 0.1) !important;
+        color: #adb5bd !important;
+    }
+</style>

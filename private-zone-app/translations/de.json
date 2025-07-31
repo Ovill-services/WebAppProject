@@ -280,6 +280,13 @@
         "viewEmail": "E-Mail anzeigen",
         "reply": "Antworten",
         "forward": "Weiterleiten",
-        "delete": "Löschen"
+        "delete": "Löschen",
+        "syncGmail": "Gmail Synchronisieren",
+        "syncing": "Synchronisiere...",
+        "gmailSyncSuccess": "E-Mails erfolgreich von Gmail synchronisiert!",
+        "syncComplete": "Synchronisation Abgeschlossen",
+        "gmailSyncError": "Fehler beim Synchronisieren von Gmail E-Mails",
+        "syncFailed": "Synchronisation Fehlgeschlagen",
+        "gmailNotConnected": "Gmail Integration nicht verbunden. Bitte richten Sie die Gmail Integration in den Einstellungen ein."
     }
 }

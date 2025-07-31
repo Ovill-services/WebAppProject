@@ -254,6 +254,8 @@
         "inbox": "Inbox",
         "refresh": "Refresh",
         "compose": "Compose",
+        "syncGmail": "Sync Gmail",
+        "syncing": "Syncing...",
         "allEmails": "All Emails",
         "unread": "Unread",
         "read": "Read",
@@ -280,6 +282,11 @@
         "viewEmail": "View Email",
         "reply": "Reply",
         "forward": "Forward",
-        "delete": "Delete"
+        "delete": "Delete",
+        "gmailSyncSuccess": "Successfully synced emails from Gmail!",
+        "syncComplete": "Sync Complete",
+        "gmailSyncError": "Failed to sync Gmail emails",
+        "syncFailed": "Sync Failed",
+        "gmailNotConnected": "Gmail integration not connected. Please set up Gmail integration in settings."
     }
 }
