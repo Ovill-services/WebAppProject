@@ -1019,7 +1019,7 @@
                 <div class="email-body-container">
                     <div class="p-4">
                         <div class="email-body-content bg-white rounded-3 border shadow-sm p-4" style="min-height: 200px; line-height: 1.8;">
-                            <div class="email-body-text" style="font-size: 1rem; color: #2c3e50; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+                            <div class="email-body-text">
                                 ${formattedBody}
                             </div>
                         </div>
@@ -1055,7 +1055,7 @@
                                 return `
                                 <div class="col-md-6 col-lg-4">
                                     <div class="attachment-item border rounded-3 p-3 h-100">
-                                        <div class="text-center mb-3">
+                                        <div class="mb-3">
                                             <img src="/api/emails/${email.id}/attachments/${attachment.id}" 
                                                  alt="${escapeHtml(attachment.filename)}"
                                                  class="img-fluid rounded shadow-sm"
@@ -1063,13 +1063,13 @@
                                                  onclick="viewImageFullscreen('/api/emails/${email.id}/attachments/${attachment.id}', '${escapeHtml(attachment.filename)}')"
                                                  loading="lazy">
                                         </div>
-                                        <div class="text-center">
+                                        <div>
                                             <div class="fw-bold text-truncate" title="${escapeHtml(attachment.filename)}">
                                                 ${escapeHtml(attachment.filename)}
                                             </div>
                                             <small class="text-muted">${fileSize}</small>
                                         </div>
-                                        <div class="mt-2 text-center">
+                                        <div class="mt-2">
                                             <a href="/api/emails/${email.id}/attachments/${attachment.id}" 
                                                download="${escapeHtml(attachment.filename)}"
                                                class="btn btn-sm btn-outline-primary">
@@ -1082,16 +1082,16 @@
                                 return `
                                 <div class="col-md-6 col-lg-4">
                                     <div class="attachment-item border rounded-3 p-3 h-100">
-                                        <div class="text-center mb-3">
+                                        <div class="mb-3">
                                             <i class="bi bi-file-earmark fs-1 text-secondary"></i>
                                         </div>
-                                        <div class="text-center">
+                                        <div>
                                             <div class="fw-bold text-truncate" title="${escapeHtml(attachment.filename)}">
                                                 ${escapeHtml(attachment.filename)}
                                             </div>
                                             <small class="text-muted">${fileSize} • ${attachment.mime_type}</small>
                                         </div>
-                                        <div class="mt-2 text-center">
+                                        <div class="mt-2">
                                             <a href="/api/emails/${email.id}/attachments/${attachment.id}" 
                                                download="${escapeHtml(attachment.filename)}"
                                                class="btn btn-sm btn-outline-primary">
@@ -1108,7 +1108,7 @@
 
                 <!-- Email Metadata Summary -->
                 <div class="bg-light border-top p-4">
-                    <div class="row g-3 text-center">
+                    <div class="row g-3">
                         <div class="col-lg-2 col-md-4 col-6">
                             <div class="border rounded-3 p-3 h-100 bg-white">
                                 <i class="bi bi-eye${email.is_read ? '' : '-slash'} text-${email.is_read ? 'success' : 'warning'} fs-4 mb-2"></i>
@@ -1349,48 +1349,14 @@
     function formatEmailBody(body) {
         if (!body) return '';
         
-        // Check if this looks like already-processed clean text or raw HTML
+        // Check if the body contains HTML content
         const hasHtmlTags = /<[^>]+>/g.test(body);
-        const hasEncodedUrls = /%3D|%26|%2F/g.test(body);
-        const hasRawHtmlStructure = /class=["'][^"']*["']|href=["'][^"']*["']/g.test(body);
         
-        let cleanedBody;
-        
-        if (hasHtmlTags || hasEncodedUrls || hasRawHtmlStructure) {
-            // This looks like raw HTML that needs aggressive cleaning
-            cleanedBody = body
-                // First decode URL encoding
-                .replace(/%3D/g, '=')
-                .replace(/%26/g, '&')
-                .replace(/%2F/g, '/')
-                .replace(/%3A/g, ':')
-                .replace(/%3F/g, '?')
-                .replace(/%20/g, ' ')
-                // Extract clean links from HTML anchors before removing tags
-                .replace(/<a\s+[^>]*href=["']([^"']+)["'][^>]*>([^<]*)<\/a>/gi, (match, url, text) => {
-                    const cleanUrl = url.replace(/&amp;/g, '&').replace(/&quot;/g, '"');
-                    return text ? `${text} (${cleanUrl})` : cleanUrl;
-                })
-                // Clean up malformed HTML-like structures in email text
-                .replace(/["']([^"']*@[^"']*\.[^"']*)['"]\s*class=["'][^"']*["'][^>]*>([^<]*)/g, '$2')
-                .replace(/["']([^"']*)['"]\s*target=["'][^"']*["'][^>]*>([^<]*)/g, '$2')
-                // Clean up remaining HTML attribute artifacts
-                .replace(/\s*class=["'][^"']*["']/g, '')
-                .replace(/\s*target=["'][^"']*["']/g, '')
-                .replace(/\s*rel=["'][^"']*["']/g, '')
-                .replace(/\s*href=["'][^"']*["']/g, '')
-                // Handle block elements with proper spacing  
-                .replace(/<\/?(div|p|h[1-6])\s*[^>]*>/gi, '\n')
-                .replace(/<br\s*\/?>/gi, '\n')
-                .replace(/<\/?(table|tr)\s*[^>]*>/gi, '\n')
-                .replace(/<td\s*[^>]*>/gi, ' | ')
-                .replace(/<\/td>/gi, '')
-                // Handle lists
-                .replace(/<li\s*[^>]*>/gi, '• ')
-                .replace(/<\/li>/gi, '\n')
-                // Remove all remaining HTML tags
-                .replace(/<[^>]*>/g, '')
-                // Fix common HTML entity issues
+        if (hasHtmlTags) {
+            // If it's HTML, preserve the original structure with minimal cleaning
+            // Only fix basic encoding issues, don't strip HTML
+            let formattedBody = body
+                // Fix common HTML entities
                 .replace(/&nbsp;/g, ' ')
                 .replace(/&amp;/g, '&')
                 .replace(/&lt;/g, '<')
@@ -1398,88 +1364,31 @@
                 .replace(/&quot;/g, '"')
                 .replace(/&#39;/g, "'")
                 .replace(/&apos;/g, "'")
-                // Clean up mangled URLs and parameters with better patterns
-                .replace(/([a-zA-Z]+)=([^&\s]+)&([a-zA-Z]+)=/g, '$1: $2\n$3: ')
-                .replace(/&([a-zA-Z]+)=/g, '\n$1: ')
-                // Fix specific email patterns from screenshot
-                .replace(/New passkey added to your account\s+([^"]*@[^"]*\.[^"]*)['"]\s*[^>]*>([^<]*)/g, 'New passkey added to your account $2')
-                .replace(/Check activity You can also see security activity at\s+/g, 'Check activity: You can also see security activity at ')
-                // Clean up remaining quoted email addresses and malformed links
-                .replace(/["']([^"']*@[^"']*\.[^"']*)['"]\s*[^>]*>([^<]*)/g, '$2')
-                .replace(/["']([^"']*https?:\/\/[^"']*)['"]\s*[^>]*>([^<]*)/g, '$2 ($1)')
-                // Clean up excessive whitespace
-                .replace(/\s{3,}/g, '  ')
-                .replace(/\n{3,}/g, '\n\n')
-                .trim();
+                // Decode basic URL encoding if present
+                .replace(/%20/g, ' ')
+                .replace(/%3A/g, ':')
+                .replace(/%2F/g, '/')
+                .replace(/%3F/g, '?')
+                .replace(/%3D/g, '=')
+                .replace(/%26/g, '&');
+            
+            // Return the HTML as-is to preserve buttons, cards, and styling
+            return formattedBody;
         } else {
-            // This looks like already-processed clean text, minimal processing
-            cleanedBody = body
-                .replace(/&nbsp;/g, ' ')
-                .replace(/&amp;/g, '&')
-                .replace(/&lt;/g, '<')
-                .replace(/&gt;/g, '>')
-                .replace(/&quot;/g, '"')
-                .replace(/&#39;/g, "'")
-                .trim();
+            // If it's plain text, escape it and preserve line breaks
+            let formattedBody = escapeHtml(body)
+                .replace(/\n/g, '<br>');
+            
+            // Make URLs clickable in plain text
+            const urlRegex = /(https?:\/\/[^\s<>"&]+)/gi;
+            formattedBody = formattedBody.replace(urlRegex, '<a href="$1" target="_blank" rel="noopener noreferrer" class="email-link">$1</a>');
+            
+            // Make email addresses clickable in plain text
+            const emailRegex = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/gi;
+            formattedBody = formattedBody.replace(emailRegex, '<a href="mailto:$1" class="email-link">$1</a>');
+            
+            return formattedBody;
         }
-        
-        // Escape HTML to prevent XSS
-        let formattedBody = escapeHtml(cleanedBody);
-        
-        // Convert URLs to clickable links (after HTML escaping)
-        const urlRegex = /(https?:\/\/[^\s<>"&]+)/gi;
-        formattedBody = formattedBody.replace(urlRegex, '<a href="$1" target="_blank" rel="noopener noreferrer" class="email-link">$1</a>');
-        
-        // Convert email addresses to clickable mailto links
-        const emailRegex = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/gi;
-        formattedBody = formattedBody.replace(emailRegex, '<a href="mailto:$1" class="email-link">$1</a>');
-        
-        // Convert phone numbers to clickable tel links
-        const phoneRegex = /(\+?[\d\s\-\(\)]{10,})/gi;
-        formattedBody = formattedBody.replace(phoneRegex, (match) => {
-            const cleanPhone = match.replace(/[^\d+]/g, '');
-            if (cleanPhone.length >= 10) {
-                return `<a href="tel:${cleanPhone}" class="email-link">${match}</a>`;
-            }
-            return match;
-        });
-        
-        // Preserve line breaks and convert to HTML
-        formattedBody = formattedBody.replace(/\n/g, '<br>');
-        
-        // Convert **bold** text
-        formattedBody = formattedBody.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-        
-        // Convert *italic* text
-        formattedBody = formattedBody.replace(/\*(.*?)\*/g, '<em>$1</em>');
-        
-        // Highlight quoted text (lines starting with >)
-        formattedBody = formattedBody.replace(/^&gt;\s*(.*$)/gim, '<div class="quote-line"><i class="bi bi-quote me-2"></i>$1</div>');
-        
-        // Make parameter sections more readable with better pattern matching
-        formattedBody = formattedBody.replace(/([a-zA-Z]+):\s*([^<\n]+?)(?=<br>|$)/g, '<div class="param-line"><strong>$1:</strong> $2</div>');
-        
-        // Transform "Check activity" text into a proper button-like format
-        formattedBody = formattedBody.replace(/(Check activity:?\s*You can also see security activity at\s*)(https?:\/\/[^\s<>"&]+)/gi, 
-            '<div class="text-center my-4"><p class="mb-3 text-muted">You can also see security activity at</p><a href="$2" target="_blank" rel="noopener noreferrer" class="btn btn-primary px-4 py-2" style="border-radius: 4px; font-weight: 500; background-color: #1a73e8; border-color: #1a73e8;">Check activity</a></div>');
-        
-        // Add prominent user email display for "New passkey" messages with Gmail-perfect styling
-        formattedBody = formattedBody.replace(/(New passkey added to your account)/gi, 
-            '$1<div class="text-center my-4"><div class="user-email-badge mx-auto">testoren25@gmail.com</div></div>');
-        
-        // Add security warning context with enhanced Gmail styling
-        formattedBody = formattedBody.replace(/(If you didn\'t add a passkey, someone might be using your account\. Check and secure your account now\.)/gi, 
-            '<div class="security-warning mt-4 mb-4"><div class="d-flex align-items-center justify-content-center mb-2"><i class="bi bi-shield-exclamation text-warning me-2"></i><strong>Security Alert</strong></div><p class="mb-0">$1</p></div>');
-        
-        // Format copyright and footer text with smaller, muted styling
-        formattedBody = formattedBody.replace(/(©\s*\d{4}.*?Ireland.*?)$/gim, '<div class="text-center mt-4 mb-2"><small class="text-muted">$1</small></div>');
-        formattedBody = formattedBody.replace(/(You received this email.*?services\.?)$/gim, '<div class="text-center mt-3 mb-2"><small class="text-muted">$1</small></div>');
-        
-        // Clean up any remaining malformed URL attributes that escaped earlier processing
-        formattedBody = formattedBody.replace(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})['"]\s*[^>]*>/g, '$1');
-        formattedBody = formattedBody.replace(/(https?:\/\/[^\s<>"&]+)['"]\s*[^>]*>/g, '$1');
-        
-        return formattedBody;
     }
 
     async function copyToClipboard(text) {
@@ -1932,6 +1841,39 @@ ${currentEmail.body}
         color: #e2e8f0 !important;
     }
 
+    /* Comprehensive dark mode text color fixes for Gmail content */
+    [data-bs-theme="dark"] .email-body-text * {
+        color: #e2e8f0 !important;
+    }
+
+    [data-bs-theme="dark"] .email-body-text p,
+    [data-bs-theme="dark"] .email-body-text div,
+    [data-bs-theme="dark"] .email-body-text span,
+    [data-bs-theme="dark"] .email-body-text td,
+    [data-bs-theme="dark"] .email-body-text th,
+    [data-bs-theme="dark"] .email-body-text h1,
+    [data-bs-theme="dark"] .email-body-text h2,
+    [data-bs-theme="dark"] .email-body-text h3,
+    [data-bs-theme="dark"] .email-body-text h4,
+    [data-bs-theme="dark"] .email-body-text h5,
+    [data-bs-theme="dark"] .email-body-text h6 {
+        color: #e2e8f0 !important;
+    }
+
+    /* Force light text for all Gmail content */
+    [data-bs-theme="dark"] .email-body-text [style*="color"] {
+        color: #e2e8f0 !important;
+    }
+
+    /* Ensure buttons remain visible in dark mode */
+    [data-bs-theme="dark"] .email-body-text button,
+    [data-bs-theme="dark"] .email-body-text [role="button"],
+    [data-bs-theme="dark"] .email-body-text a[style*="background"] {
+        background-color: #4299e1 !important;
+        color: #ffffff !important;
+        border-color: #4299e1 !important;
+    }
+
     [data-bs-theme="dark"] .email-metadata {
         background: #1a202c !important;
         border-color: #4a5568 !important;
@@ -2135,25 +2077,60 @@ ${currentEmail.body}
         word-wrap: break-word;
         overflow-wrap: break-word;
         hyphens: auto;
-        max-width: 600px;
-        margin: 0 auto;
-        text-align: center;
-        font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
-        font-size: 14px !important;
-        color: #3c4043 !important;
-        letter-spacing: 0.2px !important;
+        /* Allow original email fonts and colors to show through */
+    }
+
+    /* Preserve Gmail HTML styling and components */
+    .email-body-text table {
+        max-width: 100%;
+        border-collapse: collapse;
+        margin: 1rem 0;
+    }
+
+    .email-body-text img {
+        max-width: 100%;
+        height: auto;
+    }
+
+    .email-body-text .gmail-button,
+    .email-body-text [role="button"],
+    .email-body-text button,
+    .email-body-text a[style*="background"],
+    .email-body-text td[style*="background"] a {
+        display: inline-block !important;
+        padding: 12px 24px !important;
+        background-color: #1a73e8 !important;
+        color: white !important;
+        text-decoration: none !important;
+        border-radius: 4px !important;
+        border: none !important;
+        cursor: pointer !important;
+        font-weight: 500 !important;
+    }
+
+    .email-body-text .gmail-card,
+    .email-body-text [style*="border"],
+    .email-body-text div[style*="background"],
+    .email-body-text table[style*="background"] {
+        border-radius: 8px !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
+        margin: 1rem 0 !important;
+    }
+
+    /* Preserve original Gmail styling by being less aggressive with overrides */
+    .email-body-text * {
+        color: inherit;
+        background: inherit;
     }
     
     /* Premium Gmail-style email body container with enhanced spacing */
     .email-body-content {
-        max-width: 700px;
-        margin: 0 auto !important;
-        padding: 3rem 2rem !important;
-        text-align: center;
+        padding: 2rem !important;
         background: #ffffff !important;
         border-radius: 12px !important;
         box-shadow: 0 2px 12px rgba(0,0,0,0.08) !important;
         border: 1px solid #f0f0f0 !important;
+        /* Let the email content determine its own styling */
     }
     
     /* Better URL handling */
@@ -2197,9 +2174,7 @@ ${currentEmail.body}
         font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Consolas', monospace !important;
         font-size: 0.9em !important;
         line-height: 1.4 !important;
-        max-width: 500px;
-        margin: 8px auto !important;
-        text-align: left;
+        margin: 8px 0 !important;
     }
     
     /* Better quote styling */
@@ -2242,8 +2217,7 @@ ${currentEmail.body}
         font-family: 'Google Sans', Roboto, Arial, sans-serif;
         box-shadow: 0 2px 6px rgba(26, 115, 232, 0.15), 0 1px 2px rgba(26, 115, 232, 0.1);
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        max-width: fit-content;
-        margin: 8px auto;
+        margin: 8px 0;
     }
     
     .user-email-badge:hover {
@@ -2265,9 +2239,7 @@ ${currentEmail.body}
         border: 1px solid #fbbc04;
         border-radius: 16px;
         padding: 24px;
-        margin: 24px auto;
-        max-width: 540px;
-        text-align: center;
+        margin: 24px 0;
         box-shadow: 0 4px 12px rgba(251, 188, 4, 0.15), 0 1px 3px rgba(251, 188, 4, 0.1);
         position: relative;
         overflow: hidden;
@@ -2340,8 +2312,7 @@ ${currentEmail.body}
         color: #5f6368 !important;
         line-height: 1.4 !important;
         display: block;
-        margin: 16px auto;
-        max-width: 500px;
+        margin: 16px 0;
     }
     
     /* Enhanced dark theme for premium email body */
@@ -2365,6 +2336,39 @@ ${currentEmail.body}
         background-color: #3c4043 !important;
         color: #e8eaed !important;
         border-color: #5f6368 !important;
+    }
+
+    /* Gmail-specific dark mode fixes */
+    [data-bs-theme="dark"] .email-body-text table,
+    [data-bs-theme="dark"] .email-body-text tbody,
+    [data-bs-theme="dark"] .email-body-text tr,
+    [data-bs-theme="dark"] .email-body-text td {
+        background-color: transparent !important;
+        color: #e2e8f0 !important;
+    }
+
+    /* Override any inline Gmail styles that force dark text */
+    [data-bs-theme="dark"] .email-body-text [style*="color:#"],
+    [data-bs-theme="dark"] .email-body-text [style*="color: #"],
+    [data-bs-theme="dark"] .email-body-text [style*="color:rgb"],
+    [data-bs-theme="dark"] .email-body-text [style*="color: rgb"] {
+        color: #e2e8f0 !important;
+    }
+
+    /* Gmail card backgrounds in dark mode */
+    [data-bs-theme="dark"] .email-body-text [style*="background-color"],
+    [data-bs-theme="dark"] .email-body-text [style*="background"] {
+        background-color: #374151 !important;
+        color: #e2e8f0 !important;
+    }
+
+    /* Ensure readability for all text elements */
+    [data-bs-theme="dark"] .email-body-text font,
+    [data-bs-theme="dark"] .email-body-text strong,
+    [data-bs-theme="dark"] .email-body-text b,
+    [data-bs-theme="dark"] .email-body-text em,
+    [data-bs-theme="dark"] .email-body-text i {
+        color: #e2e8f0 !important;
     }
     
     [data-bs-theme="dark"] .user-email-badge {

@@ -13,7 +13,7 @@ export class GmailService {
             process.env.GOOGLE_CLIENT_SECRET,
             process.env.GOOGLE_REDIRECT_URI
         );
-        
+
         this.oauth2Client.setCredentials(credentials);
         this.gmail = google.gmail({ version: 'v1', auth: this.oauth2Client });
     }
@@ -25,11 +25,11 @@ export class GmailService {
                 process.env.GOOGLE_CLIENT_SECRET,
                 process.env.GOOGLE_REDIRECT_URI
             );
-            
+
             oauth2Client.setCredentials({
                 refresh_token: refreshToken
             });
-            
+
             const { credentials } = await oauth2Client.refreshAccessToken();
             return credentials;
         } catch (error) {
@@ -58,6 +58,11 @@ export class GmailService {
                         format: 'full'
                     });
 
+                    const messageStructure = JSON.parse(JSON.stringify(messageDetail, (key, value) => {
+                        if (key === 'data') return undefined;
+                        return value;
+                    }));
+                    console.log('Fetched message structure:', messageStructure);
                     const emailData = this.parseEmailData(messageDetail.data);
                     detailedMessages.push(emailData);
                 } catch (error) {
@@ -99,12 +104,12 @@ export class GmailService {
         let body = '';
         let htmlBody = '';
         const attachments = [];
-        
+
         const extractContent = (payload, parentContentId = null) => {
             // Handle attachments - check for filename or attachmentId
-            if ((payload.filename && payload.filename.length > 0) || 
+            if ((payload.filename && payload.filename.length > 0) ||
                 (payload.body && payload.body.attachmentId)) {
-                
+
                 const attachment = {
                     filename: payload.filename || 'unnamed_attachment',
                     mimeType: payload.mimeType || 'application/octet-stream',
@@ -118,11 +123,11 @@ export class GmailService {
                 if (payload.headers) {
                     const contentIdHeader = payload.headers.find(h => h.name.toLowerCase() === 'content-id');
                     const contentDispositionHeader = payload.headers.find(h => h.name.toLowerCase() === 'content-disposition');
-                    
+
                     if (contentIdHeader) {
                         attachment.contentId = contentIdHeader.value;
                     }
-                    
+
                     if (contentDispositionHeader && contentDispositionHeader.value.toLowerCase().includes('inline')) {
                         attachment.isInline = true;
                     }
@@ -135,7 +140,11 @@ export class GmailService {
 
             // Handle body content
             if (payload.body && payload.body.data) {
-                const content = Buffer.from(payload.body.data, 'base64').toString();
+                let base64EncodedString = payload.body.data
+                    .replace(/-/g, '+')
+                    .replace(/_/g, '/');
+                const content = Buffer.from(base64EncodedString, 'base64').toString();
+                console.log(`Extracted body content: ${content} characters`);
                 if (payload.mimeType === 'text/plain') {
                     body = content;
                 } else if (payload.mimeType === 'text/html') {
@@ -143,7 +152,7 @@ export class GmailService {
                 }
                 return;
             }
-            
+
             // Process nested parts
             if (payload.parts) {
                 for (const part of payload.parts) {
@@ -154,35 +163,19 @@ export class GmailService {
 
         extractContent(messageData.payload);
 
-        // Use plain text body, or convert HTML to text if no plain text available
-        let finalBody = body;
-        if (!finalBody && htmlBody) {
-            // More aggressive HTML to text conversion for complex emails
+        // Prefer HTML content for rich display, fallback to plain text
+        let finalBody = htmlBody || body;
+        
+        // If we only have plain text, use it as is
+        if (!htmlBody && body) {
+            finalBody = body;
+        }
+        
+        // If we have HTML content, preserve it for rich display
+        if (htmlBody) {
+            // Only do minimal cleanup for display issues, preserve HTML structure
             finalBody = htmlBody
-                // First decode URL encoding
-                .replace(/%3D/g, '=')
-                .replace(/%26/g, '&')
-                .replace(/%2F/g, '/')
-                .replace(/%3A/g, ':')
-                .replace(/%3F/g, '?')
-                // Extract clean links from HTML anchors
-                .replace(/<a\s+[^>]*href=["']([^"']+)["'][^>]*>([^<]*)<\/a>/gi, (match, url, text) => {
-                    // Clean up the URL
-                    const cleanUrl = url.replace(/&amp;/g, '&');
-                    return text ? `${text} (${cleanUrl})` : cleanUrl;
-                })
-                // Handle block elements with proper spacing  
-                .replace(/<\/?(div|p|h[1-6])\s*[^>]*>/gi, '\n')
-                .replace(/<br\s*\/?>/gi, '\n')
-                .replace(/<\/?(table|tr)\s*[^>]*>/gi, '\n')
-                .replace(/<td\s*[^>]*>/gi, ' | ')
-                .replace(/<\/td>/gi, '')
-                // Handle lists
-                .replace(/<li\s*[^>]*>/gi, '• ')
-                .replace(/<\/li>/gi, '\n')
-                // Remove all remaining HTML tags
-                .replace(/<[^>]*>/g, '')
-                // Decode HTML entities
+                // Fix common encoding issues but preserve HTML tags
                 .replace(/&nbsp;/g, ' ')
                 .replace(/&amp;/g, '&')
                 .replace(/&lt;/g, '<')
@@ -190,14 +183,13 @@ export class GmailService {
                 .replace(/&quot;/g, '"')
                 .replace(/&#39;/g, "'")
                 .replace(/&apos;/g, "'")
-                // Clean up mangled URLs and parameters
-                .replace(/([a-zA-Z]+)=([^&\s]+)&([a-zA-Z]+)=/g, '$1: $2\n$3: ')
-                .replace(/&([a-zA-Z]+)=/g, '\n$1: ')
-                // Clean up excessive whitespace and newlines
-                .replace(/\n\s*\n\s*\n/g, '\n\n')  // Multiple newlines to double
-                .replace(/[ \t]+/g, ' ')           // Multiple spaces to single
-                .replace(/^\s+|\s+$/gm, '')        // Trim each line
-                .trim();
+                // Decode basic URL encoding if present
+                .replace(/%20/g, ' ')
+                .replace(/%3A/g, ':')
+                .replace(/%2F/g, '/')
+                .replace(/%3F/g, '?')
+                .replace(/%3D/g, '=')
+                .replace(/%26/g, '&');
         }
 
         return {
@@ -222,7 +214,7 @@ export class GmailService {
     async sendMessage(emailData) {
         try {
             const { to, cc, bcc, subject, body } = emailData;
-            
+
             // Create the email message
             const message = [
                 `To: ${to}`,
@@ -296,7 +288,7 @@ export class GmailService {
             const response = await this.gmail.users.getProfile({
                 userId: 'me'
             });
-            
+
             return {
                 emailAddress: response.data.emailAddress,
                 messagesTotal: response.data.messagesTotal,
@@ -330,7 +322,7 @@ export class GmailService {
     isImageMimeType(mimeType) {
         const imageMimeTypes = [
             'image/jpeg',
-            'image/jpg', 
+            'image/jpg',
             'image/png',
             'image/gif',
             'image/webp',
