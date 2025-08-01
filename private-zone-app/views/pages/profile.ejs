@@ -1,0 +1,604 @@
+<div class="main-content">
+    <div class="mt-5 container">
+        <h1 class="mb-4" data-translate="profile.profileTitle">Profile</h1>
+        <div class="row mb-4">
+            <div class="col-lg-3 col-md-4 col-12 mb-4 mb-md-0">
+                <div class="align-items-center text-center">
+                    <!-- Profile Picture with Upload Button -->
+                    <div class="position-relative d-inline-block mb-3">
+                        <% if (user.avatar_url) { %>
+                            <img src="<%= user.avatar_url %>" class="profile-avatar-img mb-2 rounded-circle" id="profileAvatar" 
+                                 style="width: 150px; height: 150px; object-fit: cover; border: 3px solid #0D6EFD;">
+                        <% } else { %>
+                            <svg class="profile-avatar-svg mb-2" id="profileAvatar" xmlns="http://www.w3.org/2000/svg" height="150px"
+                                viewBox="0 -960 960 960" width="150px" style="fill: #0D6EFD;">
+                                <path
+                                    d="M222-255q63-44 125-67.5T480-346q71 0 133.5 23.5T739-255q44-54 62.5-109T820-480q0-145-97.5-242.5T480-820q-145 0-242.5 97.5T140-480q0 61 19 116t63 109Zm257.81-195q-57.81 0-97.31-39.69-39.5-39.68-39.5-97.5 0-57.81 39.69-97.31 39.68-39.5 97.5-39.5 57.81 0 97.31 39.69 39.5 39.68 39.5 97.5 0 57.81-39.69 97.31-39.68 39.5-97.5 39.5Zm.66 370Q398-80 325-111.5t-127.5-86q-54.5-54.5-86-127.27Q80-397.53 80-480.27 80-563 111.5-635.5q31.5-72.5 86-127t127.27-86q72.76-31.5 155.5-31.5 82.73 0 155.23 31.5 72.5 31.5 127 86t86 127.03q31.5 72.53 31.5 155T848.5-325q-31.5 73-86 127.5t-127.03 86Q562.94-80 480.47-80Zm-.47-60q55 0 107.5-16T691-212q-51-36-104-55t-107-19q-54 0-107 19t-104 55q51 40 103.5 56T480-140Zm0-370q34 0 55.5-21.5T557-587q0-34-21.5-55.5T480-664q-34 0-55.5 21.5T403-587q0 34 21.5 55.5T480-510Zm0-77Zm0 374Z" />
+                            </svg>
+                        <% } %>
+                        <button class="btn btn-primary btn-sm position-absolute bottom-0 end-0 rounded-circle p-2" 
+                                id="avatarUploadBtn" style="width: 35px; height: 35px;">
+                            <i class="bi bi-camera"></i>
+                        </button>
+                        <input type="file" id="avatarUpload" accept="image/*" class="d-none">
+                    </div>
+
+                    <h3 class="mb-1 mt-2"><strong>
+                            <%= user.name %>
+                    </strong></h3>
+
+                    <h6 class="text-muted mb-3">
+                        <%= user.email %>
+                    </h6>
+
+                </div>
+                <div class="text-center d-grid gap-2">
+                    <button id="editProfileBtn" class="btn btn-secondary" data-translate="profile.editProfile">Edit Profile</button>
+                    <button id="saveProfileBtn" class="btn btn-success d-none" data-translate="profile.saveChanges">Save Changes</button>
+                    <div class="d-none" id="editButtons">
+                        <button id="cancelEditBtn" class="btn btn-outline-secondary w-100 mb-2" data-translate="profile.cancel">Cancel</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Profile Information Section -->
+            <div class="col-lg-9 col-md-8 col-12">
+                <!-- View Mode -->
+                <div id="profileView" class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0" data-translate="profile.profileInformation">Profile Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-sm-3">
+                                <strong data-translate="profile.fullName">Full Name:</strong>
+                            </div>
+                            <div class="col-sm-9" id="displayName">
+                                <%= user.name %>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-sm-3">
+                                <strong data-translate="profile.email">Email:</strong>
+                            </div>
+                            <div class="col-sm-9" id="displayEmail">
+                                <%= user.email %>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-sm-3">
+                                <strong data-translate="profile.phone">Phone:</strong>
+                            </div>
+                            <div class="col-sm-9" id="displayPhone">
+                                <%= user.phone || 'Not provided' %>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-sm-3">
+                                <strong data-translate="profile.bio">Bio:</strong>
+                            </div>
+                            <div class="col-sm-9" id="displayBio">
+                                <%= user.bio || 'No bio provided' %>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-sm-3">
+                                <strong data-translate="profile.jobTitle">Job Title:</strong>
+                            </div>
+                            <div class="col-sm-9" id="displayJobTitle">
+                                <%= user.jobTitle || 'Not specified' %>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-sm-3">
+                                <strong data-translate="profile.company">Company:</strong>
+                            </div>
+                            <div class="col-sm-9" id="displayCompany">
+                                <%= user.company || 'Not specified' %>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-sm-3">
+                                <strong data-translate="profile.skills">Skills:</strong>
+                            </div>
+                            <div class="col-sm-9" id="displaySkills">
+                                <% if (user.skills && user.skills.length > 0) { %>
+                                    <% user.skills.split(',').forEach(skill => { %>
+                                        <span class="badge bg-primary me-1 mb-1"><%= skill.trim() %></span>
+                                    <% }); %>
+                                <% } else { %>
+                                    <span class="text-muted" data-translate="profile.noSkillsAdded">No skills added</span>
+                                <% } %>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Edit Mode Form -->
+                <div id="profileEdit" class="card d-none">
+                    <div class="card-header">
+                        <h5 class="mb-0" data-translate="profile.editProfileInformation">Edit Profile Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="profileForm">
+                            <div class="mb-3">
+                                <label for="editName" class="form-label" data-translate="profile.fullName">Full Name</label>
+                                <input type="text" class="form-control" id="editName" value="<%= user.name %>" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="editEmail" class="form-label" data-translate="profile.email">Email</label>
+                                <input type="email" class="form-control" id="editEmail" value="<%= user.email %>" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="editPhone" class="form-label" data-translate="profile.phone">Phone</label>
+                                <input type="tel" class="form-control" id="editPhone" value="<%= user.phone || '' %>">
+                            </div>
+                            <div class="mb-3">
+                                <label for="editBio" class="form-label" data-translate="profile.bio">Bio</label>
+                                <textarea class="form-control" id="editBio" rows="3"><%= user.bio || '' %></textarea>
+                            </div>
+                            
+                            <!-- Professional Information -->
+                            <h6 class="mt-4 mb-3 text-primary" data-translate="profile.professionalInformation">Professional Information</h6>
+                            <div class="mb-3">
+                                <label for="editJobTitle" class="form-label" data-translate="profile.jobTitle">Job Title</label>
+                                <input type="text" class="form-control" id="editJobTitle" value="<%= user.jobTitle || '' %>" data-translate="profile.jobTitlePlaceholder" placeholder="e.g., Software Developer">
+                            </div>
+                            <div class="mb-3">
+                                <label for="editCompany" class="form-label" data-translate="profile.company">Company</label>
+                                <input type="text" class="form-control" id="editCompany" value="<%= user.company || '' %>" data-translate="profile.companyPlaceholder" placeholder="e.g., Tech Corp">
+                            </div>
+                            <div class="mb-3">
+                                <label for="editSkills" class="form-label"><span data-translate="profile.skills">Skills</span> <small class="text-muted" data-translate="profile.skillsHelper">(comma separated)</small></label>
+                                <input type="text" class="form-control" id="editSkills" value="<%= user.skills || '' %>" data-translate="profile.skillsPlaceholder" placeholder="e.g., JavaScript, Python, React">
+                                <div class="form-text" data-translate="profile.skillsHelpText">Enter skills separated by commas</div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Theme Preferences Card -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-palette me-2"></i><span data-translate="preferences.preferences">Preferences</span></h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="themeSelect" class="form-label" data-translate="preferences.theme">Theme</label>
+                                    <select class="form-select" id="themeSelect">
+                                        <option value="light" data-translate="preferences.lightTheme">🌞 Light</option>
+                                        <option value="dark" data-translate="preferences.darkTheme">🌙 Dark</option>
+                                        <option value="auto" data-translate="preferences.autoTheme">🔄 Auto (System)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="languageSelect" class="form-label" data-translate="preferences.language">Language</label>
+                                    <select class="form-select" id="languageSelect">
+                                        <option value="en" data-translate="preferences.englishLang">🇺🇸 English</option>
+                                        <option value="es" data-translate="preferences.spanishLang">🇪🇸 Spanish</option>
+                                        <option value="fr" data-translate="preferences.frenchLang">🇫🇷 French</option>
+                                        <option value="de" data-translate="preferences.germanLang">🇩🇪 German</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <button class="btn btn-outline-primary btn-sm" id="savePreferencesBtn">
+                                <i class="bi bi-check-circle me-1"></i><span data-translate="preferences.savePreferences">Save Preferences</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        
+        <!-- Success/Error Messages -->
+        <div id="alertContainer"></div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const editBtn = document.getElementById('editProfileBtn');
+    const saveBtn = document.getElementById('saveProfileBtn');
+    const cancelBtn = document.getElementById('cancelEditBtn');
+    const profileView = document.getElementById('profileView');
+    const profileEdit = document.getElementById('profileEdit');
+    const alertContainer = document.getElementById('alertContainer');
+    
+    // Store original values
+    const originalValues = {
+        name: document.getElementById('editName').value,
+        email: document.getElementById('editEmail').value,
+        phone: document.getElementById('editPhone').value,
+        bio: document.getElementById('editBio').value,
+        jobTitle: document.getElementById('editJobTitle').value,
+        company: document.getElementById('editCompany').value,
+        skills: document.getElementById('editSkills').value
+    };
+    
+    // Switch to edit mode
+    editBtn.addEventListener('click', function() {
+        profileView.classList.add('d-none');
+        profileEdit.classList.remove('d-none');
+        editBtn.classList.add('d-none');
+        saveBtn.classList.remove('d-none');
+        document.getElementById('editButtons').classList.remove('d-none');
+    });
+    
+    // Cancel edit mode
+    cancelBtn.addEventListener('click', function() {
+        // Restore original values
+        document.getElementById('editName').value = originalValues.name;
+        document.getElementById('editEmail').value = originalValues.email;
+        document.getElementById('editPhone').value = originalValues.phone;
+        document.getElementById('editBio').value = originalValues.bio;
+        document.getElementById('editJobTitle').value = originalValues.jobTitle;
+        document.getElementById('editCompany').value = originalValues.company;
+        document.getElementById('editSkills').value = originalValues.skills;
+        
+        // Switch back to view mode
+        switchToViewMode();
+    });
+    
+    // Save changes
+    saveBtn.addEventListener('click', async function() {
+        const formData = {
+            name: document.getElementById('editName').value,
+            email: document.getElementById('editEmail').value,
+            phone: document.getElementById('editPhone').value,
+            bio: document.getElementById('editBio').value,
+            jobTitle: document.getElementById('editJobTitle').value,
+            company: document.getElementById('editCompany').value,
+            skills: document.getElementById('editSkills').value
+        };
+        
+        // Basic validation
+        if (!formData.name.trim() || !formData.email.trim()) {
+            showAlert(LanguageManager.t('messages.fillRequiredFields'), 'danger');
+            return;
+        }
+        
+        // Email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(formData.email)) {
+            showAlert(LanguageManager.t('messages.validEmailRequired'), 'danger');
+            return;
+        }
+        
+        // Simulate API call (replace with actual endpoint)
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
+        
+        // Make actual API call to save profile
+        try {
+            const response = await fetch('/api/profile', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                // Update display values
+                document.getElementById('displayName').textContent = formData.name;
+                document.getElementById('displayEmail').textContent = formData.email;
+                document.getElementById('displayPhone').textContent = formData.phone || 'Not provided';
+                document.getElementById('displayBio').textContent = formData.bio || 'No bio provided';
+                document.getElementById('displayJobTitle').textContent = formData.jobTitle || 'Not specified';
+                document.getElementById('displayCompany').textContent = formData.company || 'Not specified';
+                
+                // Update skills display
+                const skillsContainer = document.getElementById('displaySkills');
+                if (formData.skills && formData.skills.trim()) {
+                    const skillsArray = formData.skills.split(',').map(skill => skill.trim()).filter(skill => skill);
+                    skillsContainer.innerHTML = skillsArray.map(skill => 
+                        `<span class="badge bg-primary me-1 mb-1">${skill}</span>`
+                    ).join('');
+                } else {
+                    skillsContainer.innerHTML = '<span class="text-muted">No skills added</span>';
+                }
+                
+                // Update original values
+                originalValues.name = formData.name;
+                originalValues.email = formData.email;
+                originalValues.phone = formData.phone;
+                originalValues.bio = formData.bio;
+                originalValues.jobTitle = formData.jobTitle;
+                originalValues.company = formData.company;
+                originalValues.skills = formData.skills;
+                
+                // Update header display
+                document.querySelector('h3 strong').textContent = formData.name;
+                document.querySelector('h6.text-muted').textContent = formData.email;
+                
+                // Update sidebar user name if it exists
+                const sidebarUserName = document.querySelector('.dropdown-toggle strong');
+                if (sidebarUserName) {
+                    sidebarUserName.textContent = formData.name;
+                }
+                
+                // Show success message
+                showAlert(LanguageManager.t('messages.profileUpdated'), 'success');
+                
+                // Switch back to view mode
+                switchToViewMode();
+            } else {
+                showAlert(result.message || LanguageManager.t('messages.serverError'), 'danger');
+            }
+        } catch (error) {
+            console.error('Error updating profile:', error);
+            showAlert(LanguageManager.t('messages.serverError'), 'danger');
+        } finally {
+            // Reset button
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = 'Save Changes';
+        }
+    });
+    
+    function switchToViewMode() {
+        profileView.classList.remove('d-none');
+        profileEdit.classList.add('d-none');
+        editBtn.classList.remove('d-none');
+        saveBtn.classList.add('d-none');
+        document.getElementById('editButtons').classList.add('d-none');
+    }
+    
+    function showAlert(message, type) {
+        const alert = document.createElement('div');
+        alert.className = `alert alert-${type} alert-dismissible fade show`;
+        alert.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        alertContainer.innerHTML = '';
+        alertContainer.appendChild(alert);
+        
+        // Auto dismiss after 5 seconds
+        setTimeout(() => {
+            if (alert.parentNode) {
+                alert.remove();
+            }
+        }, 5000);
+    }
+    
+    // Avatar upload functionality
+    const avatarUploadBtn = document.getElementById('avatarUploadBtn');
+    const avatarUpload = document.getElementById('avatarUpload');
+    const profileAvatar = document.getElementById('profileAvatar');
+    
+    avatarUploadBtn.addEventListener('click', () => {
+        avatarUpload.click();
+    });
+    
+    avatarUpload.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            // Check file size (5MB limit)
+            if (file.size > 5 * 1024 * 1024) {
+                showAlert(LanguageManager.t('messages.fileSizeLimit'), 'danger');
+                return;
+            }
+
+            // Check file type
+            if (!file.type.startsWith('image/')) {
+                showAlert(LanguageManager.t('messages.imageFileRequired'), 'danger');
+                return;
+            }
+
+            // Show preview and upload
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                // Update the avatar preview immediately
+                const avatarContainer = document.getElementById('profileAvatar');
+                avatarContainer.outerHTML = `<img src="${e.target.result}" class="profile-avatar-img mb-2 rounded-circle" id="profileAvatar" style="width: 150px; height: 150px; object-fit: cover; border: 3px solid #0D6EFD;">`;
+                
+                // Also update the sidebar avatar if it exists
+                const sidebarAvatar = document.getElementById('sidebarAvatar');
+                if (sidebarAvatar) {
+                    sidebarAvatar.src = e.target.result;
+                }
+            };
+            reader.readAsDataURL(file);
+
+            // Upload the file
+            uploadAvatar(file);
+        }
+    });
+
+    // Function to upload avatar
+    async function uploadAvatar(file) {
+        const formData = new FormData();
+        formData.append('avatar', file);
+
+        // Show loading state
+        const uploadBtn = document.getElementById('avatarUploadBtn');
+        const originalHTML = uploadBtn.innerHTML;
+        uploadBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+        uploadBtn.disabled = true;
+
+        try {
+            const response = await fetch('/api/upload-avatar', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showAlert(LanguageManager.t('messages.avatarUploaded'), 'success');
+                // The preview is already shown in the profile page
+                // Also update sidebar avatar if the upload was successful and we have the URL
+                if (result.avatarUrl) {
+                    const sidebarAvatar = document.getElementById('sidebarAvatar');
+                    if (sidebarAvatar) {
+                        sidebarAvatar.src = result.avatarUrl;
+                    }
+                }
+            } else {
+                showAlert(result.message || LanguageManager.t('messages.avatarUploadError'), 'danger');
+                // Revert to original avatar on error
+                location.reload();
+            }
+        } catch (error) {
+            console.error('Error uploading avatar:', error);
+            showAlert(LanguageManager.t('messages.avatarUploadError'), 'danger');
+            // Revert to original avatar on error
+            location.reload();
+        } finally {
+            // Reset button
+            uploadBtn.innerHTML = originalHTML;
+            uploadBtn.disabled = false;
+        }
+    }
+    
+    // Theme preferences functionality
+    const themeSelect = document.getElementById('themeSelect');
+    const languageSelect = document.getElementById('languageSelect');
+    const savePreferencesBtn = document.getElementById('savePreferencesBtn');
+    
+    // Load saved preferences
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    const savedLanguage = localStorage.getItem('language') || 'en';
+    themeSelect.value = savedTheme;
+    languageSelect.value = savedLanguage;
+    
+    // Apply theme function
+    function applyTheme(theme) {
+        if (theme === 'dark') {
+            document.documentElement.setAttribute('data-bs-theme', 'dark');
+        } else if (theme === 'light') {
+            document.documentElement.setAttribute('data-bs-theme', 'light');
+        } else {
+            // Auto theme
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            document.documentElement.setAttribute('data-bs-theme', prefersDark ? 'dark' : 'light');
+        }
+    }
+    
+    // Theme change handler
+    themeSelect.addEventListener('change', function() {
+        const newTheme = this.value;
+        applyTheme(newTheme);
+        localStorage.setItem('theme', newTheme);
+        showAlert(LanguageManager.t('messages.themeChanged') + ' ' + newTheme, 'success');
+    });
+    
+    // Language change handler
+    languageSelect.addEventListener('change', async function() {
+        const newLanguage = this.value;
+        const success = await LanguageManager.setLanguage(newLanguage);
+        if (success) {
+            const langName = LanguageManager.t('preferences.' + newLanguage + 'Lang');
+            showAlert(LanguageManager.t('messages.languageChanged') + ' ' + langName, 'success');
+            
+            // Update dynamic content that uses translated text
+            updateDynamicTranslations();
+        }
+    });
+    
+    // Function to update dynamic content with translations
+    function updateDynamicTranslations() {
+        // Wait for translations to be loaded
+        if (!LanguageManager.isLoaded) {
+            setTimeout(updateDynamicTranslations, 100);
+            return;
+        }
+        
+        // Update display values that use translated text
+        const phoneDisplay = document.getElementById('displayPhone');
+        if (phoneDisplay && !phoneDisplay.textContent.trim()) {
+            phoneDisplay.textContent = LanguageManager.t('profile.notProvided');
+        }
+        
+        const bioDisplay = document.getElementById('displayBio');
+        if (bioDisplay && (!bioDisplay.textContent.trim() || bioDisplay.textContent === 'No bio provided')) {
+            bioDisplay.textContent = LanguageManager.t('profile.noBioProvided');
+        }
+        
+        const jobTitleDisplay = document.getElementById('displayJobTitle');
+        if (jobTitleDisplay && (!jobTitleDisplay.textContent.trim() || jobTitleDisplay.textContent === 'Not specified')) {
+            jobTitleDisplay.textContent = LanguageManager.t('profile.notSpecified');
+        }
+        
+        const companyDisplay = document.getElementById('displayCompany');
+        if (companyDisplay && (!companyDisplay.textContent.trim() || companyDisplay.textContent === 'Not specified')) {
+            companyDisplay.textContent = LanguageManager.t('profile.notSpecified');
+        }
+        
+        const skillsDisplay = document.getElementById('displaySkills');
+        const skillsPlaceholder = skillsDisplay.querySelector('.text-muted');
+        if (skillsPlaceholder && skillsPlaceholder.textContent === 'No skills added') {
+            skillsPlaceholder.textContent = LanguageManager.t('profile.noSkillsAdded');
+        }
+        
+        // Update form placeholders
+        document.getElementById('editJobTitle').placeholder = LanguageManager.t('profile.jobTitlePlaceholder');
+        document.getElementById('editCompany').placeholder = LanguageManager.t('profile.companyPlaceholder');
+        document.getElementById('editSkills').placeholder = LanguageManager.t('profile.skillsPlaceholder');
+    }
+    
+    // Save preferences handler
+    savePreferencesBtn.addEventListener('click', async function() {
+        const preferences = {
+            theme: themeSelect.value,
+            language: languageSelect.value,
+            emailNotifications: document.getElementById('emailNotifications')?.checked || true,
+            pushNotifications: document.getElementById('pushNotifications')?.checked || true
+        };
+        
+        // Save to localStorage
+        localStorage.setItem('theme', preferences.theme);
+        localStorage.setItem('language', preferences.language);
+        localStorage.setItem('emailNotifications', preferences.emailNotifications);
+        localStorage.setItem('pushNotifications', preferences.pushNotifications);
+        
+        // Apply changes
+        applyTheme(preferences.theme);
+        await LanguageManager.setLanguage(preferences.language);
+        updateDynamicTranslations();
+        
+        showAlert(LanguageManager.t('messages.preferencesUpdated'), 'success');
+    });
+    
+    // Load notification preferences (if elements exist)
+    if (document.getElementById('emailNotifications')) {
+        document.getElementById('emailNotifications').checked = 
+            localStorage.getItem('emailNotifications') !== 'false';
+    }
+    if (document.getElementById('pushNotifications')) {
+        document.getElementById('pushNotifications').checked = 
+            localStorage.getItem('pushNotifications') !== 'false';
+    }
+    
+    // Update alert messages to use translations
+    function showAlert(message, type) {
+        const alert = document.createElement('div');
+        alert.className = `alert alert-${type} alert-dismissible fade show`;
+        alert.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        alertContainer.innerHTML = '';
+        alertContainer.appendChild(alert);
+        
+        // Auto dismiss after 5 seconds
+        setTimeout(() => {
+            if (alert.parentNode) {
+                alert.remove();
+            }
+        }, 5000);
+    }
+    
+    // Initialize translations on page load
+    setTimeout(() => {
+        updateDynamicTranslations();
+    }, 100);
+});
+</script>

@@ -1,7 +1,0 @@
-CREATE TABLE reports (
-    id SERIAL PRIMARY KEY,
-    timestamp TIMESTAMP NOT NULL DEFAULT NOW(),
-    name VARCHAR(255) NOT NULL,
-    email VARCHAR(255) NOT NULL,
-    message TEXT NOT NULL
-);

@@ -1,0 +1,3 @@
+<%- include('components/header.ejs') %>
+<%- include(`pages/${page}.ejs`, { sweetalertScript: typeof sweetalertScript !== 'undefined' ? sweetalertScript : '' }) %>
+<%- include('components/footer.ejs') %>
