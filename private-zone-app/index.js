@@ -10,6 +10,7 @@ import fs from 'fs';
 import dotenv from 'dotenv';
 import fetch from 'node-fetch';
 import { google } from 'googleapis';
+import moment from 'moment';
 import { GoogleCalendarService } from './services/googleCalendarService.js';
 import { GmailService } from './services/gmailService.js';
 
@@ -30,20 +31,20 @@ const PgSession = pgSession(session);
 
 // Database connection
 const db = new pg.Client({
-  user: "postgres",
-  host: "localhost",
-  database: "Ovill",
-  password: "mysecretpassword",
-  port: 5433,
+  user: process.env.DB_USER || "postgres",
+  host: process.env.DB_HOST || "localhost",
+  database: process.env.DB_NAME || "Ovill",
+  password: process.env.DB_PASSWORD || "mysecretpassword",
+  port: process.env.DB_PORT || 5433,
 });
 
 // Create a pool for session store
 const sessionPool = new pg.Pool({
-  user: "postgres",
-  host: "localhost",
-  database: "Ovill",
-  password: "mysecretpassword",
-  port: 5433,
+  user: process.env.DB_USER || "postgres",
+  host: process.env.DB_HOST || "localhost",
+  database: process.env.DB_NAME || "Ovill",
+  password: process.env.DB_PASSWORD || "mysecretpassword",
+  port: process.env.DB_PORT || 5433,
 });
 
 const app = express();
@@ -56,12 +57,15 @@ app.use(session({
     pool: sessionPool,
     tableName: 'session'
   }),
-  secret: 'your-secret-key-change-this-in-production',
+  name: 'private-zone-session',
+  secret: process.env.SESSION_SECRET || 'your-secret-key-change-this-in-production',
   resave: false,
   saveUninitialized: false,
   cookie: { 
     secure: false,
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    httpOnly: true,
+    sameSite: 'lax'
   }
 }));
 
@@ -102,14 +106,60 @@ app.use(express.static('public'));
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-// Middleware to check authentication
-function requireAuth(req, res, next) {
+// Middleware to check authentication or validate token
+async function requireAuth(req, res, next) {
+    console.log('requireAuth called, URL:', req.originalUrl);
+    console.log('Session user:', req.session?.user);
+    console.log('Token from query:', req.query.token ? req.query.token.substring(0, 8) + '...' : 'none');
+    
+    // Check if user is already authenticated
     if (req.session && req.session.user) {
-        next();
-    } else {
-        // Redirect to public site login
-        res.redirect('http://localhost:3000/login');
+        console.log('User already authenticated via session');
+        return next();
     }
+    
+    // Check for authentication token from query parameter
+    const token = req.query.token;
+    if (token) {
+        console.log('Attempting token verification...');
+        try {
+            // Verify token and get user info
+            const result = await db.query(
+                'SELECT u.email, u.name, u.username FROM temp_auth_tokens t JOIN users u ON t.user_username = u.username WHERE t.token = $1 AND t.expires_at > NOW()',
+                [token]
+            );
+            
+            console.log('Token query result:', result.rows.length, 'rows');
+            
+            if (result.rows.length > 0) {
+                const user = result.rows[0];
+                console.log('Token verified for user:', user.username);
+                
+                // Set session
+                req.session.user = {
+                    email: user.username, // Use username as email for consistency
+                    name: user.name
+                };
+                
+                // Delete the used token
+                await db.query('DELETE FROM temp_auth_tokens WHERE token = $1', [token]);
+                
+                console.log('User authenticated via token:', req.session.user);
+                
+                // Redirect to clean URL without token
+                const cleanUrl = req.originalUrl.split('?')[0];
+                return res.redirect(cleanUrl);
+            } else {
+                console.log('Token not found or expired');
+            }
+        } catch (error) {
+            console.error('Token verification error:', error);
+        }
+    }
+    
+    console.log('Redirecting to login - no valid session or token');
+    // Redirect to public site login
+    res.redirect('http://localhost:3000/login');
 }
 
 // API Routes for Google Calendar (status and events only)
@@ -161,7 +211,7 @@ app.get('/api/google/calendar/events', requireAuth, async (req, res) => {
                 access_token = refreshedTokens.access_token;
                 
                 // Update tokens in database
-                const newExpiresAt = refreshedTokens.expiry_date ? new Date(refreshedTokens.expiry_date) : null;
+                const newExpiresAt = refreshedTokens.expiry_date ? new Date(refreshedTokens.expiry_date) : moment().add(1, 'hour').toDate();
                 await db.query(
                     'UPDATE google_calendar_integration SET access_token = $1, expires_at = $2 WHERE user_email = $3',
                     [refreshedTokens.access_token, newExpiresAt, req.session.user.email]
@@ -247,7 +297,7 @@ app.post('/calendar/create-event', requireAuth, async (req, res) => {
                 access_token = refreshedTokens.access_token;
                 
                 // Update tokens in database
-                const newExpiresAt = refreshedTokens.expiry_date ? new Date(refreshedTokens.expiry_date) : null;
+                const newExpiresAt = refreshedTokens.expiry_date ? new Date(refreshedTokens.expiry_date) : moment().add(1, 'hour').toDate();
                 await db.query(
                     'UPDATE google_calendar_integration SET access_token = $1, expires_at = $2 WHERE user_email = $3',
                     [refreshedTokens.access_token, newExpiresAt, req.session.user.email]
@@ -315,7 +365,7 @@ app.put('/calendar/update-event/:eventId', requireAuth, async (req, res) => {
                 access_token = refreshedTokens.access_token;
                 
                 // Update tokens in database
-                const newExpiresAt = refreshedTokens.expiry_date ? new Date(refreshedTokens.expiry_date) : null;
+                const newExpiresAt = refreshedTokens.expiry_date ? new Date(refreshedTokens.expiry_date) : moment().add(1, 'hour').toDate();
                 await db.query(
                     'UPDATE google_calendar_integration SET access_token = $1, expires_at = $2 WHERE user_email = $3',
                     [refreshedTokens.access_token, newExpiresAt, req.session.user.email]
@@ -382,7 +432,7 @@ app.delete('/calendar/delete-event/:eventId', requireAuth, async (req, res) => {
                 access_token = refreshedTokens.access_token;
                 
                 // Update tokens in database
-                const newExpiresAt = refreshedTokens.expiry_date ? new Date(refreshedTokens.expiry_date) : null;
+                const newExpiresAt = refreshedTokens.expiry_date ? new Date(refreshedTokens.expiry_date) : moment().add(1, 'hour').toDate();
                 await db.query(
                     'UPDATE google_calendar_integration SET access_token = $1, expires_at = $2 WHERE user_email = $3',
                     [refreshedTokens.access_token, newExpiresAt, req.session.user.email]
@@ -704,11 +754,17 @@ app.get('/auth/google/callback', async (req, res) => {
                 updated_at = CURRENT_TIMESTAMP
         `;
         
+        // Google OAuth tokens typically expire in 1 hour
+        // Use expiry_date from tokens if available, otherwise set to 1 hour from now
+        const expiresAt = tokens.expiry_date ? 
+            new Date(tokens.expiry_date) : 
+            moment().add(1, 'hour').toDate();
+        
         const values = [
             req.session.user.email,
             tokens.access_token,
             tokens.refresh_token,
-            tokens.expiry_date ? new Date(tokens.expiry_date) : null,
+            expiresAt,
             gmailEmail,
             true
         ];
@@ -767,7 +823,7 @@ app.get('/api/gmail/test', requireAuth, async (req, res) => {
                 access_token = refreshedTokens.access_token;
                 
                 // Update tokens in database
-                const newExpiresAt = refreshedTokens.expiry_date ? new Date(refreshedTokens.expiry_date) : null;
+                const newExpiresAt = refreshedTokens.expiry_date ? new Date(refreshedTokens.expiry_date) : moment().add(1, 'hour').toDate();
                 await db.query(
                     'UPDATE gmail_integration SET access_token = $1, expires_at = $2 WHERE user_email = $3',
                     [refreshedTokens.access_token, newExpiresAt, req.session.user.email]
@@ -876,7 +932,7 @@ async function processEmailAttachments(attachments, emailId, gmailMessageId, gma
             // Insert attachment record
             const insertAttachmentQuery = `
                 INSERT INTO email_attachments (
-                    email_id, filename, original_filename, mime_type, file_size, attachment_data, 
+                    email_id, filename, original_filename, mime_type, size_bytes, attachment_data, 
                     gmail_attachment_id, is_inline, content_id
                 ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
                 RETURNING id
@@ -927,7 +983,7 @@ app.post('/api/gmail/sync', requireAuth, async (req, res) => {
                 access_token = refreshedTokens.access_token;
                 
                 // Update tokens in database
-                const newExpiresAt = refreshedTokens.expiry_date ? new Date(refreshedTokens.expiry_date) : null;
+                const newExpiresAt = refreshedTokens.expiry_date ? new Date(refreshedTokens.expiry_date) : moment().add(1, 'hour').toDate();
                 await db.query(
                     'UPDATE gmail_integration SET access_token = $1, expires_at = $2 WHERE user_email = $3',
                     [refreshedTokens.access_token, newExpiresAt, req.session.user.email]
@@ -958,8 +1014,8 @@ app.post('/api/gmail/sync', requireAuth, async (req, res) => {
                         INSERT INTO emails (
                             user_email, sender_email, recipient_email, cc_emails, bcc_emails,
                             subject, body, is_read, is_important, email_type, 
-                            gmail_message_id, gmail_thread_id, gmail_labels, snippet, synced_from_gmail
-                        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+                            gmail_message_id, gmail_thread_id, gmail_labels, snippet, synced_from_gmail, received_at
+                        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
                         RETURNING *
                     `;
                     
@@ -978,7 +1034,8 @@ app.post('/api/gmail/sync', requireAuth, async (req, res) => {
                         message.threadId,
                         message.labels,
                         message.snippet,
-                        true
+                        true,
+                        message.date
                     ];
                     
                     const result = await db.query(insertQuery, values);
@@ -1156,7 +1213,7 @@ app.get('/api/emails/:emailId/attachments', requireAuth, async (req, res) => {
         
         // Get attachments
         const attachmentsResult = await db.query(
-            'SELECT id, filename, mime_type, file_size, is_inline, content_id FROM email_attachments WHERE email_id = $1 ORDER BY filename',
+            'SELECT id, filename, mime_type, size_bytes, is_inline, content_id FROM email_attachments WHERE email_id = $1 ORDER BY filename',
             [emailId]
         );
         
@@ -1193,7 +1250,7 @@ app.post('/api/gmail/reprocess-attachments', requireAuth, async (req, res) => {
                 access_token = refreshedTokens.access_token;
                 
                 // Update tokens in database
-                const newExpiresAt = refreshedTokens.expiry_date ? new Date(refreshedTokens.expiry_date) : null;
+                const newExpiresAt = refreshedTokens.expiry_date ? new Date(refreshedTokens.expiry_date) : moment().add(1, 'hour').toDate();
                 await db.query(
                     'UPDATE gmail_integration SET access_token = $1, expires_at = $2 WHERE user_email = $3',
                     [refreshedTokens.access_token, newExpiresAt, req.session.user.email]
@@ -1323,7 +1380,7 @@ app.get('/api/gmail/profile', requireAuth, async (req, res) => {
                 access_token = refreshedTokens.access_token;
                 
                 // Update tokens in database
-                const newExpiresAt = refreshedTokens.expiry_date ? new Date(refreshedTokens.expiry_date) : null;
+                const newExpiresAt = refreshedTokens.expiry_date ? new Date(refreshedTokens.expiry_date) : moment().add(1, 'hour').toDate();
                 await db.query(
                     'UPDATE gmail_integration SET access_token = $1, expires_at = $2 WHERE user_email = $3',
                     [refreshedTokens.access_token, newExpiresAt, req.session.user.email]
@@ -1380,7 +1437,7 @@ app.post('/api/gmail/send', requireAuth, async (req, res) => {
                 access_token = refreshedTokens.access_token;
                 
                 // Update tokens in database
-                const newExpiresAt = refreshedTokens.expiry_date ? new Date(refreshedTokens.expiry_date) : null;
+                const newExpiresAt = refreshedTokens.expiry_date ? new Date(refreshedTokens.expiry_date) : moment().add(1, 'hour').toDate();
                 await db.query(
                     'UPDATE gmail_integration SET access_token = $1, expires_at = $2 WHERE user_email = $3',
                     [refreshedTokens.access_token, newExpiresAt, req.session.user.email]
@@ -1400,8 +1457,8 @@ app.post('/api/gmail/send', requireAuth, async (req, res) => {
             INSERT INTO emails (
                 user_email, sender_email, recipient_email, cc_emails, bcc_emails,
                 subject, body, is_read, is_important, email_type, 
-                gmail_message_id, synced_from_gmail
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+                gmail_message_id, synced_from_gmail, received_at
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
             RETURNING *
         `;
         
@@ -1417,7 +1474,8 @@ app.post('/api/gmail/send', requireAuth, async (req, res) => {
             false,
             'sent',
             sentMessage.id,
-            true
+            true,
+            new Date() // Use current time for sent emails
         ];
         
         const result = await db.query(insertQuery, values);
@@ -1541,7 +1599,7 @@ app.get('/api/emails', requireAuth, async (req, res) => {
             params.push(`%${search}%`);
         }
         
-        query += ' ORDER BY created_at DESC';
+        query += ' ORDER BY COALESCE(received_at, created_at) DESC';
         
         const result = await db.query(query, params);
         res.json({
@@ -1943,11 +2001,11 @@ app.post('/api/tasks', requireAuth, async (req, res) => {
         const taskSource = validSources.includes(source) ? source : 'user';
         
         const query = `
-            INSERT INTO tasks (user_email, text, completed, source)
-            VALUES ($1, $2, false, $3)
+            INSERT INTO tasks (user_email, title, text, completed, source)
+            VALUES ($1, $2, $3, false, $4)
             RETURNING *
         `;
-        const values = [req.session.user.email, text.trim(), taskSource];
+        const values = [req.session.user.email, text.trim(), text.trim(), taskSource];
         const result = await db.query(query, values);
         
         res.json({
@@ -2191,9 +2249,10 @@ app.post('/api/google/tasks/sync', requireAuth, async (req, res) => {
             if (existingTask.rows.length === 0) {
                 // Insert new task
                 const insertResult = await db.query(
-                    'INSERT INTO tasks (user_email, text, completed, source, google_task_id, created_at) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+                    'INSERT INTO tasks (user_email, title, text, completed, source, google_task_id, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
                     [
                         req.session.user.email,
+                        googleTask.title,
                         googleTask.title,
                         googleTask.status === 'completed',
                         'google_tasks',
@@ -2205,8 +2264,9 @@ app.post('/api/google/tasks/sync', requireAuth, async (req, res) => {
             } else {
                 // Update existing task
                 const updateResult = await db.query(
-                    'UPDATE tasks SET text = $1, completed = $2, updated_at = $3 WHERE google_task_id = $4 AND user_email = $5 RETURNING *',
+                    'UPDATE tasks SET title = $1, text = $2, completed = $3, updated_at = $4 WHERE google_task_id = $5 AND user_email = $6 RETURNING *',
                     [
+                        googleTask.title,
                         googleTask.title,
                         googleTask.status === 'completed',
                         new Date(),
@@ -2311,6 +2371,15 @@ app.get('/logout', (req, res) => {
 // Default redirect to dashboard
 app.get('/', requireAuth, (req, res) => {
     res.redirect('/dashboard');
+});
+
+// Health check endpoint for Docker
+app.get('/health', (req, res) => {
+    res.status(200).json({ 
+        status: 'OK', 
+        timestamp: new Date().toISOString(),
+        service: 'private-zone-app'
+    });
 });
 
 // Database connection and server startup

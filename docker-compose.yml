@@ -1,0 +1,120 @@
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:7.0
+    container_name: mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: secretpassword
+      MONGO_INITDB_DATABASE: private_zone
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./mongodb-init:/docker-entrypoint-initdb.d
+    networks:
+      - app-network
+
+  # PostgreSQL Database (for transition period)
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: mysecretpassword
+      POSTGRES_DB: Ovill
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./sql-init:/docker-entrypoint-initdb.d
+    networks:
+      - app-network
+
+  # Private Zone App
+  private-zone-app:
+    build:
+      context: ./private-zone-app
+      dockerfile: Dockerfile
+    container_name: private-zone-app
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: mysecretpassword
+      DB_NAME: Ovill
+      MONGODB_URI: mongodb://admin:secretpassword@mongodb:27017/private_zone?authSource=admin
+      SESSION_SECRET: your-super-secret-session-key-change-in-production
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI}
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./private-zone-app/public/uploads:/app/public/uploads
+      - ./private-zone-app/translations:/app/translations
+    depends_on:
+      - postgres
+      - mongodb
+    networks:
+      - app-network
+
+  # Public Site App
+  public-site:
+    build:
+      context: ./public-site
+      dockerfile: Dockerfile
+    container_name: public-site
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: mysecretpassword
+      DB_NAME: Ovill
+      MONGODB_URI: mongodb://admin:secretpassword@mongodb:27017/private_zone?authSource=admin
+      SESSION_SECRET: your-super-secret-session-key-change-in-production
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI}
+      PRIVATE_ZONE_URL: http://localhost:3001
+    ports:
+      - "3000:3000"
+    depends_on:
+      - postgres
+      - mongodb
+    networks:
+      - app-network
+
+  # MongoDB Admin Interface (optional)
+  mongo-express:
+    image: mongo-express:1.0.0
+    container_name: mongo-express
+    restart: unless-stopped
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
+      ME_CONFIG_MONGODB_ADMINPASSWORD: secretpassword
+      ME_CONFIG_MONGODB_URL: mongodb://admin:secretpassword@mongodb:27017/
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: admin123
+    ports:
+      - "8081:8081"
+    depends_on:
+      - mongodb
+    networks:
+      - app-network
+
+volumes:
+  mongodb_data:
+    driver: local
+  postgres_data:
+    driver: local
+
+networks:
+  app-network:
+    driver: bridge

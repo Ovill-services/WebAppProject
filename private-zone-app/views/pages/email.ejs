@@ -440,7 +440,9 @@
         emailItem.className = `list-group-item list-group-item-action email-item ${!email.is_read ? 'border-start border-primary border-3' : ''}`;
         emailItem.onclick = () => viewEmail(email.id);
 
-        const timeAgo = getTimeAgo(new Date(email.created_at));
+        // Use received_at if available, otherwise fall back to created_at
+        const emailDate = email.received_at ? new Date(email.received_at) : new Date(email.created_at);
+        const timeAgo = getTimeAgo(emailDate);
 
         emailItem.innerHTML = `
             <div class="d-flex w-100 justify-content-between align-items-start">
@@ -472,9 +474,15 @@
 
     function getTimeAgo(date) {
         const now = new Date();
-        const diffInMinutes = Math.floor((now - date) / (1000 * 60));
+        const emailDate = new Date(date);
+        const diffInMinutes = Math.floor((now - emailDate) / (1000 * 60));
 
-        if (diffInMinutes < 60) {
+        // Handle edge cases where time might be negative (future dates) or very small
+        if (diffInMinutes < 0) {
+            return 'just now';
+        } else if (diffInMinutes === 0) {
+            return 'just now';
+        } else if (diffInMinutes < 60) {
             return `${diffInMinutes}m ago`;
         } else if (diffInMinutes < 1440) {
             return `${Math.floor(diffInMinutes / 60)}h ago`;
@@ -856,7 +864,8 @@
             }
 
             const emailViewContent = document.getElementById('emailViewContent');
-            const emailDate = new Date(email.created_at);
+            // Use received_at if available, otherwise fall back to created_at
+            const emailDate = email.received_at ? new Date(email.received_at) : new Date(email.created_at);
             const timeAgo = getTimeAgo(emailDate);
             
             // Fetch attachments for this email
@@ -1287,9 +1296,11 @@
 
     function replyToEmail() {
         if (currentEmail) {
+            // Use received_at if available, otherwise fall back to created_at
+            const emailDate = currentEmail.received_at ? new Date(currentEmail.received_at) : new Date(currentEmail.created_at);
             document.getElementById('emailTo').value = currentEmail.sender_email;
             document.getElementById('emailSubject').value = 'Re: ' + currentEmail.subject;
-            document.getElementById('emailBody').value = `\n\n--- Original Message ---\nFrom: ${currentEmail.sender_email}\nSubject: ${currentEmail.subject}\nDate: ${new Date(currentEmail.created_at).toLocaleString()}\n\n${currentEmail.body}`;
+            document.getElementById('emailBody').value = `\n\n--- Original Message ---\nFrom: ${currentEmail.sender_email}\nSubject: ${currentEmail.subject}\nDate: ${emailDate.toLocaleString()}\n\n${currentEmail.body}`;
 
             const viewModal = bootstrap.Modal.getInstance(document.getElementById('emailViewModal'));
             viewModal.hide();
@@ -1301,8 +1312,10 @@
 
     function forwardEmail() {
         if (currentEmail) {
+            // Use received_at if available, otherwise fall back to created_at
+            const emailDate = currentEmail.received_at ? new Date(currentEmail.received_at) : new Date(currentEmail.created_at);
             document.getElementById('emailSubject').value = 'Fwd: ' + currentEmail.subject;
-            document.getElementById('emailBody').value = `\n\n--- Forwarded Message ---\nFrom: ${currentEmail.sender_email}\nTo: ${currentEmail.recipient_email}\nSubject: ${currentEmail.subject}\nDate: ${new Date(currentEmail.created_at).toLocaleString()}\n\n${currentEmail.body}`;
+            document.getElementById('emailBody').value = `\n\n--- Forwarded Message ---\nFrom: ${currentEmail.sender_email}\nTo: ${currentEmail.recipient_email}\nSubject: ${currentEmail.subject}\nDate: ${emailDate.toLocaleString()}\n\n${currentEmail.body}`;
 
             const viewModal = bootstrap.Modal.getInstance(document.getElementById('emailViewModal'));
             viewModal.hide();
@@ -1416,12 +1429,14 @@
     async function copyEmailContent() {
         if (!currentEmail) return;
         
+        // Use received_at if available, otherwise fall back to created_at
+        const emailDate = currentEmail.received_at ? new Date(currentEmail.received_at) : new Date(currentEmail.created_at);
         const emailContent = `
 Subject: ${currentEmail.subject}
 From: ${currentEmail.sender_email}
 To: ${currentEmail.recipient_email}
 ${currentEmail.cc_emails ? `CC: ${currentEmail.cc_emails}` : ''}
-Date: ${new Date(currentEmail.created_at).toLocaleString()}
+Date: ${emailDate.toLocaleString()}
 
 ${currentEmail.body}
         `.trim();
@@ -1432,7 +1447,8 @@ ${currentEmail.body}
     function printEmail() {
         if (!currentEmail) return;
         
-        const emailDate = new Date(currentEmail.created_at);
+        // Use received_at if available, otherwise fall back to created_at
+        const emailDate = currentEmail.received_at ? new Date(currentEmail.received_at) : new Date(currentEmail.created_at);
         const printContent = `
             <html>
                 <head>

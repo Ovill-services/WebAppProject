@@ -1,3 +1,8 @@
 <%- include('components/header.ejs') %>
-<%- include(`pages/${page}.ejs`, { sweetalertScript: typeof sweetalertScript !== 'undefined' ? sweetalertScript : '' }) %>
+<%- include(`pages/${page}.ejs`, { 
+    sweetalertScript: typeof sweetalertScript !== 'undefined' ? sweetalertScript : '',
+    googleOAuthEnabled: typeof googleOAuthEnabled !== 'undefined' ? googleOAuthEnabled : false,
+    message: typeof message !== 'undefined' ? message : undefined,
+    method: typeof method !== 'undefined' ? method : 'GET'
+}) %>
 <%- include('components/footer.ejs') %>
