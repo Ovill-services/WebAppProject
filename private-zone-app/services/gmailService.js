@@ -58,11 +58,6 @@ export class GmailService {
                         format: 'full'
                     });
 
-                    const messageStructure = JSON.parse(JSON.stringify(messageDetail, (key, value) => {
-                        if (key === 'data') return undefined;
-                        return value;
-                    }));
-                    console.log('Fetched message structure:', messageStructure);
                     const emailData = this.parseEmailData(messageDetail.data);
                     detailedMessages.push(emailData);
                 } catch (error) {
@@ -134,7 +129,6 @@ export class GmailService {
                 }
 
                 attachments.push(attachment);
-                console.log(`Found attachment: ${attachment.filename} (${attachment.mimeType})`);
                 return;
             }
 
@@ -144,7 +138,6 @@ export class GmailService {
                     .replace(/-/g, '+')
                     .replace(/_/g, '/');
                 const content = Buffer.from(base64EncodedString, 'base64').toString();
-                console.log(`Extracted body content: ${content} characters`);
                 if (payload.mimeType === 'text/plain') {
                     body = content;
                 } else if (payload.mimeType === 'text/html') {
@@ -192,6 +185,27 @@ export class GmailService {
                 .replace(/%26/g, '&');
         }
 
+        // Get the actual email date from headers (when email was originally sent)
+        // Fall back to internalDate (when Gmail received it) if Date header is missing
+        const dateHeader = getHeader('Date');
+        let emailDate;
+        if (dateHeader) {
+            try {
+                emailDate = new Date(dateHeader);
+                // Validate that the parsed date is reasonable
+                if (isNaN(emailDate.getTime()) || emailDate.getTime() < 0) {
+                    console.log(`Invalid Date header "${dateHeader}", falling back to internalDate`);
+                    emailDate = new Date(parseInt(messageData.internalDate));
+                }
+            } catch (error) {
+                console.log(`Error parsing Date header "${dateHeader}", falling back to internalDate:`, error);
+                emailDate = new Date(parseInt(messageData.internalDate));
+            }
+        } else {
+            console.log('No Date header found, using internalDate');
+            emailDate = new Date(parseInt(messageData.internalDate));
+        }
+
         return {
             id: messageData.id,
             threadId: messageData.threadId,
@@ -202,7 +216,7 @@ export class GmailService {
             subject: getHeader('Subject'),
             body: finalBody || '',
             htmlBody: htmlBody, // Keep HTML version for rich display
-            date: new Date(parseInt(messageData.internalDate)),
+            date: emailDate,
             isRead: !messageData.labelIds?.includes('UNREAD'),
             isImportant: messageData.labelIds?.includes('IMPORTANT') || false,
             labels: messageData.labelIds || [],

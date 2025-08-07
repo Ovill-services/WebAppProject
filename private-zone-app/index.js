@@ -228,11 +228,153 @@ app.get('/api/google/calendar/events', requireAuth, async (req, res) => {
         const endDate = end || new Date(new Date().getTime() + 30 * 24 * 60 * 60 * 1000).toISOString(); // 30 days from now
         
         const events = await googleCalendarService.getEvents(startDate, endDate);
+        
+        // Sync events to local database
+        await syncGoogleCalendarEvents(req.session.user.email, events);
+        
         res.json({ success: true, events });
         
     } catch (error) {
         console.error('Error fetching Google Calendar events:', error);
         res.status(500).json({ error: 'Failed to fetch calendar events' });
+    }
+});
+
+// Function to sync Google Calendar events to local database
+async function syncGoogleCalendarEvents(userEmail, googleEvents) {
+    try {
+        console.log(`Syncing ${googleEvents.length} Google Calendar events for user: ${userEmail}`);
+        
+        for (const googleEvent of googleEvents) {
+            try {
+                // Skip events without proper time data
+                if (!googleEvent.start || !googleEvent.end) {
+                    console.log('Skipping event without start/end time:', googleEvent.id);
+                    continue;
+                }
+                
+                // Handle all-day events and timed events
+                const startTime = googleEvent.start;
+                const endTime = googleEvent.end;
+                const isAllDay = googleEvent.allDay || false;
+                
+                // Check if event already exists in local database
+                const existingEventQuery = `
+                    SELECT id FROM calendar_events 
+                    WHERE user_email = $1 AND google_event_id = $2
+                `;
+                const existingEventResult = await db.query(existingEventQuery, [userEmail, googleEvent.id]);
+                
+                if (existingEventResult.rows.length > 0) {
+                    // Update existing event
+                    const updateQuery = `
+                        UPDATE calendar_events 
+                        SET title = $1, description = $2, start_time = $3, end_time = $4, 
+                            location = $5, is_all_day = $6, updated_at = CURRENT_TIMESTAMP
+                        WHERE user_email = $7 AND google_event_id = $8
+                    `;
+                    const updateValues = [
+                        googleEvent.title || 'Untitled Event',
+                        googleEvent.description || null,
+                        new Date(startTime),
+                        new Date(endTime),
+                        googleEvent.location || null,
+                        isAllDay,
+                        userEmail,
+                        googleEvent.id
+                    ];
+                    
+                    await db.query(updateQuery, updateValues);
+                    console.log(`Updated Google Calendar event: ${googleEvent.title || googleEvent.id}`);
+                } else {
+                    // Insert new event
+                    const insertQuery = `
+                        INSERT INTO calendar_events (
+                            user_email, title, description, start_time, end_time, 
+                            location, is_all_day, event_type, google_event_id
+                        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                    `;
+                    const insertValues = [
+                        userEmail,
+                        googleEvent.title || 'Untitled Event',
+                        googleEvent.description || null,
+                        new Date(startTime),
+                        new Date(endTime),
+                        googleEvent.location || null,
+                        isAllDay,
+                        'google_calendar',
+                        googleEvent.id
+                    ];
+                    
+                    await db.query(insertQuery, insertValues);
+                    console.log(`Inserted Google Calendar event: ${googleEvent.title || googleEvent.id}`);
+                }
+                
+            } catch (eventError) {
+                console.error(`Error syncing individual event ${googleEvent.id}:`, eventError);
+                // Continue with other events
+            }
+        }
+        
+        console.log('Google Calendar events sync completed');
+    } catch (error) {
+        console.error('Error syncing Google Calendar events:', error);
+        throw error;
+    }
+}
+
+// Sync Google Calendar events to local database
+app.post('/api/google/calendar/sync', requireAuth, async (req, res) => {
+    try {
+        // Get user's Google Calendar tokens
+        const tokenResult = await db.query(
+            'SELECT access_token, refresh_token, expires_at FROM google_calendar_integration WHERE user_email = $1 AND is_active = true',
+            [req.session.user.email]
+        );
+        
+        if (tokenResult.rows.length === 0) {
+            return res.status(401).json({ error: 'Google Calendar integration not found' });
+        }
+        
+        let { access_token, refresh_token, expires_at } = tokenResult.rows[0];
+        
+        // Check if token needs refresh
+        if (expires_at && new Date() >= new Date(expires_at)) {
+            try {
+                const refreshedTokens = await googleCalendarService.refreshAccessToken(refresh_token);
+                access_token = refreshedTokens.access_token;
+                
+                // Update tokens in database
+                const newExpiresAt = refreshedTokens.expiry_date ? new Date(refreshedTokens.expiry_date) : moment().add(1, 'hour').toDate();
+                await db.query(
+                    'UPDATE google_calendar_integration SET access_token = $1, expires_at = $2 WHERE user_email = $3',
+                    [refreshedTokens.access_token, newExpiresAt, req.session.user.email]
+                );
+            } catch (refreshError) {
+                console.error('Error refreshing token:', refreshError);
+                return res.status(401).json({ error: 'Failed to refresh Google Calendar token' });
+            }
+        }
+        
+        // Set credentials and get events (next 90 days)
+        googleCalendarService.setCredentials({ access_token, refresh_token });
+        const startDate = new Date().toISOString();
+        const endDate = new Date(new Date().getTime() + 90 * 24 * 60 * 60 * 1000).toISOString(); // 90 days from now
+        
+        const events = await googleCalendarService.getEvents(startDate, endDate);
+        
+        // Sync events to local database
+        await syncGoogleCalendarEvents(req.session.user.email, events);
+        
+        res.json({ 
+            success: true, 
+            message: `Successfully synced ${events.length} Google Calendar events`,
+            syncedCount: events.length
+        });
+        
+    } catch (error) {
+        console.error('Error syncing Google Calendar events:', error);
+        res.status(500).json({ error: 'Failed to sync calendar events' });
     }
 });
 
@@ -801,61 +943,6 @@ app.post('/api/gmail/disconnect', requireAuth, async (req, res) => {
     }
 });
 
-// Test Gmail connection
-app.get('/api/gmail/test', requireAuth, async (req, res) => {
-    try {
-        // Get user's Gmail tokens
-        const tokenResult = await db.query(
-            'SELECT access_token, refresh_token, expires_at, gmail_email FROM gmail_integration WHERE user_email = $1 AND is_active = true',
-            [req.session.user.email]
-        );
-        
-        if (tokenResult.rows.length === 0) {
-            return res.status(401).json({ error: 'Gmail integration not found' });
-        }
-        
-        let { access_token, refresh_token, expires_at, gmail_email } = tokenResult.rows[0];
-        
-        // Check if token needs refresh
-        if (expires_at && new Date() >= new Date(expires_at)) {
-            try {
-                const refreshedTokens = await gmailService.refreshAccessToken(refresh_token);
-                access_token = refreshedTokens.access_token;
-                
-                // Update tokens in database
-                const newExpiresAt = refreshedTokens.expiry_date ? new Date(refreshedTokens.expiry_date) : moment().add(1, 'hour').toDate();
-                await db.query(
-                    'UPDATE gmail_integration SET access_token = $1, expires_at = $2 WHERE user_email = $3',
-                    [refreshedTokens.access_token, newExpiresAt, req.session.user.email]
-                );
-            } catch (refreshError) {
-                console.error('Error refreshing Gmail token:', refreshError);
-                return res.status(401).json({ error: 'Failed to refresh Gmail token' });
-            }
-        }
-        
-        // Test Gmail connection by getting profile
-        gmailService.setCredentials({ access_token, refresh_token });
-        const profile = await gmailService.getProfile();
-        
-        res.json({
-            success: true,
-            connected: true,
-            gmailEmail: gmail_email,
-            profile: profile,
-            message: 'Gmail connection is working correctly'
-        });
-        
-    } catch (error) {
-        console.error('Gmail connection test failed:', error);
-        res.status(500).json({
-            success: false,
-            connected: false,
-            error: 'Gmail connection test failed'
-        });
-    }
-});
-
 
 // Gmail API Routes
 // Get Gmail integration status
@@ -888,8 +975,6 @@ async function processEmailAttachments(attachments, emailId, gmailMessageId, gma
     
     for (const attachment of attachments) {
         try {
-            console.log(`Processing attachment: ${attachment.filename} (${attachment.mimeType})`);
-            
             // Skip if no attachment ID (shouldn't happen, but safety check)
             if (!attachment.attachmentId) {
                 console.log(`Skipping attachment ${attachment.filename} - no attachment ID`);
@@ -898,7 +983,6 @@ async function processEmailAttachments(attachments, emailId, gmailMessageId, gma
             
             // Check if it's an image
             const isImage = gmailService.isImageMimeType(attachment.mimeType);
-            console.log(`Attachment ${attachment.filename} is image: ${isImage}`);
             
             // For small images (under 1MB), download and store directly
             let attachmentData = null;
@@ -906,10 +990,8 @@ async function processEmailAttachments(attachments, emailId, gmailMessageId, gma
             
             if (isImage && attachment.size < 1024 * 1024) { // 1MB limit
                 try {
-                    console.log(`Downloading attachment data for ${attachment.filename}`);
                     const downloadedAttachment = await gmailService.getAttachment(gmailMessageId, attachment.attachmentId);
                     attachmentData = Buffer.from(downloadedAttachment.data, 'base64');
-                    console.log(`Downloaded ${attachmentData.length} bytes for ${attachment.filename}`);
                 } catch (downloadError) {
                     console.error(`Error downloading attachment ${attachment.filename}:`, downloadError);
                     // Continue without the attachment data
@@ -951,7 +1033,6 @@ async function processEmailAttachments(attachments, emailId, gmailMessageId, gma
             ];
             
             const result = await db.query(insertAttachmentQuery, attachmentValues);
-            console.log(`Saved attachment ${attachment.filename} with ID ${result.rows[0].id}`);
             
         } catch (attachmentError) {
             console.error(`Error processing attachment ${attachment.filename}:`, attachmentError);
@@ -1225,136 +1306,6 @@ app.get('/api/emails/:emailId/attachments', requireAuth, async (req, res) => {
     } catch (error) {
         console.error('Error fetching attachments:', error);
         res.status(500).json({ error: 'Failed to fetch attachments' });
-    }
-});
-
-// Re-process existing emails for attachments
-app.post('/api/gmail/reprocess-attachments', requireAuth, async (req, res) => {
-    try {
-        // Get user's Gmail tokens
-        const tokenResult = await db.query(
-            'SELECT access_token, refresh_token, expires_at FROM gmail_integration WHERE user_email = $1 AND is_active = true',
-            [req.session.user.email]
-        );
-        
-        if (tokenResult.rows.length === 0) {
-            return res.status(401).json({ error: 'Gmail integration not found' });
-        }
-        
-        let { access_token, refresh_token, expires_at } = tokenResult.rows[0];
-        
-        // Check if token needs refresh
-        if (expires_at && new Date() >= new Date(expires_at)) {
-            try {
-                const refreshedTokens = await gmailService.refreshAccessToken(refresh_token);
-                access_token = refreshedTokens.access_token;
-                
-                // Update tokens in database
-                const newExpiresAt = refreshedTokens.expiry_date ? new Date(refreshedTokens.expiry_date) : moment().add(1, 'hour').toDate();
-                await db.query(
-                    'UPDATE gmail_integration SET access_token = $1, expires_at = $2 WHERE user_email = $3',
-                    [refreshedTokens.access_token, newExpiresAt, req.session.user.email]
-                );
-            } catch (refreshError) {
-                console.error('Error refreshing Gmail token:', refreshError);
-                return res.status(401).json({ error: 'Failed to refresh Gmail token' });
-            }
-        }
-        
-        // Set credentials
-        gmailService.setCredentials({ access_token, refresh_token });
-        
-        // Get emails without attachments that have Gmail message IDs
-        const emailsToProcess = await db.query(`
-            SELECT e.id, e.gmail_message_id, e.subject
-            FROM emails e
-            LEFT JOIN email_attachments ea ON e.id = ea.email_id
-            WHERE e.gmail_message_id IS NOT NULL 
-            AND e.user_email = $1
-            AND ea.id IS NULL
-            ORDER BY e.created_at DESC
-            LIMIT 20
-        `, [req.session.user.email]);
-        
-        console.log(`Re-processing ${emailsToProcess.rows.length} emails for attachments`);
-        
-        let processedCount = 0;
-        let attachmentsFound = 0;
-        
-        for (const email of emailsToProcess.rows) {
-            try {
-                console.log(`Re-processing email: ${email.subject} (ID: ${email.gmail_message_id})`);
-                
-                // Get full message details from Gmail
-                const messageDetail = await gmailService.getMessage(email.gmail_message_id);
-                
-                if (messageDetail.attachments && messageDetail.attachments.length > 0) {
-                    console.log(`Found ${messageDetail.attachments.length} attachments in email: ${email.subject}`);
-                    await processEmailAttachments(messageDetail.attachments, email.id, email.gmail_message_id, gmailService);
-                    attachmentsFound += messageDetail.attachments.length;
-                }
-                
-                processedCount++;
-                
-            } catch (error) {
-                console.error(`Error re-processing email ${email.id}:`, error);
-                // Continue with other emails
-            }
-        }
-        
-        res.json({
-            success: true,
-            processedEmails: processedCount,
-            totalAttachments: attachmentsFound,
-            message: `Re-processed ${processedCount} emails and found ${attachmentsFound} attachments`
-        });
-        
-    } catch (error) {
-        console.error('Error re-processing attachments:', error);
-        res.status(500).json({ error: 'Failed to re-process attachments' });
-    }
-});
-
-// Debug endpoint to inspect Gmail message structure
-app.get('/debug/gmail/:messageId', async (req, res) => {
-    try {
-        const { messageId } = req.params;
-        console.log(`[DEBUG] Inspecting Gmail message: ${messageId}`);
-        
-        const gmailService = new GmailService();
-        const rawMessage = await gmailService.getMessage(messageId);
-        
-        console.log(`[DEBUG] Raw message structure:`, JSON.stringify(rawMessage, null, 2));
-        
-        res.json({
-            success: true,
-            messageId,
-            rawMessage
-        });
-    } catch (error) {
-        console.error('[DEBUG] Error inspecting message:', error);
-        res.status(500).json({
-            success: false,
-            error: error.message
-        });
-    }
-});
-
-// Test endpoint for attachment debugging (temporary)
-app.get('/test/attachments', async (req, res) => {
-    try {
-        const attachments = await db.query('SELECT * FROM email_attachments LIMIT 10');
-        const emails = await db.query('SELECT id, subject, gmail_message_id FROM emails LIMIT 10');
-        
-        res.json({
-            success: true,
-            emails: emails.rows,
-            attachments: attachments.rows,
-            totalAttachments: attachments.rows.length
-        });
-    } catch (error) {
-        console.error('Error in test endpoint:', error);
-        res.status(500).json({ error: error.message });
     }
 });
 
@@ -1961,6 +1912,158 @@ app.get('/api/translations/:lang', (req, res) => {
 // Default translations route (defaults to English)
 app.get('/api/translations', (req, res) => {
     res.redirect('/api/translations/en');
+});
+
+// Dashboard Statistics API
+app.get('/api/dashboard/stats', requireAuth, async (req, res) => {
+    try {
+        const userEmail = req.session.user.email;
+        
+        // Get email count
+        const emailCountQuery = 'SELECT COUNT(*) as count FROM emails WHERE user_email = $1';
+        const emailCountResult = await db.query(emailCountQuery, [userEmail]);
+        const emailCount = parseInt(emailCountResult.rows[0].count);
+        
+        // Get task statistics
+        const taskStatsQuery = `
+            SELECT 
+                COUNT(*) as total,
+                COUNT(CASE WHEN completed = true THEN 1 END) as completed,
+                COUNT(CASE WHEN completed = false THEN 1 END) as pending
+            FROM tasks WHERE user_email = $1
+        `;
+        const taskStatsResult = await db.query(taskStatsQuery, [userEmail]);
+        const taskStats = taskStatsResult.rows[0];
+        
+        // Get recent emails (last 7 days)
+        const recentEmailsQuery = `
+            SELECT COUNT(*) as count 
+            FROM emails 
+            WHERE user_email = $1 
+            AND received_at >= NOW() - INTERVAL '7 days'
+        `;
+        const recentEmailsResult = await db.query(recentEmailsQuery, [userEmail]);
+        const recentEmailCount = parseInt(recentEmailsResult.rows[0].count);
+        
+        // Get tasks created today
+        const todayTasksQuery = `
+            SELECT COUNT(*) as count 
+            FROM tasks 
+            WHERE user_email = $1 
+            AND DATE(created_at) = CURRENT_DATE
+        `;
+        const todayTasksResult = await db.query(todayTasksQuery, [userEmail]);
+        const todayTaskCount = parseInt(todayTasksResult.rows[0].count);
+        
+        // Get tasks completed today
+        const completedTodayQuery = `
+            SELECT COUNT(*) as count 
+            FROM tasks 
+            WHERE user_email = $1 
+            AND completed = true 
+            AND DATE(updated_at) = CURRENT_DATE
+        `;
+        const completedTodayResult = await db.query(completedTodayQuery, [userEmail]);
+        const completedTodayCount = parseInt(completedTodayResult.rows[0].count);
+        
+        // Get nearest upcoming event
+        const upcomingEventQuery = `
+            SELECT title, description, start_time, end_time, location
+            FROM calendar_events 
+            WHERE user_email = $1 
+            AND start_time >= NOW()
+            ORDER BY start_time ASC
+            LIMIT 1
+        `;
+        console.log('Executing upcoming event query for user:', userEmail);
+        const upcomingEventResult = await db.query(upcomingEventQuery, [userEmail]);
+        console.log('Upcoming event query result:', upcomingEventResult.rows);
+        const nearestEvent = upcomingEventResult.rows.length > 0 ? upcomingEventResult.rows[0] : null;
+        console.log('Nearest event:', nearestEvent);
+        
+        // Get recent activity for the chart (last 7 days)
+        const activityQuery = `
+            SELECT 
+                DATE(created_at) as date,
+                COUNT(*) as count
+            FROM (
+                SELECT created_at FROM emails WHERE user_email = $1 AND created_at >= NOW() - INTERVAL '7 days'
+                UNION ALL
+                SELECT created_at FROM tasks WHERE user_email = $1 AND created_at >= NOW() - INTERVAL '7 days'
+            ) as combined_activity
+            GROUP BY DATE(created_at)
+            ORDER BY date DESC
+            LIMIT 7
+        `;
+        const activityResult = await db.query(activityQuery, [userEmail]);
+        
+        // Format activity data for chart
+        const activityData = activityResult.rows.map(row => ({
+            date: row.date,
+            count: parseInt(row.count)
+        }));
+        
+        // Get recent activity log entries
+        const recentActivityQuery = `
+            SELECT 
+                type,
+                action,
+                details,
+                timestamp
+            FROM (
+                SELECT 
+                    'email' as type,
+                    'Email Received' as action,
+                    subject as details,
+                    received_at as timestamp
+                FROM emails 
+                WHERE user_email = $1 
+                
+                UNION ALL
+                
+                SELECT 
+                    'task' as type,
+                    CASE WHEN completed THEN 'Task Completed' ELSE 'Task Created' END as action,
+                    text as details,
+                    COALESCE(updated_at, created_at) as timestamp
+                FROM tasks 
+                WHERE user_email = $1 
+            ) as combined_activities
+            ORDER BY timestamp DESC
+            LIMIT 5
+        `;
+        const recentActivityResult = await db.query(recentActivityQuery, [userEmail]);
+        
+        res.json({
+            success: true,
+            stats: {
+                emails: {
+                    total: emailCount,
+                    recent: recentEmailCount,
+                    trend: recentEmailCount > 0 ? '+' + Math.round((recentEmailCount / 7) * 30) + '% this month' : 'No recent activity'
+                },
+                tasks: {
+                    total: parseInt(taskStats.total),
+                    completed: parseInt(taskStats.completed),
+                    pending: parseInt(taskStats.pending),
+                    todayCreated: todayTaskCount,
+                    completedToday: completedTodayCount,
+                    trend: todayTaskCount > 0 ? `+${todayTaskCount} today` : 'No tasks today'
+                },
+                upcomingEvent: nearestEvent,
+                activity: {
+                    chartData: activityData,
+                    recentActivities: recentActivityResult.rows
+                }
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching dashboard stats:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching dashboard statistics'
+        });
+    }
 });
 
 // Task Management API Routes

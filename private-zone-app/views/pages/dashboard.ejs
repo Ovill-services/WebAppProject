@@ -1,77 +1,179 @@
 <div class="main-content">
   <div class="container mt-5">
-    <h1 class="mb-4" data-translate="dashboard.dashboard">Dashboard</h1>
-    <div class="row mb-4">
-      <div class="col-md-4">
-        <div class="card text-white bg-success mb-3">
-          <div class="card-body">
-            <h5 class="card-title">Active Users</h5>
-            <p class="card-text display-6">1,234</p>
+    <!-- Enhanced header with better visual hierarchy -->
+    <div class="d-flex justify-content-between align-items-center mb-5">
+      <div class="d-flex align-items-center">
+        <div class="me-3">
+          <div class="bg-primary bg-opacity-10 rounded-circle p-3">
+            <i class="bi bi-speedometer2 text-primary fs-4"></i>
           </div>
         </div>
-      </div>
-      <div class="col-md-4">
-        <div class="card text-white bg-info mb-3">
-          <div class="card-body">
-            <h5 class="card-title">Messages</h5>
-            <p class="card-text display-6">567</p>
-          </div>
+        <div>
+          <h1 class="mb-1" data-translate="dashboard.dashboard">Dashboard</h1>
+          <p class="text-muted mb-0">Welcome to your workspace overview</p>
         </div>
       </div>
-      <div class="col-md-4">
-        <div class="card text-white bg-warning mb-3">
-          <div class="card-body">
-            <h5 class="card-title">Tasks</h5>
-            <p class="card-text display-6">42</p>
+      <div class="text-end">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body py-2 px-3">
+            <small class="text-muted d-block">Last Updated</small>
+            <strong class="text-primary">
+              <i class="bi bi-clock me-1"></i>
+              Just now
+            </strong>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="card mb-4">
-      <div class="card-header bg-primary text-white">
-        User Activity (Graph)
+    <!-- Real-time stats cards with dynamic data -->
+    <div class="row mb-4">
+      <div class="col-md-4">
+        <div class="card text-white bg-success mb-3 shadow">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <h5 class="card-title mb-2" data-translate="dashboard.emails">Emails</h5>
+                <p class="card-text display-6 mb-0" id="emailCount">Loading...</p>
+                <small class="text-white-50" id="emailTrend">
+                  <i class="bi bi-arrow-up me-1"></i>Loading...
+                </small>
+              </div>
+              <div class="opacity-75">
+                <i class="bi bi-envelope-fill fs-1"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card text-white bg-info mb-3 shadow">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <h5 class="card-title mb-2" data-translate="dashboard.tasks">Tasks</h5>
+                <p class="card-text display-6 mb-0" id="taskCount">Loading...</p>
+                <small class="text-white-50" id="taskTrend">
+                  <i class="bi bi-check-circle me-1"></i>Loading...
+                </small>
+              </div>
+              <div class="opacity-75">
+                <i class="bi bi-list-check fs-1"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card text-white bg-warning mb-3 shadow">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <h5 class="card-title mb-2" data-translate="dashboard.completed">Completed</h5>
+                <p class="card-text display-6 mb-0" id="completedCount">Loading...</p>
+                <small class="text-dark-50" id="completedTrend">
+                  <i class="bi bi-trophy me-1"></i>Loading...
+                </small>
+              </div>
+              <div class="opacity-75">
+                <i class="bi bi-trophy-fill fs-1 text-dark"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Upcoming Event Card -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="card border-0 shadow" id="upcomingEventCard" style="display: none;">
+          <div class="card-header bg-gradient-primary text-white d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center">
+              <i class="bi bi-calendar-event me-2"></i>
+              <span data-translate="dashboard.upcomingEvent">Upcoming Event</span>
+            </div>
+            <i class="bi bi-clock"></i>
+          </div>
+          <div class="card-body">
+            <div class="row align-items-center">
+              <div class="col-md-8">
+                <h5 class="mb-2" id="eventTitle">No upcoming events</h5>
+                <p class="text-muted mb-2" id="eventDescription">You're all caught up!</p>
+                <div class="d-flex align-items-center text-muted">
+                  <i class="bi bi-geo-alt me-1"></i>
+                  <span id="eventLocation">No location</span>
+                </div>
+              </div>
+              <div class="col-md-4 text-end">
+                <div class="bg-light rounded p-3">
+                  <div class="text-primary fw-bold" id="eventDate">No date</div>
+                  <div class="text-muted small" id="eventTime">No time</div>
+                  <div class="mt-2">
+                    <span class="badge bg-primary" id="eventTimeRemaining">Upcoming</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- No events card (shown when no upcoming events) -->
+        <div class="card border-0 shadow-sm" id="noEventsCard">
+          <div class="card-body text-center py-5">
+            <div class="text-muted">
+              <i class="bi bi-calendar-x display-4 mb-3"></i>
+              <h5 data-translate="dashboard.noUpcomingEvents">No Upcoming Events</h5>
+              <p class="mb-3" data-translate="dashboard.noEventsDescription">You don't have any events scheduled. Your calendar is clear!</p>
+              <a href="/calendar" class="btn btn-outline-primary">
+                <i class="bi bi-plus-circle me-2"></i>
+                <span data-translate="dashboard.createEvent">Create Event</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Real-time chart with dynamic data -->
+    <div class="card mb-4 shadow">
+      <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center">
+          <i class="bi bi-graph-up me-2"></i>
+          <span data-translate="dashboard.activityAnalytics">Activity Analytics</span>
+        </div>
+        <div class="btn-group btn-group-sm">
+          <button class="btn btn-outline-light btn-sm" onclick="refreshDashboard()">
+            <i class="bi bi-arrow-clockwise"></i>
+          </button>
+        </div>
       </div>
       <div class="card-body">
         <canvas id="activityChart" height="100"></canvas>
       </div>
     </div>
 
-    <div class="card">
-      <div class="card-header bg-primary text-white">
-        Recent Activity
+    <!-- Real-time activity table -->
+    <div class="card shadow">
+      <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center">
+          <i class="bi bi-activity me-2"></i>
+          <span data-translate="dashboard.recentActivity">Recent Activity</span>
+        </div>
+        <div class="btn-group btn-group-sm">
+          <button class="btn btn-outline-light btn-sm" onclick="refreshDashboard()">
+            <i class="bi bi-arrow-clockwise"></i>
+          </button>
+        </div>
       </div>
-      <div class="card-body">
-        <table class="table table-hover">
-          <thead>
-            <tr>
-              <th scope="col">#</th>
-              <th scope="col">Action</th>
-              <th scope="col">Date</th>
-              <th scope="col">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <th scope="row">1</th>
-              <td>Logged in</td>
-              <td>2025-07-11</td>
-              <td><span class="badge bg-success">Success</span></td>
-            </tr>
-            <tr>
-              <th scope="row">2</th>
-              <td>Updated profile</td>
-              <td>2025-07-10</td>
-              <td><span class="badge bg-info">Info</span></td>
-            </tr>
-            <tr>
-              <th scope="row">3</th>
-              <td>Logged out</td>
-              <td>2025-07-09</td>
-              <td><span class="badge bg-secondary">Other</span></td>
-            </tr>
-          </tbody>
-        </table>
+      <div class="card-body p-0">
+        <div id="recentActivityTable">
+          <div class="d-flex justify-content-center align-items-center p-5">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -80,30 +182,394 @@
 <!-- Chart.js CDN -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-  const ctx = document.getElementById('activityChart').getContext('2d');
-  new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-      datasets: [{
-        label: 'Active Users',
-        data: [120, 190, 300, 250, 220, 300, 100],
-        borderColor: 'rgba(13,110,253,1)',
-        backgroundColor: 'rgba(13,110,253,0.1)',
-        tension: 0.4,
-        fill: true
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: { display: false }
-      },
-      scales: {
-        y: { beginAtZero: true }
-      }
-    }
+  // Global variables for chart and data
+  let activityChart;
+  let dashboardData = null;
+
+  // Initialize dashboard
+  document.addEventListener('DOMContentLoaded', function() {
+    loadDashboardData();
+    
+    // Auto-refresh every 5 minutes
+    setInterval(loadDashboardData, 5 * 60 * 1000);
   });
+
+  // Load dashboard data from API
+  async function loadDashboardData() {
+    try {
+      const response = await fetch('/api/dashboard/stats');
+      const data = await response.json();
+      
+      if (data.success) {
+        dashboardData = data.stats;
+        updateDashboardUI();
+        updateChart();
+        updateRecentActivity();
+        updateLastUpdatedTime();
+      } else {
+        console.error('Failed to load dashboard data:', data.message);
+        showError('Failed to load dashboard data');
+      }
+    } catch (error) {
+      console.error('Error loading dashboard data:', error);
+      showError('Error connecting to server');
+    }
+  }
+
+  // Update dashboard UI elements
+  function updateDashboardUI() {
+    if (!dashboardData) return;
+    
+    // Update email stats
+    document.getElementById('emailCount').textContent = dashboardData.emails.total;
+    document.getElementById('emailTrend').innerHTML = `
+      <i class="bi bi-envelope me-1"></i>${dashboardData.emails.recent} this week
+    `;
+    
+    // Update task stats
+    document.getElementById('taskCount').textContent = dashboardData.tasks.total;
+    document.getElementById('taskTrend').innerHTML = `
+      <i class="bi bi-plus-circle me-1"></i>${dashboardData.tasks.todayCreated} created today
+    `;
+    
+    // Update completed stats
+    document.getElementById('completedCount').textContent = dashboardData.tasks.completed;
+    document.getElementById('completedTrend').innerHTML = `
+      <i class="bi bi-check-circle me-1"></i>${dashboardData.tasks.completedToday} completed today
+    `;
+    
+    // Update upcoming event
+    updateUpcomingEvent();
+  }
+
+  // Update upcoming event display
+  function updateUpcomingEvent() {
+    const upcomingEvent = dashboardData.upcomingEvent;
+    const eventCard = document.getElementById('upcomingEventCard');
+    const noEventsCard = document.getElementById('noEventsCard');
+    
+    if (upcomingEvent) {
+      // Show event card, hide no events card
+      eventCard.style.display = 'block';
+      noEventsCard.style.display = 'none';
+      
+      // Update event details
+      document.getElementById('eventTitle').textContent = upcomingEvent.title || 'Untitled Event';
+      document.getElementById('eventDescription').textContent = upcomingEvent.description || 'No description';
+      document.getElementById('eventLocation').textContent = upcomingEvent.location || 'No location';
+      
+      // Format event date and time
+      const startTime = new Date(upcomingEvent.start_time);
+      const endTime = new Date(upcomingEvent.end_time);
+      
+      document.getElementById('eventDate').textContent = startTime.toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric'
+      });
+      
+      document.getElementById('eventTime').textContent = 
+        startTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) + 
+        ' - ' + 
+        endTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+      
+      // Calculate time remaining
+      const now = new Date();
+      const timeDiff = startTime - now;
+      let timeRemaining = '';
+      
+      if (timeDiff > 0) {
+        const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+        
+        if (days > 0) {
+          timeRemaining = `in ${days} day${days > 1 ? 's' : ''}`;
+        } else if (hours > 0) {
+          timeRemaining = `in ${hours} hour${hours > 1 ? 's' : ''}`;
+        } else if (minutes > 0) {
+          timeRemaining = `in ${minutes} minute${minutes > 1 ? 's' : ''}`;
+        } else {
+          timeRemaining = 'Starting soon';
+        }
+      } else {
+        timeRemaining = 'In progress';
+      }
+      
+      document.getElementById('eventTimeRemaining').textContent = timeRemaining;
+    } else {
+      // Show no events card, hide event card
+      eventCard.style.display = 'none';
+      noEventsCard.style.display = 'block';
+    }
+  }
+
+  // Update activity chart
+  function updateChart() {
+    if (!dashboardData || !dashboardData.activity.chartData) return;
+    
+    const ctx = document.getElementById('activityChart').getContext('2d');
+    
+    // Prepare chart data
+    const last7Days = [];
+    const today = new Date();
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      last7Days.push(date.toISOString().split('T')[0]);
+    }
+    
+    const chartData = last7Days.map(date => {
+      const activity = dashboardData.activity.chartData.find(item => 
+        item.date && new Date(item.date).toISOString().split('T')[0] === date
+      );
+      return activity ? activity.count : 0;
+    });
+    
+    const labels = last7Days.map(date => {
+      const d = new Date(date);
+      return d.toLocaleDateString('en-US', { weekday: 'short' });
+    });
+    
+    // Destroy existing chart if it exists
+    if (activityChart) {
+      activityChart.destroy();
+    }
+    
+    // Create new chart
+    activityChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Daily Activity',
+          data: chartData,
+          borderColor: 'rgba(13,110,253,1)',
+          backgroundColor: 'rgba(13,110,253,0.1)',
+          tension: 0.4,
+          fill: true,
+          pointBackgroundColor: 'rgba(13,110,253,1)',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+          pointRadius: 5
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            mode: 'index',
+            intersect: false,
+            backgroundColor: 'rgba(0,0,0,0.8)',
+            titleColor: '#fff',
+            bodyColor: '#fff',
+            borderColor: 'rgba(13,110,253,1)',
+            borderWidth: 1
+          }
+        },
+        scales: {
+          y: { 
+            beginAtZero: true,
+            grid: {
+              color: 'rgba(0,0,0,0.1)'
+            }
+          },
+          x: {
+            grid: {
+              color: 'rgba(0,0,0,0.1)'
+            }
+          }
+        },
+        interaction: {
+          mode: 'nearest',
+          axis: 'x',
+          intersect: false
+        }
+      }
+    });
+  }
+
+  // Update recent activity table
+  function updateRecentActivity() {
+    if (!dashboardData || !dashboardData.activity.recentActivities) {
+      document.getElementById('recentActivityTable').innerHTML = `
+        <div class="text-center text-muted p-4">
+          <i class="bi bi-inbox display-4 mb-3"></i>
+          <p>No recent activity</p>
+        </div>
+      `;
+      return;
+    }
+    
+    const activities = dashboardData.activity.recentActivities;
+    
+    if (activities.length === 0) {
+      document.getElementById('recentActivityTable').innerHTML = `
+        <div class="text-center text-muted p-4">
+          <i class="bi bi-inbox display-4 mb-3"></i>
+          <p>No recent activity</p>
+        </div>
+      `;
+      return;
+    }
+    
+    const tableHTML = `
+      <table class="table table-hover mb-0">
+        <thead class="bg-light">
+          <tr>
+            <th scope="col" class="px-4 py-3">
+              <i class="bi bi-lightning me-2"></i>Action
+            </th>
+            <th scope="col" class="px-4 py-3">
+              <i class="bi bi-info-circle me-2"></i>Details
+            </th>
+            <th scope="col" class="px-4 py-3">
+              <i class="bi bi-calendar me-2"></i>Date
+            </th>
+            <th scope="col" class="px-4 py-3">
+              <i class="bi bi-flag me-2"></i>Type
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          ${activities.map((activity, index) => `
+            <tr>
+              <td class="px-4 py-3">
+                <div class="d-flex align-items-center">
+                  <i class="bi bi-${getActivityIcon(activity.type, activity.action)} me-2 ${getActivityColor(activity.type)}"></i>
+                  ${activity.action}
+                </div>
+              </td>
+              <td class="px-4 py-3">
+                <span class="text-truncate d-inline-block" style="max-width: 200px;" title="${escapeHtml(activity.details)}">
+                  ${escapeHtml(activity.details || 'No details')}
+                </span>
+              </td>
+              <td class="px-4 py-3">
+                ${formatDate(activity.timestamp)}
+              </td>
+              <td class="px-4 py-3">
+                <span class="badge ${getTypeBadgeClass(activity.type)}">
+                  <i class="bi bi-${getTypeIcon(activity.type)} me-1"></i>${capitalizeFirst(activity.type)}
+                </span>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+    
+    document.getElementById('recentActivityTable').innerHTML = tableHTML;
+  }
+
+  // Helper functions
+  function getActivityIcon(type, action) {
+    if (type === 'email') return 'envelope';
+    if (type === 'task') {
+      return action.includes('Completed') ? 'check-circle' : 'plus-circle';
+    }
+    return 'activity';
+  }
+
+  function getActivityColor(type) {
+    const colors = {
+      email: 'text-success',
+      task: 'text-info'
+    };
+    return colors[type] || 'text-secondary';
+  }
+
+  function getTypeBadgeClass(type) {
+    const classes = {
+      email: 'bg-success',
+      task: 'bg-info'
+    };
+    return classes[type] || 'bg-secondary';
+  }
+
+  function getTypeIcon(type) {
+    const icons = {
+      email: 'envelope',
+      task: 'list-check'
+    };
+    return icons[type] || 'circle';
+  }
+
+  function formatDate(timestamp) {
+    const date = new Date(timestamp);
+    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+  }
+
+  function capitalizeFirst(str) {
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  }
+
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  function updateLastUpdatedTime() {
+    const now = new Date();
+    const timeString = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    const lastUpdatedElement = document.querySelector('.card-body .text-primary');
+    if (lastUpdatedElement) {
+      lastUpdatedElement.innerHTML = `<i class="bi bi-clock me-1"></i>${timeString}`;
+    }
+  }
+
+  function showError(message) {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = 'alert alert-danger alert-dismissible fade show position-fixed';
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 1050; min-width: 300px;';
+    notification.innerHTML = `
+      ${message}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+      if (notification.parentNode) {
+        notification.remove();
+      }
+    }, 5000);
+  }
+
+  // Global refresh function
+  function refreshDashboard() {
+    loadDashboardData();
+  }
+
+  // Apply translations when available
+  function applyTranslations() {
+    document.querySelectorAll('[data-translate]').forEach(element => {
+      const key = element.getAttribute('data-translate');
+      if (typeof LanguageManager !== 'undefined' && LanguageManager.isLoaded) {
+        element.textContent = LanguageManager.t(key);
+      }
+    });
+  }
+
+  // Initialize translations
+  if (typeof LanguageManager !== 'undefined') {
+    if (LanguageManager.isLoaded) {
+      applyTranslations();
+    } else {
+      const checkTranslations = () => {
+        if (LanguageManager.isLoaded) {
+          applyTranslations();
+        } else {
+          setTimeout(checkTranslations, 100);
+        }
+      };
+      checkTranslations();
+    }
+  }
 </script>
 </body>
 

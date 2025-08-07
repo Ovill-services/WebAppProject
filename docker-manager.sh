@@ -67,11 +67,30 @@ start_services() {
         exit 1
     fi
 }
+start_private_zone_app() {
+    print_status "Starting Private Zone App..."
+    docker compose up -d --build private-zone-app
+}
+
+start_public_site() {
+    print_status "Starting Public Site..."
+    docker compose up -d --build public-site
+}
 
 # Function to stop all services
 stop_services() {
     print_status "Stopping all services..."
     docker compose down
+}
+
+stop_private_zone_app() {
+    print_status "Stopping Private Zone App..."
+    docker compose stop private-zone-app
+}
+
+stop_public_site() {
+    print_status "Stopping Public Site..."
+    docker compose stop public-site
 }
 
 # Function to restart services
@@ -80,6 +99,15 @@ restart_services() {
     docker compose up -d --build
 }
 
+restart_private_zone_app() {
+    print_status "Restarting Private Zone App..."
+    docker compose up -d --build private-zone-app
+}
+
+restart_public_site() {
+    print_status "Restarting Public Site..."
+    docker compose up -d --build public-site
+}
 # Function to view logs
 view_logs() {
     if [ -z "$1" ]; then
@@ -172,5 +200,23 @@ case "$1" in
         echo ""
         echo "Services: private-zone-app, public-site, mongodb, postgres, mongo-express"
         exit 1
+        ;;
+    start-private-zone-app)
+        start_private_zone_app
+        ;;
+    start-public-site)
+        start_public_site
+        ;;
+    stop-private-zone-app)
+        stop_private_zone_app
+        ;;
+    stop-public-site)
+        stop_public_site
+        ;;
+    restart-private-zone-app)
+        restart_private_zone_app
+        ;;
+    restart-public-site)
+        restart_public_site
         ;;
 esac
