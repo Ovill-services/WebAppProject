@@ -1,12 +1,12 @@
 <div class="main-content">
     <div class="mt-5 container">
         <!-- Enhanced page header -->
-        <div class="page-header">
+        <div class="enhanced-page-header">
             <div class="d-flex justify-content-between align-items-center">
                 <div class="d-flex align-items-center">
                     <div class="me-3">
-                        <div class="bg-primary bg-opacity-10 rounded-circle p-3">
-                            <i class="bi bi-calendar-event text-primary fs-4"></i>
+                        <div class="page-header-icon">
+                            <i class="bi bi-calendar-event"></i>
                         </div>
                     </div>
                     <div>
@@ -15,7 +15,7 @@
                     </div>
                 </div>
                 <div class="text-end">
-                    <div class="current-time-card card border-0 shadow-sm">
+                    <div class="enhanced-time-card card border-0">
                         <div class="card-body py-2 px-3">
                             <small class="text-muted d-block">Current Time</small>
                             <strong class="text-body">
@@ -34,18 +34,18 @@
         <!-- Enhanced Calendar Navigation -->
         <div class="row mb-4">
             <div class="col-12">
-                <div class="card shadow-sm border-0">
-                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center py-3">
-                        <h5 class="mb-0 d-flex align-items-center">
+                <div class="calendar-card">
+                    <div class="calendar-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 d-flex align-items-center text-white">
                             <i class="bi bi-calendar me-2"></i>
                             <span id="currentMonth">January 2025</span>
                         </h5>
                         <div class="btn-group" role="group">
-                            <button type="button" class="btn btn-outline-light btn-sm" id="prevMonth" data-translate="calendar.previousMonth" title="Previous Month">
+                            <button type="button" class="calendar-nav-btn" id="prevMonth" data-translate="calendar.previousMonth" title="Previous Month">
                                 <i class="bi bi-chevron-left"></i>
                             </button>
-                            <button type="button" class="btn btn-light btn-sm text-primary fw-bold" id="todayBtn" data-translate="calendar.today">Today</button>
-                            <button type="button" class="btn btn-outline-light btn-sm" id="nextMonth" data-translate="calendar.nextMonth" title="Next Month">
+                            <button type="button" class="calendar-today-btn calendar-nav-btn" id="todayBtn" data-translate="calendar.today">Today</button>
+                            <button type="button" class="calendar-nav-btn" id="nextMonth" data-translate="calendar.nextMonth" title="Next Month">
                                 <i class="bi bi-chevron-right"></i>
                             </button>
                         </div>
@@ -54,7 +54,7 @@
                         <!-- Enhanced Calendar Grid -->
                         <div class="table-responsive">
                             <table class="table mb-0" id="calendarTable">
-                                <thead class="bg-light">
+                                <thead>
                                     <tr>
                                         <th class="text-center py-3 fw-bold text-muted border-0" data-translate="calendar.dayNames.sunday">SUN</th>
                                         <th class="text-center py-3 fw-bold text-muted border-0" data-translate="calendar.dayNames.monday">MON</th>
@@ -79,26 +79,26 @@
         <div class="row">
             <!-- Enhanced Quick Actions -->
             <div class="col-lg-4 mb-4">
-                <div class="card shadow-sm border-0 h-100">
-                    <div class="card-header bg-success text-white py-3">
-                        <h6 class="mb-0 d-flex align-items-center">
+                <div class="quick-actions-card h-100">
+                    <div class="quick-actions-header card-header text-white py-3 px-3">
+                        <h6 class="mb-0 d-flex align-items-center position-relative">
                             <i class="bi bi-lightning-charge me-2"></i><span data-translate="calendar.quickActions">Quick Actions</span>
                         </h6>
                     </div>
                     <div class="card-body">
                         <div class="d-grid gap-3">
-                            <button class="page-action-btn btn btn-primary btn-lg d-flex align-items-center justify-content-center" 
+                            <button class="enhanced-action-btn btn btn-primary btn-lg d-flex align-items-center justify-content-center mt-3" 
                                     id="addEventBtn" 
                                     data-bs-toggle="modal" 
                                     data-bs-target="#addEventModal">
                                 <i class="bi bi-calendar-plus me-2"></i>
                                 <span data-translate="calendar.addEvent">Add Event</span>
                             </button>
-                            <button class="btn btn-outline-primary btn-lg d-flex align-items-center justify-content-center" id="scheduleMeetingBtn">
+                            <button class="enhanced-action-btn btn btn-outline-primary btn-lg d-flex align-items-center justify-content-center" id="scheduleMeetingBtn">
                                 <i class="bi bi-people me-2"></i>
                                 <span data-translate="calendar.scheduleMeeting">Schedule Meeting</span>
                             </button>
-                            <button class="btn btn-outline-info btn-lg d-flex align-items-center justify-content-center" id="syncCalendarBtn" onclick="location.reload()">
+                            <button class="enhanced-action-btn btn btn-outline-info btn-lg d-flex align-items-center justify-content-center" id="syncCalendarBtn" onclick="location.reload()">
                                 <i class="bi bi-arrow-clockwise me-2"></i>
                                 <span data-translate="calendar.syncCalendar">Sync Calendar</span>
                             </button>
@@ -108,14 +108,14 @@
                         <hr class="my-4">
                         <div class="row text-center">
                             <div class="col-6">
-                                <div class="stats-card">
+                                <div class="enhanced-stats-card">
                                     <div class="stats-number text-primary">0</div>
                                     <div class="stats-label" data-translate="calendar.events">Events</div>
                                     <small class="text-muted" data-translate="calendar.thisMonth">This Month</small>
                                 </div>
                             </div>
                             <div class="col-6">
-                                <div class="stats-card">
+                                <div class="enhanced-stats-card">
                                     <div class="stats-number text-success">0</div>
                                     <div class="stats-label" data-translate="calendar.tasks">Tasks</div>
                                     <small class="text-muted" data-translate="calendar.today">Today</small>
@@ -128,9 +128,9 @@
 
             <!-- Enhanced Upcoming Events -->
             <div class="col-lg-8 mb-4">
-                <div class="card shadow-sm border-0 h-100">
-                    <div class="card-header bg-primary text-white py-3 d-flex justify-content-between align-items-center">
-                        <h6 class="mb-0 d-flex align-items-center">
+                <div class="enhanced-events-card h-100">
+                    <div class="enhanced-events-header card-header text-white py-3 d-flex justify-content-between align-items-center px-3">
+                        <h6 class="mb-0 d-flex align-items-center position-relative">
                             <i class="bi bi-calendar-check me-2"></i><span data-translate="calendar.upcomingEvents">Upcoming Events</span>
                         </h6>
                         <span class="badge bg-light text-dark"><span id="eventsCount">0</span> <span data-translate="calendar.events">events</span></span>
@@ -142,7 +142,7 @@
                             </div>
                             <h5 class="text-muted mb-2" data-translate="calendar.noEventsMessage">No upcoming events</h5>
                             <p class="text-muted mb-4" data-translate="calendar.noEventsDescription">Your scheduled events will appear here</p>
-                            <button class="btn btn-outline-primary page-action-btn" id="createFirstEventBtn">
+                            <button class="enhanced-action-btn btn btn-outline-primary" id="createFirstEventBtn">
                                 <i class="bi bi-plus-circle me-2"></i><span data-translate="calendar.createFirstEvent">Create your first event</span>
                             </button>
                         </div>
@@ -158,15 +158,15 @@
         <!-- Enhanced Calendar Integration -->
         <div class="row">
             <div class="col-12">
-                <div class="card shadow-sm border-0">
-                    <div class="card-header bg-info text-white py-3">
-                        <h6 class="mb-0 d-flex align-items-center">
+                <div class="enhanced-integration-card">
+                    <div class="enhanced-integration-header card-header text-white py-3 px-3">
+                        <h6 class="mb-0 d-flex align-items-center position-relative">
                             <i class="bi bi-puzzle me-2"></i><span data-translate="calendar.calendarIntegration">Calendar Integration</span>
                         </h6>
                     </div>
                     <div class="card-body text-center py-5">
                         <div class="mb-4">
-                            <i class="bi bi-calendar-check display-4 text-success"></i>
+                            <i class="bi bi-calendar-check integration-status-icon"></i>
                         </div>
                         <h5 class="mb-3" data-translate="calendar.googleCalendarIntegration">Google Calendar Integration</h5>
                         <p class="text-muted mb-4 col-md-8 mx-auto" data-translate="calendar.googleCalendarDescription">
@@ -183,7 +183,7 @@
                                 </div>
                                 
                                 <div class="d-flex flex-wrap justify-content-center gap-3" id="calendarActions">
-                                    <button class="page-action-btn btn btn-success btn-lg" id="refreshCalendarBtn">
+                                    <button class="enhanced-action-btn btn btn-success btn-lg" id="refreshCalendarBtn">
                                         <i class="bi bi-arrow-clockwise me-2"></i>
                                         <span data-translate="calendar.refreshCalendar">Refresh Calendar</span>
                                     </button>
@@ -207,37 +207,40 @@
 <!-- Add Event Modal -->
 <div class="modal fade" id="addEventModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title">
+        <div class="modal-content enhanced-modal">
+            <div class="enhanced-modal-header">
+                <h5 class="modal-title text-white position-relative">
                     <i class="bi bi-calendar-plus me-2"></i><span data-translate="calendar.addNewEvent">Add New Event</span>
                 </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
+            <div class="enhanced-modal-body">
                 <form id="createEventForm">
                     <div class="row">
-                        <div class="col-md-12 mb-3">
-                            <label for="title" class="form-label" data-translate="calendar.eventTitle">Event Title</label> *
-                            <input type="text" class="form-control" id="title" name="title" required>
+                        <div class="col-md-12 mb-4">
+                            <label for="title" class="form-label" data-translate="calendar.eventTitle">Event Title</label>
+                            <span class="text-danger">*</span>
+                            <input type="text" class="enhanced-form-control" id="title" name="title" required placeholder="Enter event title">
                         </div>
                     </div>
                     
-                    <div class="row mb-3">
+                    <div class="row mb-4">
                         <div class="col-md-6">
-                            <label for="startDate" class="form-label" data-translate="calendar.startDate">Start Date</label> *
-                            <input type="date" class="form-control" id="startDate" name="startDate" required>
+                            <label for="startDate" class="form-label" data-translate="calendar.startDate">Start Date</label>
+                            <span class="text-danger">*</span>
+                            <input type="date" class="enhanced-form-control" id="startDate" name="startDate" required>
                         </div>
                         <div class="col-md-6">
-                            <label for="endDate" class="form-label" data-translate="calendar.endDate">End Date</label> *
-                            <input type="date" class="form-control" id="endDate" name="endDate" required>
+                            <label for="endDate" class="form-label" data-translate="calendar.endDate">End Date</label>
+                            <span class="text-danger">*</span>
+                            <input type="date" class="enhanced-form-control" id="endDate" name="endDate" required>
                         </div>
                     </div>
                     
-                    <div class="row mb-3">
+                    <div class="row mb-4">
                         <div class="col-12">
                             <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="allDay" name="allDay">
+                                <input class="form-check-input pr-2" type="checkbox" id="allDay" name="allDay">
                                 <label class="form-check-label" for="allDay" data-translate="calendar.allDayEvent">
                                     All Day Event
                                 </label>
@@ -245,31 +248,31 @@
                         </div>
                     </div>
                     
-                    <div class="row mb-3" id="timeFields">
+                    <div class="row mb-4" id="timeFields">
                         <div class="col-md-6">
                             <label for="startTime" class="form-label" data-translate="calendar.startTime">Start Time</label>
-                            <input type="time" class="form-control" id="startTime" name="startTime">
+                            <input type="time" class="enhanced-form-control" id="startTime" name="startTime">
                         </div>
                         <div class="col-md-6">
                             <label for="endTime" class="form-label" data-translate="calendar.endTime">End Time</label>
-                            <input type="time" class="form-control" id="endTime" name="endTime">
+                            <input type="time" class="enhanced-form-control" id="endTime" name="endTime">
                         </div>
                     </div>
                     
-                    <div class="mb-3">
+                    <div class="mb-4">
                         <label for="location" class="form-label" data-translate="calendar.location">Location</label>
-                        <input type="text" class="form-control" id="location" name="location" data-translate="calendar.locationPlaceholder" placeholder="Meeting room, address, or virtual link">
+                        <input type="text" class="enhanced-form-control" id="location" name="location" data-translate="calendar.locationPlaceholder" placeholder="Meeting room, address, or virtual link">
                     </div>
                     
                     <div class="mb-3">
                         <label for="description" class="form-label" data-translate="calendar.description">Description</label>
-                        <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                        <textarea class="enhanced-form-control" id="description" name="description" rows="3" placeholder="Add event details..."></textarea>
                     </div>
                 </form>
             </div>
-            <div class="modal-footer">
+            <div class="enhanced-modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-translate="calendar.cancel">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="window.createEvent();">
+                <button type="button" class="btn btn-primary enhanced-action-btn" onclick="window.createEvent();">
                     <i class="bi bi-check-circle me-2"></i><span data-translate="calendar.createEvent">Create Event</span>
                 </button>
             </div>
@@ -281,7 +284,7 @@
 <div class="modal fade" id="viewEventModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header bg-info text-white">
+            <div class="modal-header bg-dark text-white">
                 <h5 class="modal-title">
                     <i class="bi bi-calendar-event me-2"></i><span data-translate="calendar.eventDetails">Event Details</span>
                 </h5>
@@ -460,15 +463,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 cell.style.border = '1px solid #e9ecef';
                 
                 if (i === 0 && j < firstDay) {
-                    // Empty cells before month starts - lighter gray
+                    // Empty cells before month starts
                     cell.innerHTML = '';
-                    cell.style.backgroundColor = '#e9ecef';
                     cell.style.cursor = 'default';
                     cell.classList.add('empty-cell');
                 } else if (date > daysInMonth) {
-                    // Empty cells after month ends - lighter gray
+                    // Empty cells after month ends
                     cell.innerHTML = '';
-                    cell.style.backgroundColor = '#e9ecef';
                     cell.style.cursor = 'default';
                     cell.classList.add('empty-cell');
                 } else {
@@ -495,16 +496,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         // Weekend styling
                         if (j === 0 || j === 6) {
                             cell.classList.add('weekend-cell');
-                            dayElement.classList.add('text-warning'); // Better color for weekend dates
+                            dayElement.classList.add('text-muted'); // Muted color for weekend dates
                         }
                     }
                     
-                    // Set initial background color based on cell type
+                    // Set initial styling based on cell type
                     if (!cell.classList.contains('today-cell')) {
-                        let originalBgColor = '#6c757d'; // Dark gray for all active cells
-                        cell.style.backgroundColor = originalBgColor;
-                        cell.style.color = 'white';
-                        
                         if (j === 0 || j === 6) {
                             cell.classList.add('weekend-cell');
                         }
@@ -512,8 +509,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         // Add hover effect only to non-today cells
                         cell.addEventListener('mouseenter', function() {
                             if (!this.classList.contains('today-cell') && !this.classList.contains('empty-cell')) {
-                                this.dataset.originalBg = this.style.backgroundColor || originalBgColor;
-                                this.style.backgroundColor = '#5a6268'; // Darker on hover
                                 this.style.transform = 'scale(1.02)';
                                 this.style.transition = 'all 0.2s ease';
                             }
@@ -521,7 +516,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         
                         cell.addEventListener('mouseleave', function() {
                             if (!this.classList.contains('today-cell') && !this.classList.contains('empty-cell')) {
-                                this.style.backgroundColor = this.dataset.originalBg || originalBgColor;
                                 this.style.transform = '';
                             }
                         });
@@ -622,26 +616,34 @@ document.addEventListener('DOMContentLoaded', function() {
                     <i class="bi bi-check-circle-fill text-success me-2"></i>
                     <strong>${window.LanguageManager ? window.LanguageManager.t('calendar.connected') : 'Google Calendar Connected!'}</strong> ${window.LanguageManager ? window.LanguageManager.t('calendar.connectedDescription') : 'Your calendar events are automatically synced.'}
                 `;
-                statusMessage.parentElement.classList.remove('alert-info');
+                statusMessage.parentElement.classList.remove('alert-info', 'alert-warning', 'alert-danger');
                 statusMessage.parentElement.classList.add('alert-success');
                 
-                await loadGoogleCalendarEvents();
+                // Try to load events, but don't show error if it fails here
+                try {
+                    await loadGoogleCalendarEvents();
+                } catch (eventError) {
+                    console.warn('Initial event loading failed, but status shows connected:', eventError);
+                    // The loadGoogleCalendarEvents function will handle its own error display
+                }
             } else {
+                googleConnected = false;
                 statusMessage.innerHTML = `
                     <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>
                     <strong>${window.LanguageManager ? window.LanguageManager.t('calendar.notConnected') : 'Google Calendar Not Connected'}</strong> - ${window.LanguageManager ? window.LanguageManager.t('calendar.notConnectedDescription') : 'Please log in with Google to enable automatic calendar sync.'}
                 `;
-                statusMessage.parentElement.classList.remove('alert-info');
+                statusMessage.parentElement.classList.remove('alert-info', 'alert-success', 'alert-danger');
                 statusMessage.parentElement.classList.add('alert-warning');
             }
         } catch (error) {
             console.error('Error checking Google Calendar status:', error);
+            googleConnected = false;
             const statusMessage = document.getElementById('calendarStatusMessage');
             statusMessage.innerHTML = `
                 <i class="bi bi-x-circle-fill text-danger me-2"></i>
-                <strong>${window.LanguageManager ? window.LanguageManager.t('calendar.connectionError') : 'Error'}</strong> - ${window.LanguageManager ? window.LanguageManager.t('calendar.connectionError') : 'Unable to check calendar status.'}
+                <strong>${window.LanguageManager ? window.LanguageManager.t('calendar.connectionError') : 'Connection Error'}</strong> - ${window.LanguageManager ? window.LanguageManager.t('calendar.connectionErrorDescription') : 'Unable to check calendar status. Please refresh the page.'}
             `;
-            statusMessage.parentElement.classList.remove('alert-info');
+            statusMessage.parentElement.classList.remove('alert-info', 'alert-success', 'alert-warning');
             statusMessage.parentElement.classList.add('alert-danger');
         }
     }
@@ -907,7 +909,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 ${event.location ? `<small class="text-muted d-block"><i class="bi bi-geo-alt me-1"></i>${event.location}</small>` : ''}
                             </div>
                             <div class="text-end">
-                                <span class="badge bg-primary">${window.LanguageManager ? window.LanguageManager.t('calendar.googleCalendar') : 'Google Calendar'}</span>
+                                <span class="badge bg-dark">${window.LanguageManager ? window.LanguageManager.t('calendar.googleCalendar') : 'Google Calendar'}</span>
                             </div>
                         </div>
                         ${event.description ? `<div class="mt-2"><small class="text-muted">${event.description.substring(0, 100)}${event.description.length > 100 ? '...' : ''}</small></div>` : ''}
@@ -977,7 +979,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     ` : ''}
                     
-                    <div class="mt-4 p-3 bg-info bg-opacity-10 rounded">
+                    <div class="mt-4 p-3 bg-light rounded">
                         <small class="text-muted">
                             <i class="bi bi-info-circle me-1"></i>
                             ${t('calendar.eventFromGoogle', 'This event is from your Google Calendar. You can edit or delete it using the buttons below.')}
