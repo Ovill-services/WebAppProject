@@ -459,8 +459,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 cell.style.height = '90px';
                 cell.style.verticalAlign = 'top';
                 cell.style.cursor = 'pointer';
-                cell.style.padding = '8px';
-                cell.style.border = '1px solid #e9ecef';
+                cell.style.padding = '2px';
+                cell.style.border = '1px solid white';
                 
                 if (i === 0 && j < firstDay) {
                     // Empty cells before month starts
@@ -483,11 +483,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         month === today.getMonth() && 
                         date === today.getDate()) {
                         cell.classList.add('today-cell');
-                        dayElement.classList.add('text-white');
                         cell.innerHTML = `
                             <div class="today-badge">
                                 <div class="day-number fw-bold text-white">${date}</div>
-                                <small class="text-white-50">${window.LanguageManager ? window.LanguageManager.t('calendar.today') : 'Today'}</small>
+                                <small class="text-white">${window.LanguageManager ? window.LanguageManager.t('calendar.today') : 'Today'}</small>
                             </div>
                         `;
                     } else {
@@ -506,19 +505,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             cell.classList.add('weekend-cell');
                         }
                         
-                        // Add hover effect only to non-today cells
-                        cell.addEventListener('mouseenter', function() {
-                            if (!this.classList.contains('today-cell') && !this.classList.contains('empty-cell')) {
-                                this.style.transform = 'scale(1.02)';
-                                this.style.transition = 'all 0.2s ease';
-                            }
-                        });
-                        
-                        cell.addEventListener('mouseleave', function() {
-                            if (!this.classList.contains('today-cell') && !this.classList.contains('empty-cell')) {
-                                this.style.transform = '';
-                            }
-                        });
+                        // No hover effects for flat design
                     }
                     
                     // Click event for day selection
@@ -586,11 +573,7 @@ document.addEventListener('DOMContentLoaded', function() {
         generateCalendar(currentMonth, currentYear);
         if (googleConnected) loadGoogleCalendarEvents();
         
-        // Add pulse effect to today button
-        this.style.transform = 'scale(0.95)';
-        setTimeout(() => {
-            this.style.transform = '';
-        }, 150);
+        // Flat design - no scaling effects
     });
 
     // Generate initial calendar
@@ -756,7 +739,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function addEventIndicator(cell, event) {
-        // Create a more attractive event indicator
+        // Create a flat event indicator - no gradients or hover effects
         const indicator = document.createElement('div');
         indicator.className = 'event-indicator';
         indicator.style.cssText = `
@@ -765,24 +748,12 @@ document.addEventListener('DOMContentLoaded', function() {
             left: 2px;
             right: 2px;
             height: 8px;
-            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
-            border-radius: 4px;
-            border: 1px solid rgba(255,255,255,0.3);
-            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            background: white;
+            border: 1px solid white;
             cursor: pointer;
-            transition: all 0.2s ease;
         `;
         
-        // Add hover effect
-        indicator.addEventListener('mouseenter', function() {
-            this.style.transform = 'translateY(-1px)';
-            this.style.boxShadow = '0 2px 6px rgba(0,0,0,0.3)';
-        });
-        
-        indicator.addEventListener('mouseleave', function() {
-            this.style.transform = '';
-            this.style.boxShadow = '0 1px 3px rgba(0,0,0,0.2)';
-        });
+        // No hover effects for flat design
         
         // Add click event to view event details
         indicator.addEventListener('click', function(e) {
@@ -812,9 +783,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 position: absolute;
                 top: 2px;
                 right: 2px;
-                background: #dc3545;
-                color: white;
-                border-radius: 50%;
+                background: white;
+                color: black;
                 width: 16px;
                 height: 16px;
                 font-size: 10px;
