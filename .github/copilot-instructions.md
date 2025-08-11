@@ -3,8 +3,6 @@
 ## Final Product
 - The final product should be an app to which you can connect your google, microsoft, yahoo, apple, ... Accounts and see your emails and calendar events in one place.
 
-## Project Context
-This is a private zone web application built with Node.js, Express, PostgreSQL, and Google APIs (Gmail & Calendar) integration.
 
 ## Coding Standards
 
@@ -73,10 +71,15 @@ app.get('/api/resource', requireAuth, async (req, res) => {
 
 ## How To Run the Application
 - cd to the project directory
-- use './docker-manager.sh start' to start the Docker containers
+- use './docker-manager.sh start' to start the Docker containe
+- private zone is available at `http://localhost:3001`
+- public zone is available at `http://localhost:3000`
 
 ## How To Restart The Application
+always:
 - use './docker-manager.sh restart' to restart the Docker containers
+- for starting only private zone, use './docker-manager.sh start-private-zone-app'
+- for starting only public site, use './docker-manager.sh start-public-site'
 
 
 ## How To Stop The Application

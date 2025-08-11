@@ -36,17 +36,31 @@
             <div class="col-12">
                 <div class="calendar-card">
                     <div class="calendar-header d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0 d-flex align-items-center text-white">
-                            <i class="bi bi-calendar me-2"></i>
-                            <span id="currentMonth">January 2025</span>
-                        </h5>
+                        <div class="d-flex align-items-center">
+                            <h5 class="mb-0 d-flex align-items-center text-white me-3">
+                                <i class="bi bi-calendar me-2"></i>
+                                <span id="currentMonth">January 2025</span>
+                            </h5>
+                            <!-- View Mode Selector -->
+                            <div class="btn-group me-3" role="group" aria-label="View Mode">
+                                <button type="button" class="btn btn-outline-light btn-sm active" id="monthViewBtn" title="Month View">
+                                    <i class="bi bi-calendar3 me-1"></i>Month
+                                </button>
+                                <button type="button" class="btn btn-outline-light btn-sm" id="weekViewBtn" title="Week View">
+                                    <i class="bi bi-calendar-week me-1"></i>Week
+                                </button>
+                            </div>
+                        </div>
                         <div class="btn-group" role="group">
-                            <button type="button" class="calendar-nav-btn" id="prevMonth" data-translate="calendar.previousMonth" title="Previous Month">
+                            <button type="button" class="calendar-nav-btn" id="prevPeriod" data-translate="calendar.previousMonth" title="Previous">
                                 <i class="bi bi-chevron-left"></i>
                             </button>
                             <button type="button" class="calendar-today-btn calendar-nav-btn" id="todayBtn" data-translate="calendar.today">Today</button>
-                            <button type="button" class="calendar-nav-btn" id="nextMonth" data-translate="calendar.nextMonth" title="Next Month">
+                            <button type="button" class="calendar-nav-btn" id="nextPeriod" data-translate="calendar.nextMonth" title="Next">
                                 <i class="bi bi-chevron-right"></i>
+                            </button>
+                            <button type="button" class="calendar-nav-btn" id="colorSettingsBtn" data-bs-toggle="modal" data-bs-target="#colorSettingsModal" title="Color Settings">
+                                <i class="bi bi-palette"></i>
                             </button>
                         </div>
                     </div>
@@ -260,6 +274,17 @@
                     </div>
                     
                     <div class="mb-4">
+                        <label for="category" class="form-label" data-translate="calendar.category">Event Category</label>
+                        <select class="enhanced-form-control" id="category" name="category">
+                            <option value="work" data-translate="calendar.categoryWork">Work</option>
+                            <option value="meeting" data-translate="calendar.categoryMeeting">Meeting</option>
+                            <option value="personal" data-translate="calendar.categoryPersonal">Personal</option>
+                            <option value="reminder" data-translate="calendar.categoryReminder">Reminder</option>
+                        </select>
+                        <small class="form-text text-muted">Choose a category to organize your events with custom colors</small>
+                    </div>
+                    
+                    <div class="mb-4">
                         <label for="location" class="form-label" data-translate="calendar.location">Location</label>
                         <input type="text" class="enhanced-form-control" id="location" name="location" data-translate="calendar.locationPlaceholder" placeholder="Meeting room, address, or virtual link">
                     </div>
@@ -363,6 +388,19 @@
                     
                     <div class="row mb-3">
                         <div class="col-12">
+                            <label for="editCategory" class="form-label" data-translate="calendar.category">Event Category</label>
+                            <select class="form-control" id="editCategory" name="category">
+                                <option value="work" data-translate="calendar.categoryWork">Work</option>
+                                <option value="meeting" data-translate="calendar.categoryMeeting">Meeting</option>
+                                <option value="personal" data-translate="calendar.categoryPersonal">Personal</option>
+                                <option value="reminder" data-translate="calendar.categoryReminder">Reminder</option>
+                            </select>
+                            <small class="form-text text-muted">Choose a category to organize your events with custom colors</small>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-12">
                             <label for="editLocation" class="form-label" data-translate="calendar.location">Location</label>
                             <input type="text" class="form-control" id="editLocation" name="location" 
                                    placeholder="Enter event location">
@@ -388,11 +426,169 @@
     </div>
 </div>
 
+<!-- Day Details Modal -->
+<div class="modal fade" id="dayDetailsModal" tabindex="-1" aria-labelledby="dayDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-body text-body">
+                <h5 class="modal-title" id="dayDetailsModalLabel">
+                    <i class="bi bi-calendar me-2"></i><span id="dayDetailsTitle">Day Events</span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0 text-muted">Events for <span id="selectedDateDisplay"></span></h6>
+                            <button type="button" class="btn btn-body btn-sm" onclick="createEventForSelectedDay()">
+                                <i class="bi bi-plus-circle me-1"></i>Add Event
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="dayEventsList">
+                    <!-- Events will be populated here -->
+                </div>
+                
+                <div id="noDayEventsMessage" class="text-center py-4" style="display: none;">
+                    <div class="mb-3">
+                        <i class="bi bi-calendar-x display-4 text-muted opacity-50"></i>
+                    </div>
+                    <h6 class="text-muted mb-2">No events for this day</h6>
+                    <p class="text-muted mb-3">Click "Add Event" to schedule something</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Color Settings Modal -->
+<div class="modal fade" id="colorSettingsModal" tabindex="-1" aria-labelledby="colorSettingsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-body text-body">
+                <h5 class="modal-title" id="colorSettingsModalLabel">
+                    <i class="bi bi-palette me-2"></i>Event Color Settings
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <p class="text-muted mb-3">Customize colors for different event categories to better organize your calendar.</p>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header bg-body text-body">
+                                <h6 class="mb-0"><i class="bi bi-briefcase me-2"></i>Work Events</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="workColorPicker" class="form-label">Primary Color</label>
+                                    <input type="color" class="form-control form-control-color" id="workColorPicker" value="#5fb3d4" title="Choose work events color">
+                                </div>
+                                <div class="event-preview" id="workPreview">
+                                    <div class="event-title event-work">Sample Work Event</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100 bg-body text-body">
+                            <div class="card-header bg-body text-body">
+                                <h6 class="mb-0"><i class="bi bi-camera-video me-2"></i>Meeting Events</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="meetingColorPicker" class="form-label">Primary Color</label>
+                                    <input type="color" class="form-control form-control-color" id="meetingColorPicker" value="#28a745" title="Choose meeting events color">
+                                </div>
+                                <div class="event-preview" id="meetingPreview">
+                                    <div class="event-title event-meeting">Sample Meeting</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header bg-body text-body">
+                                <h6 class="mb-0"><i class="bi bi-person me-2"></i>Personal Events</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="personalColorPicker" class="form-label">Primary Color</label>
+                                    <input type="color" class="form-control form-control-color" id="personalColorPicker" value="#dc3545" title="Choose personal events color">
+                                </div>
+                                <div class="event-preview" id="personalPreview">
+                                    <div class="event-title event-personal">Sample Personal Event</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header bg-body text-body">
+                                <h6 class="mb-0"><i class="bi bi-bell me-2"></i>Reminder Events</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label for="reminderColorPicker" class="form-label">Primary Color</label>
+                                    <input type="color" class="form-control form-control-color" id="reminderColorPicker" value="#ffc107" title="Choose reminder events color">
+                                </div>
+                                <div class="event-preview" id="reminderPreview">
+                                    <div class="event-title event-reminder">Sample Reminder</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <strong>Tip:</strong> Colors are saved locally in your browser and will be remembered for future visits.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" id="resetColorsBtn">
+                    <i class="bi bi-arrow-clockwise me-1"></i>Reset to Default
+                </button>
+                <button type="button" class="btn btn-primary" id="saveColorsBtn">
+                    <i class="bi bi-check-lg me-1"></i>Save Colors
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const currentDate = new Date();
     let currentMonth = currentDate.getMonth();
     let currentYear = currentDate.getFullYear();
+    let currentViewMode = 'month'; // 'month' or 'week'
+    let currentWeekStart = new Date(); // For week view
+
+    // Initialize current week to start of this week (Sunday)
+    const today = new Date();
+    const dayOfWeek = today.getDay();
+    currentWeekStart = new Date(today);
+    currentWeekStart.setDate(today.getDate() - dayOfWeek);
 
     // Translated month names - will be updated by language system
     let monthNames = [
@@ -441,6 +637,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const daysInMonth = new Date(year, month + 1, 0).getDate();
         const today = new Date();
         
+        // Show thead for month view
+        const thead = document.querySelector('#calendarTable thead');
+        if (thead) {
+            thead.style.display = 'table-header-group';
+            thead.style.visibility = 'visible';
+        }
+        
         const translatedMonthNames = getMonthNames();
         document.getElementById('currentMonth').textContent = `${translatedMonthNames[month]} ${year}`;
         
@@ -460,7 +663,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 cell.style.verticalAlign = 'top';
                 cell.style.cursor = 'pointer';
                 cell.style.padding = '2px';
-                cell.style.border = '1px solid white';
+                cell.style.border = '1px solid var(--bs-border-color)';
+                cell.style.transition = 'all 0.2s ease';
+                
+                // Add hover effect for the entire cell
+                cell.addEventListener('mouseenter', function() {
+                    if (!this.classList.contains('empty-cell')) {
+                        this.style.backgroundColor = 'rgba(var(--bs-primary-rgb), 0.02)';
+                        this.style.borderColor = 'rgba(var(--bs-primary-rgb), 0.3)';
+                    }
+                });
+                cell.addEventListener('mouseleave', function() {
+                    if (!this.classList.contains('empty-cell')) {
+                        this.style.backgroundColor = 'transparent';
+                        this.style.borderColor = 'var(--bs-border-color)';
+                    }
+                });
                 
                 if (i === 0 && j < firstDay) {
                     // Empty cells before month starts
@@ -477,6 +695,47 @@ document.addEventListener('DOMContentLoaded', function() {
                     const dayElement = document.createElement('div');
                     dayElement.className = 'day-number fw-bold mb-1';
                     dayElement.textContent = date;
+                    dayElement.style.cursor = 'pointer';
+                    dayElement.style.padding = '4px 6px';
+                    dayElement.style.borderRadius = '6px';
+                    dayElement.style.display = 'inline-block';
+                    dayElement.style.minWidth = '24px';
+                    dayElement.style.textAlign = 'center';
+                    dayElement.style.transition = 'all 0.2s ease';
+                    dayElement.style.fontWeight = 'bold';
+                    dayElement.style.position = 'relative';
+                    dayElement.style.zIndex = '10'; // Ensure day number is always on top
+                    dayElement.style.marginBottom = '2px';
+                    dayElement.title = 'Click to view day details';
+                    
+                    // Add hover effect
+                    
+                    // Add onclick handler for day number (more reliable than addEventListener)
+                    dayElement.onclick = (function(capturedDate) {
+                        return function(e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            e.stopImmediatePropagation();
+                            console.log('Day number ONCLICK:', capturedDate, 'Month:', month, 'Year:', year);
+                            window.showDayDetails(capturedDate, month, year);
+                            return false;
+                        };
+                    })(date);
+
+                    // Add click handler to the entire cell for day details
+                    cell.onclick = (function(capturedDate) {
+                        return function(e) {
+                            // Only trigger if the click wasn't on an event title
+                            if (!e.target.classList.contains('event-title')) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                e.stopImmediatePropagation();
+                                console.log('Cell ONCLICK for date:', capturedDate, 'Month:', month, 'Year:', year);
+                                window.showDayDetails(capturedDate, month, year);
+                                return false;
+                            }
+                        };
+                    })(date);
                     
                     // Highlight today
                     if (year === today.getFullYear() && 
@@ -485,10 +744,40 @@ document.addEventListener('DOMContentLoaded', function() {
                         cell.classList.add('today-cell');
                         cell.innerHTML = `
                             <div class="today-badge">
-                                <div class="day-number fw-bold text-white">${date}</div>
+                                <div class="day-number fw-bold text-white" style="cursor: pointer; padding: 4px 6px; border-radius: 6px; display: inline-block; min-width: 24px; text-align: center; position: relative; z-index: 10; margin-bottom: 2px;" title="Click to view day details">${date}</div>
                                 <small class="text-white">${window.LanguageManager ? window.LanguageManager.t('calendar.today') : 'Today'}</small>
                             </div>
                         `;
+                        
+                        // Add onclick handler to today's day number (more reliable)
+                        const todayDayNumber = cell.querySelector('.day-number');
+                        if (todayDayNumber) {
+                            todayDayNumber.onclick = (function(capturedDate) {
+                                return function(e) {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    e.stopImmediatePropagation();
+                                    console.log('Today day number ONCLICK:', capturedDate, 'Month:', month, 'Year:', year);
+                                    window.showDayDetails(capturedDate, month, year);
+                                    return false;
+                                };
+                            })(date);
+                        }
+
+                        // Add click handler to today's entire cell
+                        cell.onclick = (function(capturedDate) {
+                            return function(e) {
+                                // Only trigger if the click wasn't on an event title
+                                if (!e.target.classList.contains('event-title')) {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    e.stopImmediatePropagation();
+                                    console.log('Today cell ONCLICK for date:', capturedDate, 'Month:', month, 'Year:', year);
+                                    window.showDayDetails(capturedDate, month, year);
+                                    return false;
+                                }
+                            };
+                        })(date);
                     } else {
                         cell.appendChild(dayElement);
                         
@@ -508,18 +797,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         // No hover effects for flat design
                     }
                     
-                    // Click event for day selection
-                    cell.addEventListener('click', function() {
-                        // Remove previous selection
-                        document.querySelectorAll('.selected-day').forEach(el => {
-                            el.classList.remove('selected-day');
-                        });
-                        
-                        if (!this.classList.contains('today-cell')) {
-                            this.classList.add('selected-day');
-                        }
-                    });
-                    
                     date++;
                 }
                 
@@ -535,33 +812,300 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    function generateWeekView(weekStart) {
+        const today = new Date();
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 6);
+        
+        // Hide thead for week view to avoid duplicate headers
+        const thead = document.querySelector('#calendarTable thead');
+        if (thead) {
+            thead.style.display = 'none';
+            thead.style.visibility = 'hidden';
+        }
+        
+        // Update header with week range
+        const translatedMonthNames = getMonthNames();
+        const startMonth = translatedMonthNames[weekStart.getMonth()];
+        const endMonth = translatedMonthNames[weekEnd.getMonth()];
+        
+        if (weekStart.getMonth() === weekEnd.getMonth()) {
+            document.getElementById('currentMonth').textContent = `${startMonth} ${weekStart.getDate()}-${weekEnd.getDate()}, ${weekStart.getFullYear()}`;
+        } else {
+            document.getElementById('currentMonth').textContent = `${startMonth} ${weekStart.getDate()} - ${endMonth} ${weekEnd.getDate()}, ${weekStart.getFullYear()}`;
+        }
+        
+        const calendarBody = document.getElementById('calendarBody');
+        calendarBody.innerHTML = '';
+        
+        // Create header row with day names and dates (single row)
+        const headerRow = document.createElement('tr');
+        headerRow.className = 'week-header-row';
+        
+        // Empty cell for time column
+        const timeHeaderCell = document.createElement('th');
+        timeHeaderCell.className = 'time-column-header';
+        timeHeaderCell.style.width = '80px';
+        timeHeaderCell.style.minWidth = '80px';
+        timeHeaderCell.style.border = '1px solid var(--bs-border-color)';
+        timeHeaderCell.style.backgroundColor = 'var(--bs-light)';
+        timeHeaderCell.style.fontWeight = 'bold';
+        timeHeaderCell.style.fontSize = '0.85rem';
+        timeHeaderCell.style.padding = '8px 4px';
+        timeHeaderCell.style.position = 'sticky';
+        timeHeaderCell.style.top = '0';
+        timeHeaderCell.style.zIndex = '10';
+        timeHeaderCell.textContent = '';
+        headerRow.appendChild(timeHeaderCell);
+        
+        // Day header cells - single row with day name and date
+        for (let i = 0; i < 7; i++) {
+            const currentDay = new Date(weekStart);
+            currentDay.setDate(weekStart.getDate() + i);
+            
+            const dayHeaderCell = document.createElement('th');
+            dayHeaderCell.className = 'day-header-cell text-center';
+            dayHeaderCell.style.border = '1px solid var(--bs-border-color)';
+            dayHeaderCell.style.backgroundColor = 'var(--bs-light)';
+            dayHeaderCell.style.fontWeight = 'bold';
+            dayHeaderCell.style.padding = '8px 4px';
+            dayHeaderCell.style.position = 'sticky';
+            dayHeaderCell.style.top = '0';
+            dayHeaderCell.style.zIndex = '10';
+            dayHeaderCell.style.minWidth = '120px';
+            
+            const dayName = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][currentDay.getDay()];
+            const dayNumber = currentDay.getDate();
+            
+            // Simple styling like month view - no blue background
+            dayHeaderCell.innerHTML = `<div class="fw-bold">${dayName}</div><div>${dayNumber}</div>`;
+            
+            // Highlight today with similar styling to month view
+            if (currentDay.toDateString() === today.toDateString()) {
+                dayHeaderCell.style.backgroundColor = 'rgba(var(--bs-primary-rgb), 0.1)';
+                dayHeaderCell.style.color = 'var(--bs-primary)';
+            }
+            
+            // Weekend styling
+            if (i === 0 || i === 6) {
+                dayHeaderCell.classList.add('weekend-header');
+                dayHeaderCell.style.backgroundColor = 'rgba(var(--bs-secondary-rgb), 0.1)';
+                dayHeaderCell.style.color = 'var(--bs-secondary)';
+            }
+            
+            headerRow.appendChild(dayHeaderCell);
+        }
+        
+        calendarBody.appendChild(headerRow);
+        
+        // Create all-day events row
+        const allDayRow = document.createElement('tr');
+        allDayRow.className = 'all-day-events-row';
+        
+        // Time label for all-day events
+        const allDayTimeCell = document.createElement('td');
+        allDayTimeCell.className = 'time-cell all-day-time';
+        allDayTimeCell.style.width = '80px';
+        allDayTimeCell.style.minWidth = '80px';
+        allDayTimeCell.style.border = '1px solid var(--bs-border-color)';
+        allDayTimeCell.style.backgroundColor = 'var(--bs-light)';
+        allDayTimeCell.style.textAlign = 'center';
+        allDayTimeCell.style.fontWeight = 'bold';
+        allDayTimeCell.style.fontSize = '0.75rem';
+        allDayTimeCell.style.padding = '4px';
+        allDayTimeCell.style.height = '30px';
+        allDayTimeCell.style.verticalAlign = 'middle';
+        allDayTimeCell.style.borderRight = '2px solid var(--bs-border-color)';
+        allDayTimeCell.textContent = 'All Day';
+        allDayRow.appendChild(allDayTimeCell);
+        
+        // All-day event cells for each day
+        for (let i = 0; i < 7; i++) {
+            const currentDay = new Date(weekStart);
+            currentDay.setDate(weekStart.getDate() + i);
+            
+            const allDayCell = document.createElement('td');
+            allDayCell.className = 'calendar-day all-day-cell position-relative';
+            allDayCell.style.border = '1px solid var(--bs-border-color)';
+            allDayCell.style.height = '25px';
+            allDayCell.style.verticalAlign = 'top';
+            allDayCell.style.padding = '2px';
+            allDayCell.style.minWidth = '120px';
+            allDayCell.style.backgroundColor = 'rgba(var(--bs-info-rgb), 0.05)';
+            
+            // Add data attributes for all-day event positioning
+            allDayCell.setAttribute('data-date', currentDay.toISOString().split('T')[0]);
+            allDayCell.setAttribute('data-all-day', 'true');
+            allDayCell.setAttribute('data-day-index', i);
+            
+            // Highlight today column
+            if (currentDay.toDateString() === today.toDateString()) {
+                allDayCell.style.backgroundColor = 'rgba(var(--bs-primary-rgb), 0.1)';
+                allDayCell.classList.add('today-column');
+            }
+            
+            // Weekend styling
+            if (i === 0 || i === 6) {
+                allDayCell.classList.add('weekend-cell');
+                allDayCell.style.backgroundColor = 'rgba(var(--bs-secondary-rgb), 0.08)';
+            }
+            
+            allDayRow.appendChild(allDayCell);
+        }
+        
+        calendarBody.appendChild(allDayRow);
+        
+        // Create time slot rows (6 AM to 11 PM = 18 hours) with even shorter cells
+        for (let hour = 6; hour <= 23; hour++) {
+            const timeRow = document.createElement('tr');
+            timeRow.className = 'time-slot-row';
+            timeRow.setAttribute('data-hour', hour);
+            
+            // Time label cell
+            const timeCell = document.createElement('td');
+            timeCell.className = 'time-cell';
+            timeCell.style.width = '80px';
+            timeCell.style.minWidth = '80px';
+            timeCell.style.border = '1px solid var(--bs-border-color)';
+            timeCell.style.backgroundColor = 'var(--bs-light)';
+            timeCell.style.textAlign = 'center';
+            timeCell.style.fontWeight = 'bold';
+            timeCell.style.fontSize = '0.8rem';
+            timeCell.style.padding = '4px';
+            timeCell.style.height = '20px'; // Reduced from 30px to 20px
+            timeCell.style.verticalAlign = 'middle';
+            timeCell.style.borderRight = '2px solid var(--bs-border-color)';
+            
+            const timeLabel = hour === 12 ? '12 PM' : 
+                             hour > 12 ? `${hour - 12} PM` : 
+                             hour === 0 ? '12 AM' : `${hour} AM`;
+            timeCell.textContent = timeLabel;
+            
+            timeRow.appendChild(timeCell);
+            
+            // Day cells for this hour
+            for (let i = 0; i < 7; i++) {
+                const currentDay = new Date(weekStart);
+                currentDay.setDate(weekStart.getDate() + i);
+                
+                const dayCell = document.createElement('td');
+                dayCell.className = 'calendar-day time-slot-cell position-relative';
+                dayCell.style.border = '1px solid var(--bs-border-color)';
+                dayCell.style.height = '20px'; // Reduced from 30px to 20px
+                dayCell.style.verticalAlign = 'top';
+                dayCell.style.padding = '2px';
+                dayCell.style.minWidth = '120px';
+                dayCell.style.cursor = 'pointer';
+                dayCell.style.transition = 'all 0.2s ease';
+                
+                // Add data attributes for event positioning
+                dayCell.setAttribute('data-date', currentDay.toISOString().split('T')[0]);
+                dayCell.setAttribute('data-hour', hour);
+                dayCell.setAttribute('data-day-index', i);
+                
+                // Add hover effect
+                dayCell.addEventListener('mouseenter', function() {
+                    this.style.backgroundColor = 'rgba(var(--bs-primary-rgb), 0.05)';
+                });
+                dayCell.addEventListener('mouseleave', function() {
+                    this.style.backgroundColor = 'transparent';
+                });
+                
+                // Highlight today column with subtle styling like month view
+                if (currentDay.toDateString() === today.toDateString()) {
+                    dayCell.style.backgroundColor = 'rgba(var(--bs-primary-rgb), 0.02)';
+                    dayCell.classList.add('today-column');
+                }
+                
+                // Weekend styling
+                if (i === 0 || i === 6) {
+                    dayCell.classList.add('weekend-cell');
+                    dayCell.style.backgroundColor = 'rgba(var(--bs-secondary-rgb), 0.02)';
+                }
+                
+                // Current hour highlighting
+                const currentHour = new Date().getHours();
+                if (currentDay.toDateString() === today.toDateString() && hour === currentHour) {
+                    dayCell.style.backgroundColor = 'rgba(var(--bs-warning-rgb), 0.1)';
+                    dayCell.style.borderLeft = '3px solid var(--bs-warning)';
+                    dayCell.classList.add('current-hour');
+                }
+                
+                // Add click handler for creating events at specific time
+                dayCell.addEventListener('click', function(e) {
+                    if (!e.target.classList.contains('week-event')) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
+                        const cellDate = currentDay.getDate();
+                        const cellMonth = currentDay.getMonth();
+                        const cellYear = currentDay.getFullYear();
+                        
+                        console.log(`Creating event at ${hour}:00 on ${cellDate}/${cellMonth + 1}/${cellYear}`);
+                        window.showDayDetails(cellDate, cellMonth, cellYear, hour);
+                    }
+                });
+                
+                timeRow.appendChild(dayCell);
+            }
+            
+            calendarBody.appendChild(timeRow);
+        }
+    }
+
     // Event listeners for navigation with smooth transitions
-    document.getElementById('prevMonth').addEventListener('click', function() {
+    document.getElementById('prevPeriod').addEventListener('click', function() {
         this.disabled = true;
-        currentMonth--;
-        if (currentMonth < 0) {
-            currentMonth = 11;
-            currentYear--;
+        
+        if (currentViewMode === 'month') {
+            currentMonth--;
+            if (currentMonth < 0) {
+                currentMonth = 11;
+                currentYear--;
+            }
+        } else {
+            // Week view - go back one week
+            currentWeekStart.setDate(currentWeekStart.getDate() - 7);
         }
         
         setTimeout(() => {
-            generateCalendar(currentMonth, currentYear);
-            if (googleConnected) loadGoogleCalendarEvents();
+            if (currentViewMode === 'month') {
+                generateCalendar(currentMonth, currentYear);
+            } else {
+                generateWeekView(currentWeekStart);
+            }
+            // Only load events if Google Calendar is connected
+            if (googleConnected) {
+                loadGoogleCalendarEvents();
+            }
             this.disabled = false;
         }, 150);
     });
 
-    document.getElementById('nextMonth').addEventListener('click', function() {
+    document.getElementById('nextPeriod').addEventListener('click', function() {
         this.disabled = true;
-        currentMonth++;
-        if (currentMonth > 11) {
-            currentMonth = 0;
-            currentYear++;
+        
+        if (currentViewMode === 'month') {
+            currentMonth++;
+            if (currentMonth > 11) {
+                currentMonth = 0;
+                currentYear++;
+            }
+        } else {
+            // Week view - go forward one week
+            currentWeekStart.setDate(currentWeekStart.getDate() + 7);
         }
         
         setTimeout(() => {
-            generateCalendar(currentMonth, currentYear);
-            if (googleConnected) loadGoogleCalendarEvents();
+            if (currentViewMode === 'month') {
+                generateCalendar(currentMonth, currentYear);
+            } else {
+                generateWeekView(currentWeekStart);
+            }
+            // Only load events if Google Calendar is connected  
+            if (googleConnected) {
+                loadGoogleCalendarEvents();
+            }
             this.disabled = false;
         }, 150);
     });
@@ -570,10 +1114,78 @@ document.addEventListener('DOMContentLoaded', function() {
         const today = new Date();
         currentMonth = today.getMonth();
         currentYear = today.getFullYear();
-        generateCalendar(currentMonth, currentYear);
-        if (googleConnected) loadGoogleCalendarEvents();
         
-        // Flat design - no scaling effects
+        if (currentViewMode === 'month') {
+            generateCalendar(currentMonth, currentYear);
+        } else {
+            // Week view - set to current week
+            const dayOfWeek = today.getDay();
+            currentWeekStart = new Date(today);
+            currentWeekStart.setDate(today.getDate() - dayOfWeek);
+            generateWeekView(currentWeekStart);
+        }
+        
+        // Only load events if Google Calendar is connected
+        if (googleConnected) {
+            loadGoogleCalendarEvents();
+        }
+    });
+
+    // View mode switchers
+    document.getElementById('monthViewBtn').addEventListener('click', function() {
+        console.log('Month view button clicked! Current mode:', currentViewMode);
+        if (currentViewMode !== 'month') {
+            console.log('Switching to month view...');
+            currentViewMode = 'month';
+            
+            // Update button states
+            this.classList.add('active');
+            document.getElementById('weekViewBtn').classList.remove('active');
+            
+            // Generate month view
+            generateCalendar(currentMonth, currentYear);
+            // Only load events if Google Calendar is connected
+            if (googleConnected) {
+                loadGoogleCalendarEvents();
+            }
+        } else {
+            console.log('Already in month view, no action needed');
+        }
+    });
+
+    document.getElementById('weekViewBtn').addEventListener('click', function() {
+        console.log('Week view button clicked! Current mode:', currentViewMode);
+        if (currentViewMode !== 'week') {
+            console.log('Switching to week view...');
+            currentViewMode = 'week';
+            
+            // Update button states
+            this.classList.add('active');
+            document.getElementById('monthViewBtn').classList.remove('active');
+            
+            // Set week start based on current month view
+            const firstOfMonth = new Date(currentYear, currentMonth, 1);
+            const dayOfWeek = firstOfMonth.getDay();
+            currentWeekStart = new Date(firstOfMonth);
+            currentWeekStart.setDate(firstOfMonth.getDate() - dayOfWeek);
+            
+            console.log('Week start calculated:', currentWeekStart);
+            
+            // Generate week view
+            try {
+                generateWeekView(currentWeekStart);
+                console.log('Week view generated successfully');
+            } catch (error) {
+                console.error('Error generating week view:', error);
+            }
+            
+            // Only load events if Google Calendar is connected
+            if (googleConnected) {
+                loadGoogleCalendarEvents();
+            }
+        } else {
+            console.log('Already in week view, no action needed');
+        }
     });
 
     // Generate initial calendar
@@ -581,7 +1193,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Google Calendar Integration functionality
     let googleConnected = false;
-    let googleEvents = [];
+    window.googleEvents = []; // Make globally accessible
 
     // Check Google Calendar integration status on page load
     checkGoogleCalendarStatus();
@@ -604,10 +1216,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Try to load events, but don't show error if it fails here
                 try {
-                    await loadGoogleCalendarEvents();
+                    await loadGoogleCalendarEvents(false); // Don't show notifications on initial load
                 } catch (eventError) {
                     console.warn('Initial event loading failed, but status shows connected:', eventError);
-                    // The loadGoogleCalendarEvents function will handle its own error display
+                    // Silently fail on initial load - don't show error notification
                 }
             } else {
                 googleConnected = false;
@@ -650,14 +1262,36 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    async function loadGoogleCalendarEvents() {
+    async function loadGoogleCalendarEvents(showErrorNotifications = true) {
         if (!googleConnected) return;
 
         try {
-            const startDate = new Date(currentYear, currentMonth, 1).toISOString();
-            const endDate = new Date(currentYear, currentMonth + 1, 0).toISOString();
+            let startDate, endDate, periodDescription;
             
-            console.log('📅 Loading events for:', `${currentMonth + 1}/${currentYear}`);
+            if (currentViewMode === 'month') {
+                startDate = new Date(currentYear, currentMonth, 1).toISOString();
+                endDate = new Date(currentYear, currentMonth + 1, 0).toISOString();
+                const translatedMonthNames = getMonthNames();
+                periodDescription = `${translatedMonthNames[currentMonth]} ${currentYear}`;
+            } else {
+                // Week view
+                startDate = new Date(currentWeekStart).toISOString();
+                const weekEnd = new Date(currentWeekStart);
+                weekEnd.setDate(currentWeekStart.getDate() + 6);
+                endDate = weekEnd.toISOString();
+                
+                const translatedMonthNames = getMonthNames();
+                const startMonth = translatedMonthNames[currentWeekStart.getMonth()];
+                const endMonth = translatedMonthNames[weekEnd.getMonth()];
+                
+                if (currentWeekStart.getMonth() === weekEnd.getMonth()) {
+                    periodDescription = `${startMonth} ${currentWeekStart.getDate()}-${weekEnd.getDate()}, ${currentWeekStart.getFullYear()}`;
+                } else {
+                    periodDescription = `${startMonth} ${currentWeekStart.getDate()} - ${endMonth} ${weekEnd.getDate()}, ${currentWeekStart.getFullYear()}`;
+                }
+            }
+            
+            console.log('📅 Loading events for:', periodDescription);
             console.log('📅 Date range:', startDate, 'to', endDate);
             
             const response = await fetch(`/api/google/calendar/events?start=${startDate}&end=${endDate}`);
@@ -666,60 +1300,90 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('📊 API Response:', data);
             
             if (data.success) {
-                googleEvents = data.events || [];
-                console.log(`🎉 Loaded ${googleEvents.length} events:`, googleEvents);
+                window.googleEvents = data.events || [];
+                console.log(`🎉 Loaded ${window.googleEvents.length} events:`, window.googleEvents);
                 updateCalendarWithEvents();
                 updateEventCount();
                 
-                // Show user feedback
-                const translatedMonthNames = getMonthNames();
-                if (googleEvents.length === 0) {
-                    const message = window.LanguageManager 
-                        ? window.LanguageManager.t('calendar.noEventsForMonth').replace('{month}', translatedMonthNames[currentMonth]).replace('{year}', currentYear)
-                        : `No events found for ${translatedMonthNames[currentMonth]} ${currentYear}`;
-                    showNotification(message, 'info');
-                } else {
-                    const message = window.LanguageManager 
-                        ? window.LanguageManager.t('calendar.eventsLoaded').replace('{count}', googleEvents.length).replace('{month}', translatedMonthNames[currentMonth])
-                        : `Loaded ${googleEvents.length} event(s) for ${translatedMonthNames[currentMonth]}`;
-                    showNotification(message, 'success');
+                // Show user feedback only if requested
+                if (showErrorNotifications) {
+                    if (window.googleEvents.length === 0) {
+                        const message = window.LanguageManager 
+                            ? window.LanguageManager.t('calendar.noEventsForMonth').replace('{month}', periodDescription).replace('{year}', '')
+                            : `No events found for ${periodDescription}`;
+                        showNotification(message, 'info');
+                    } else {
+                        const message = window.LanguageManager 
+                            ? window.LanguageManager.t('calendar.eventsLoaded').replace('{count}', window.googleEvents.length).replace('{month}', periodDescription)
+                            : `Loaded ${window.googleEvents.length} event(s) for ${periodDescription}`;
+                        showNotification(message, 'success');
+                    }
                 }
             } else {
                 console.error('❌ API Error:', data);
-                showNotification(window.LanguageManager ? window.LanguageManager.t('calendar.failedToLoadEvents') : 'Failed to load calendar events', 'error');
+                if (showErrorNotifications) {
+                    showNotification(window.LanguageManager ? window.LanguageManager.t('calendar.failedToLoadEvents') : 'Failed to load calendar events', 'error');
+                }
             }
         } catch (error) {
             console.error('❌ Error loading Google Calendar events:', error);
-            showNotification(window.LanguageManager ? window.LanguageManager.t('calendar.failedToLoadEvents') : 'Failed to load Google Calendar events', 'error');
+            if (showErrorNotifications) {
+                showNotification(window.LanguageManager ? window.LanguageManager.t('calendar.failedToLoadEvents') : 'Failed to load Google Calendar events', 'error');
+            }
         }
     }
 
     function updateCalendarWithEvents() {
-        console.log('🎨 Updating calendar with events:', googleEvents);
+        console.log('🎨 Updating calendar with events:', window.googleEvents);
         
         // Clear existing event indicators
-        document.querySelectorAll('.event-indicator').forEach(el => el.remove());
+        document.querySelectorAll('.event-title, .event-count-badge, .week-event').forEach(el => el.remove());
         
-        if (!googleEvents || googleEvents.length === 0) {
+        if (!window.googleEvents || window.googleEvents.length === 0) {
             console.log('📭 No events to display');
             return;
         }
         
+        // Apply user colors to ensure events get correct styling
+        const userColors = loadUserColors();
+        applyColors(userColors);
+        
         let eventsAdded = 0;
-        googleEvents.forEach((event, index) => {
+        window.googleEvents.forEach((event, index) => {
             console.log(`📅 Processing event ${index + 1}:`, event);
             
             const eventDate = new Date(event.start);
-            console.log(`📅 Event date: ${eventDate}, Current month: ${currentMonth}, Current year: ${currentYear}`);
+            console.log(`📅 Event date: ${eventDate}, View mode: ${currentViewMode}`);
             
-            if (eventDate.getMonth() === currentMonth && eventDate.getFullYear() === currentYear) {
-                const dayCell = findDayCell(eventDate.getDate());
-                console.log(`📅 Found day cell for day ${eventDate.getDate()}:`, dayCell ? 'Yes' : 'No');
+            let shouldShowEvent = false;
+            
+            if (currentViewMode === 'month') {
+                // Month view - show events for current month
+                shouldShowEvent = eventDate.getMonth() === currentMonth && eventDate.getFullYear() === currentYear;
+            } else {
+                // Week view - show events for current week
+                const weekEnd = new Date(currentWeekStart);
+                weekEnd.setDate(currentWeekStart.getDate() + 6);
+                shouldShowEvent = eventDate >= currentWeekStart && eventDate <= weekEnd;
+            }
+            
+            if (shouldShowEvent) {
+                const dayCell = findDayCell(eventDate);
+                console.log(`📅 Found day cell for date ${eventDate.toDateString()}:`, dayCell ? 'Yes' : 'No');
                 
-                if (dayCell && !dayCell.classList.contains('empty-cell')) {
-                    addEventIndicator(dayCell, event);
-                    eventsAdded++;
-                    console.log(`✅ Added event indicator for: ${event.title}`);
+                if (dayCell) {
+                    // Check if it's not an empty cell (only relevant for month view)
+                    const isEmptyCell = currentViewMode === 'month' && dayCell.classList && dayCell.classList.contains('empty-cell');
+                    
+                    if (!isEmptyCell) {
+                        addEventIndicator(dayCell, event, eventDate.getMonth(), eventDate.getFullYear());
+                        eventsAdded++;
+                        console.log(`✅ Added event indicator for: ${event.title}`);
+                    } else {
+                        console.log(`⚠️ Skipping empty cell for: ${event.title}`);
+                    }
+                } else {
+                    console.log(`❌ No day cell found for: ${event.title} on ${eventDate.toDateString()}`);
                 }
             }
         });
@@ -727,82 +1391,397 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log(`🎉 Added ${eventsAdded} event indicators to calendar`);
     }
 
-    function findDayCell(day) {
+    function findDayCell(eventDate) {
         const cells = document.querySelectorAll('.calendar-day');
-        for (let cell of cells) {
-            const dayElement = cell.querySelector('.day-number');
-            if (dayElement && parseInt(dayElement.textContent) === day && !cell.classList.contains('empty-cell')) {
-                return cell;
+        
+        if (currentViewMode === 'month') {
+            // Month view - find by day number
+            const day = eventDate.getDate();
+            for (let cell of cells) {
+                const dayElement = cell.querySelector('.day-number');
+                if (dayElement && parseInt(dayElement.textContent) === day && !cell.classList.contains('empty-cell')) {
+                    return cell;
+                }
+            }
+        } else {
+            // Week view with time slots - find by date and return the container for that day
+            const targetDateStr = eventDate.toISOString().split('T')[0];
+            
+            // For week view, we need to find all cells for this date and return a container
+            const dayCells = Array.from(cells).filter(cell => 
+                cell.getAttribute('data-date') === targetDateStr && !cell.classList.contains('all-day-cell')
+            );
+            
+            if (dayCells.length > 0) {
+                // Return a virtual container that represents this day column
+                return {
+                    isWeekColumn: true,
+                    date: eventDate,
+                    cells: dayCells,
+                    getAttribute: () => targetDateStr
+                };
             }
         }
         return null;
     }
 
-    function addEventIndicator(cell, event) {
-        // Create a flat event indicator - no gradients or hover effects
-        const indicator = document.createElement('div');
-        indicator.className = 'event-indicator';
-        indicator.style.cssText = `
-            position: absolute;
-            bottom: 2px;
-            left: 2px;
-            right: 2px;
-            height: 8px;
-            background: white;
-            border: 1px solid white;
-            cursor: pointer;
-        `;
-        
-        // No hover effects for flat design
-        
-        // Add click event to view event details
-        indicator.addEventListener('click', function(e) {
-            e.stopPropagation();
-            showEventDetails(event);
-        });
-        
-        // Format time for tooltip
-        let timeDisplay = '';
-                if (!event.allDay) {
-                    const eventTime = new Date(event.start);
-                    const endTime = new Date(event.end);
-                    timeDisplay = `\n🕐 ${eventTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - ${endTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
-                } else {
-                    timeDisplay = `\n📅 ${window.LanguageManager ? window.LanguageManager.t('calendar.allDay') : 'All day'}`;
+    function addEventIndicator(dayContainer, event, month, year) {
+        if (currentViewMode === 'month') {
+            // Month view logic with multi-day event support
+            const eventStart = new Date(event.start);
+            const eventEnd = new Date(event.end);
+            
+            // Calculate event duration in days
+            const startDate = new Date(eventStart.getFullYear(), eventStart.getMonth(), eventStart.getDate());
+            const endDate = new Date(eventEnd.getFullYear(), eventEnd.getMonth(), eventEnd.getDate());
+            const durationDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+            
+            console.log(`📅 Event "${event.title}" duration: ${durationDays} days`);
+            
+            if (durationDays > 1) {
+                // Multi-day event - span across multiple cells
+                addMultiDayEvent(event, eventStart, eventEnd, month, year);
+            } else {
+                // Single day event - use existing logic
+                const cell = dayContainer;
+                const existingEvents = cell.querySelectorAll('.event-title');
+                const maxEventsToShow = 3;
+                
+                if (existingEvents.length < maxEventsToShow) {
+                    const eventTitle = document.createElement('div');
+                    eventTitle.className = 'event-title';
+                    
+                    const eventType = categorizeEvent(event);
+                    eventTitle.classList.add(`event-${eventType}`);
+                    eventTitle.textContent = event.title;
+                    eventTitle.title = `${event.title} (${eventType})\nClick: View event details`;
+                    
+                    eventTitle.style.width = '100%';
+                    eventTitle.style.maxWidth = '100%';
+                    eventTitle.style.pointerEvents = 'auto';
+                    eventTitle.style.position = 'relative';
+                    eventTitle.style.zIndex = '2';
+                    eventTitle.style.display = 'block';
+                    eventTitle.style.cursor = 'pointer';
+                    
+                    eventTitle.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        console.log('Event title clicked:', event.title);
+                        showEventDetails(event);
+                    });
+                    
+                    cell.appendChild(eventTitle);
+                }
+            }
+        } else {
+            // Week view with time positioning
+            if (!dayContainer || !dayContainer.isWeekColumn) {
+                console.log('❌ Invalid day container for week view:', dayContainer);
+                return;
+            }
+            
+            const eventStart = new Date(event.start);
+            const eventEnd = new Date(event.end);
+            
+            // Handle all-day events
+            if (event.allDay) {
+                // Find the all-day cell for this date
+                const targetDateStr = dayContainer.date.toISOString().split('T')[0];
+                const allDayCell = document.querySelector(`td.all-day-cell[data-date="${targetDateStr}"]`);
+                
+                if (allDayCell) {
+                    const eventElement = document.createElement('div');
+                    eventElement.className = 'week-event all-day-event position-relative';
+                    
+                    const eventType = categorizeEvent(event);
+                    eventElement.classList.add(`event-${eventType}`);
+                    
+                    eventElement.style.width = '100%';
+                    eventElement.style.height = '20px';
+                    eventElement.style.backgroundColor = 'rgba(var(--bs-info-rgb), 0.8)';
+                    eventElement.style.border = '1px solid rgba(var(--bs-info-rgb), 1)';
+                    eventElement.style.borderRadius = '3px';
+                    eventElement.style.padding = '1px 4px';
+                    eventElement.style.fontSize = '0.6rem';
+                    eventElement.style.color = 'white';
+                    eventElement.style.overflow = 'hidden';
+                    eventElement.style.cursor = 'pointer';
+                    eventElement.style.marginBottom = '1px';
+                    eventElement.style.textAlign = 'center';
+                    eventElement.style.lineHeight = '18px';
+                    
+                    eventElement.innerHTML = `<div style="font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${event.title}</div>`;
+                    eventElement.title = `${event.title} (All Day)\nClick: View event details`;
+                    
+                    // Click handler
+                    eventElement.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        console.log('All-day event clicked:', event.title);
+                        showEventDetails(event);
+                    });
+                    
+                    // Apply user-selected colors
+                    const userColors = loadUserColors();
+                    if (userColors[eventType]) {
+                        eventElement.style.backgroundColor = userColors[eventType];
+                        eventElement.style.borderColor = userColors[eventType];
+                    }
+                    
+                    allDayCell.appendChild(eventElement);
+                    console.log(`✅ Added all-day event indicator for: ${event.title}`);
+                }
+                return; // Early return for all-day events
+            }
+            
+            // Handle timed events
+            const startHour = eventStart.getHours();
+            const endHour = eventEnd.getHours();
+            const startMinutes = eventStart.getMinutes();
+            const endMinutes = eventEnd.getMinutes();
+            const durationInHours = (eventEnd - eventStart) / (1000 * 60 * 60);
+            
+            console.log(`📍 Event spans from ${startHour}:${startMinutes.toString().padStart(2, '0')} to ${endHour}:${endMinutes.toString().padStart(2, '0')} (${durationInHours.toFixed(2)} hours)`);
+            
+            // Find the starting time slot cell
+            const startCell = dayContainer.cells.find(cell => {
+                const cellHour = parseInt(cell.getAttribute('data-hour'));
+                return cellHour === startHour;
+            });
+            
+            if (startCell) {
+                // Enhanced multi-hour event handling
+                const cellsToSpan = [];
+                const eventDurationHours = Math.ceil(durationInHours);
+                
+                // Collect all cells this event should span
+                for (let hour = startHour; hour < startHour + eventDurationHours && hour <= 23; hour++) {
+                    const cell = dayContainer.cells.find(cell => 
+                        parseInt(cell.getAttribute('data-hour')) === hour
+                    );
+                    if (cell) cellsToSpan.push(cell);
                 }
                 
-                indicator.title = `${event.title}${timeDisplay}${event.location ? '\n📍 ' + event.location : ''}\n\n${window.LanguageManager ? window.LanguageManager.t('calendar.eventDetails').replace('Event Details', 'Click to view details') : 'Click to view details'}`;
-                cell.appendChild(indicator);
+                console.log(`📍 Event will span ${cellsToSpan.length} cells for ${eventDurationHours} hours duration`);
+                
+                if (cellsToSpan.length > 0) {
+                    const eventElement = document.createElement('div');
+                    eventElement.className = 'week-event position-absolute multi-hour-event';
+                    
+                    const eventType = categorizeEvent(event);
+                    eventElement.classList.add(`event-${eventType}`);
+                    
+                    // Enhanced positioning for multi-hour events
+                    const topOffset = (startMinutes / 60) * 40; // 40px per hour
+                    
+                    // Calculate height to span across multiple time slots
+                    let eventHeight;
+                    if (durationInHours <= 1) {
+                        // Short event - fit within time slots
+                        const totalMinutes = (eventEnd - eventStart) / (1000 * 60);
+                        eventHeight = Math.max((totalMinutes / 60) * 40, 12); // Minimum 12px height
+                    } else {
+                        // Multi-hour event - span across cells with better visual continuity
+                        const cellHeight = 40; // Height per hour cell
+                        const totalHeight = cellsToSpan.length * cellHeight;
+                        const endOffset = (endMinutes / 60) * cellHeight;
+                        
+                        // Calculate exact height from start to end time
+                        eventHeight = totalHeight - topOffset - (cellHeight - endOffset);
+                        eventHeight = Math.max(eventHeight, 15); // Minimum height for visibility
+                    }
+                    
+                    // Position relative to the first cell
+                    eventElement.style.top = `${topOffset}px`;
+                    eventElement.style.left = '3px';
+                    eventElement.style.right = '3px';
+                    eventElement.style.height = `${eventHeight}px`;
+                    eventElement.style.backgroundColor = 'rgba(var(--bs-primary-rgb), 0.9)';
+                    eventElement.style.border = '2px solid rgba(var(--bs-primary-rgb), 1)';
+                    eventElement.style.borderRadius = '6px';
+                    eventElement.style.padding = '2px 4px';
+                    eventElement.style.fontSize = eventHeight > 20 ? '0.65rem' : '0.55rem';
+                    eventElement.style.color = 'white';
+                    eventElement.style.overflow = 'hidden';
+                    eventElement.style.zIndex = '5';
+                    eventElement.style.cursor = 'pointer';
+                    eventElement.style.boxShadow = '0 2px 4px rgba(0,0,0,0.25)';
+                    eventElement.style.lineHeight = '1.2';
+                    eventElement.style.fontWeight = 'bold';
+                    
+                    // Enhanced content based on event height
+                    const startTimeText = `${eventStart.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+                    const endTimeText = `${eventEnd.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+                    
+                    if (eventHeight > 30) {
+                        // Large event - show full details
+                        eventElement.innerHTML = `
+                            <div style="font-weight: bold; line-height: 1.1; margin-bottom: 1px;">${event.title}</div>
+                            <div style="font-size: 0.5rem; opacity: 0.9; line-height: 1;">${startTimeText} - ${endTimeText}</div>
+                        `;
+                    } else if (eventHeight > 18) {
+                        // Medium event - show title and start time
+                        eventElement.innerHTML = `
+                            <div style="font-weight: bold; line-height: 1.1;">${event.title}</div>
+                            <div style="font-size: 0.45rem; opacity: 0.8;">${startTimeText}</div>
+                        `;
+                    } else {
+                        // Small event - show only title
+                        eventElement.innerHTML = `<div style="font-weight: bold; line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${event.title}</div>`;
+                    }
+                    
+                    eventElement.title = `${event.title}\n${startTimeText} - ${endTimeText}\nDuration: ${durationInHours.toFixed(1)} hours\nClick: View event details`;
+                    
+                    // Click handler
+                    eventElement.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        console.log('Multi-hour event clicked:', event.title);
+                        showEventDetails(event);
+                    });
+                    
+                    // Add hover effect for better interactivity
+                    eventElement.addEventListener('mouseenter', function() {
+                        this.style.transform = 'scale(1.02)';
+                        this.style.zIndex = '6';
+                        this.style.boxShadow = '0 3px 8px rgba(0,0,0,0.35)';
+                    });
+                    eventElement.addEventListener('mouseleave', function() {
+                        this.style.transform = 'scale(1)';
+                        this.style.zIndex = '5';
+                        this.style.boxShadow = '0 2px 4px rgba(0,0,0,0.25)';
+                    });
+                    
+                    // Apply user-selected colors
+                    const userColors = loadUserColors();
+                    if (userColors[eventType]) {
+                        eventElement.style.backgroundColor = userColors[eventType];
+                        eventElement.style.borderColor = userColors[eventType];
+                    }
+                    
+                    // Add to the first cell in the span
+                    startCell.appendChild(eventElement);
+                    console.log(`✅ Added enhanced multi-hour event: ${event.title} (${durationInHours.toFixed(1)}h, ${eventHeight}px height)`);
+                } else {
+                    console.log(`❌ No cells found to span for event: ${event.title}`);
+                }
+            } else {
+                console.log(`❌ No start cell found for hour ${startHour} in week view`);
+            }
+        }
+    }
+
+    // Function to handle multi-day events in month view
+    function addMultiDayEvent(event, eventStart, eventEnd, month, year) {
+        console.log(`📅 Adding multi-day event: ${event.title} from ${eventStart.toDateString()} to ${eventEnd.toDateString()}`);
         
-        // Add event count if there are multiple events
-        const existingIndicators = cell.querySelectorAll('.event-indicator');
-        if (existingIndicators.length > 1) {
-            const countBadge = document.createElement('div');
-            countBadge.className = 'event-count-badge';
-            countBadge.style.cssText = `
-                position: absolute;
-                top: 2px;
-                right: 2px;
-                background: white;
-                color: black;
-                width: 16px;
-                height: 16px;
-                font-size: 10px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-weight: bold;
-                border: 1px solid white;
-            `;
-            countBadge.textContent = existingIndicators.length;
-            cell.appendChild(countBadge);
+        const startDate = new Date(eventStart.getFullYear(), eventStart.getMonth(), eventStart.getDate());
+        const endDate = new Date(eventEnd.getFullYear(), eventEnd.getMonth(), eventEnd.getDate());
+        
+        // Find all calendar cells for this event's date range
+        const calendarCells = document.querySelectorAll('.calendar-day');
+        const eventCells = [];
+        
+        for (let cell of calendarCells) {
+            const dayNumber = cell.querySelector('.day-number');
+            if (!dayNumber || cell.classList.contains('empty-cell')) continue;
+            
+            const cellDay = parseInt(dayNumber.textContent);
+            const cellDate = new Date(year, month, cellDay);
+            
+            // Check if this cell's date falls within the event range
+            if (cellDate >= startDate && cellDate <= endDate) {
+                eventCells.push({ cell, date: cellDate, day: cellDay });
+            }
+        }
+        
+        console.log(`📅 Found ${eventCells.length} cells for multi-day event`);
+        
+        if (eventCells.length > 0) {
+            // Sort cells by date to ensure proper order
+            eventCells.sort((a, b) => a.date - b.date);
+            
+            const eventType = categorizeEvent(event);
+            
+            // Create the event bar that spans across days
+            eventCells.forEach((cellInfo, index) => {
+                const { cell, date, day } = cellInfo;
+                const isFirst = index === 0;
+                const isLast = index === eventCells.length - 1;
+                
+                // Check if we should show this part of the event (don't show on empty cells)
+                const existingEvents = cell.querySelectorAll('.event-title, .multi-day-event');
+                const maxEventsToShow = 3;
+                
+                if (existingEvents.length < maxEventsToShow) {
+                    const eventElement = document.createElement('div');
+                    eventElement.className = 'event-title multi-day-event';
+                    eventElement.classList.add(`event-${eventType}`);
+                    
+                    // Style the event differently based on position
+                    if (isFirst && isLast) {
+                        // Single cell (shouldn't happen for multi-day, but just in case)
+                        eventElement.textContent = event.title;
+                        eventElement.style.borderRadius = '4px';
+                    } else if (isFirst) {
+                        // First cell - show title and rounded left
+                        eventElement.textContent = event.title;
+                        eventElement.style.borderRadius = '4px 0 0 4px';
+                        eventElement.style.position = 'relative';
+                        
+                        // Add continuation indicator
+                        const continueArrow = document.createElement('span');
+                        continueArrow.innerHTML = ' →';
+                        continueArrow.style.position = 'absolute';
+                        continueArrow.style.right = '2px';
+                        continueArrow.style.top = '0';
+                        continueArrow.style.opacity = '0.8';
+                        eventElement.appendChild(continueArrow);
+                    } else if (isLast) {
+                        // Last cell - show continuation and rounded right
+                        eventElement.textContent = `← ${event.title}`;
+                        eventElement.style.borderRadius = '0 4px 4px 0';
+                    } else {
+                        // Middle cell - show continuation
+                        eventElement.textContent = `← ${event.title} →`;
+                        eventElement.style.borderRadius = '0';
+                    }
+                    
+                    // Common styling
+                    eventElement.title = `${event.title} (${eventType}) - Multi-day event\nClick: View event details`;
+                    eventElement.style.width = '100%';
+                    eventElement.style.maxWidth = '100%';
+                    eventElement.style.pointerEvents = 'auto';
+                    eventElement.style.position = 'relative';
+                    eventElement.style.zIndex = '3';
+                    eventElement.style.display = 'block';
+                    eventElement.style.cursor = 'pointer';
+                    eventElement.style.fontSize = '0.6rem';
+                    eventElement.style.fontWeight = 'bold';
+                    eventElement.style.overflow = 'hidden';
+                    eventElement.style.whiteSpace = 'nowrap';
+                    eventElement.style.textOverflow = 'ellipsis';
+                    
+                    // Add distinctive styling for multi-day events
+                    eventElement.style.border = '2px solid rgba(255,255,255,0.3)';
+                    eventElement.style.boxShadow = '0 1px 3px rgba(0,0,0,0.2)';
+                    
+                    eventElement.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        console.log('Multi-day event clicked:', event.title);
+                        showEventDetails(event);
+                    });
+                    
+                    cell.appendChild(eventElement);
+                }
+            });
+            
+            console.log(`✅ Added multi-day event spanning ${eventCells.length} cells`);
         }
     }
 
     function updateEventCount() {
         const eventCountElement = document.querySelector('.col-6 .h5');
         if (eventCountElement) {
-            const currentMonthEvents = googleEvents.filter(event => {
+            const currentMonthEvents = window.googleEvents.filter(event => {
                 const eventDate = new Date(event.start);
                 return eventDate.getMonth() === currentMonth && eventDate.getFullYear() === currentYear;
             });
@@ -819,7 +1798,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const eventsList = document.getElementById('eventsList');
         const eventCountBadge = document.querySelector('.card-header .badge');
         
-        if (!googleEvents || googleEvents.length === 0) {
+        if (!window.googleEvents || window.googleEvents.length === 0) {
             noEventsMessage.style.display = 'block';
             eventsList.style.display = 'none';
             if (eventCountBadge) eventCountBadge.textContent = `0 ${window.LanguageManager ? window.LanguageManager.t('calendar.events') : 'events'}`;
@@ -830,7 +1809,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const now = new Date();
         const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
         
-        const upcomingEvents = googleEvents
+        const upcomingEvents = window.googleEvents
             .filter(event => {
                 const eventDate = new Date(event.start);
                 return eventDate >= now && eventDate <= nextWeek;
@@ -847,7 +1826,7 @@ document.addEventListener('DOMContentLoaded', function() {
             eventsList.style.display = 'block';
             if (eventCountBadge) eventCountBadge.textContent = `${upcomingEvents.length} ${window.LanguageManager ? window.LanguageManager.t('calendar.upcoming') : 'upcoming'}`;
             
-            // Generate events HTML
+            // Generate events HTML with enhanced styling
             eventsList.innerHTML = upcomingEvents.map(event => {
                 const eventDate = new Date(event.start);
                 const isToday = eventDate.toDateString() === now.toDateString();
@@ -865,11 +1844,25 @@ document.addEventListener('DOMContentLoaded', function() {
                     timeDisplay = window.LanguageManager ? window.LanguageManager.t('calendar.allDay') : 'All day';
                 }
                 
+                // Get event category for styling - use user-selected colors
+                const eventType = categorizeEvent(event);
+                const userColors = loadUserColors();
+                const categoryColors = {
+                    work: { bg: userColors.work, text: 'Work' },
+                    meeting: { bg: userColors.meeting, text: 'Meeting' },
+                    personal: { bg: userColors.personal, text: 'Personal' },
+                    reminder: { bg: userColors.reminder, text: 'Reminder' }
+                };
+                const categoryStyle = categoryColors[eventType] || categoryColors.work;
+                
                 return `
                     <div class="event-item mb-3 p-3 border rounded cursor-pointer" onclick="showEventDetails(${JSON.stringify(event).replace(/"/g, '&quot;')})">
                         <div class="d-flex justify-content-between align-items-start">
                             <div class="flex-grow-1">
-                                <h6 class="mb-1 text-primary">${event.title}</h6>
+                                <div class="d-flex align-items-center mb-2">
+                                    <h6 class="mb-0 text-primary me-2">${event.title}</h6>
+                                    <span class="badge text-white" style="background-color: ${categoryStyle.bg};">${categoryStyle.text}</span>
+                                </div>
                                 <small class="text-muted d-block">
                                     <i class="bi bi-calendar me-1"></i>${dateDisplay}
                                 </small>
@@ -887,79 +1880,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 `;
             }).join('');
         }
-    }
-
-    function showEventDetails(event) {
-        // Store the event for potential editing/deleting
-        currentEventForEdit = event;
-        window.currentEventForEdit = event; // Also store globally
-        
-        const modal = new bootstrap.Modal(document.getElementById('viewEventModal'));
-        const content = document.getElementById('eventDetailsContent');
-        
-        const eventDate = new Date(event.start);
-        const endDate = new Date(event.end);
-        
-        let timeDisplay = '';
-        if (!event.allDay) {
-            timeDisplay = `${eventDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - ${endDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
-        } else {
-            timeDisplay = window.LanguageManager ? window.LanguageManager.t('calendar.allDay') : 'All day';
-        }
-        
-        const t = (key, fallback) => window.LanguageManager ? window.LanguageManager.t(key) : fallback;
-        
-        content.innerHTML = `
-            <div class="row">
-                <div class="col-12 mb-4">
-                    <h4 class="text-primary mb-3">${event.title}</h4>
-                    
-                    <div class="mb-3">
-                        <div class="d-flex align-items-center mb-2">
-                            <i class="bi bi-calendar3 me-2 text-muted"></i>
-                            <strong>${t('calendar.date', 'Date')}:</strong>
-                            <span class="ms-2">${eventDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
-                        </div>
-                        
-                        <div class="d-flex align-items-center mb-2">
-                            <i class="bi bi-clock me-2 text-muted"></i>
-                            <strong>${t('calendar.time', 'Time')}:</strong>
-                            <span class="ms-2">${timeDisplay}</span>
-                        </div>
-                        
-                        ${event.location ? `
-                            <div class="d-flex align-items-center mb-2">
-                                <i class="bi bi-geo-alt me-2 text-muted"></i>
-                                <strong>${t('calendar.location', 'Location')}:</strong>
-                                <span class="ms-2">${event.location}</span>
-                            </div>
-                        ` : ''}
-                        
-                        <div class="d-flex align-items-center mb-2">
-                            <i class="bi bi-tag me-2 text-muted"></i>
-                            <strong>${t('calendar.source', 'Source')}:</strong>
-                            <span class="badge bg-success ms-2">${t('calendar.googleCalendar', 'Google Calendar')}</span>
-                        </div>
-                    </div>
-                    
-                    ${event.description ? `
-                        <div class="mb-3">
-                            <strong class="d-block mb-2">${t('calendar.description', 'Description')}:</strong>
-                            <div class="p-3 bg-light rounded">${event.description}</div>
-                        </div>
-                    ` : ''}
-                    
-                    <div class="mt-4 p-3 bg-light rounded">
-                        <small class="text-muted">
-                            <i class="bi bi-info-circle me-1"></i>
-                            ${t('calendar.eventFromGoogle', 'This event is from your Google Calendar. You can edit or delete it using the buttons below.')}
-                        </small>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        modal.show();
     }
 
     // Original functions moved to global scope at end of file - see window.createEvent, etc.
@@ -1062,6 +1982,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize form handlers
     initializeFormHandlers();
+    
+    // Initialize color settings
+    setTimeout(() => {
+        initializeColorSettings();
+        // Apply colors immediately on page load
+        const userColors = loadUserColors();
+        applyColors(userColors);
+    }, 100);
 
     function showNotification(message, type = 'info') {
         // Create notification element
@@ -1106,11 +2034,447 @@ document.addEventListener('DOMContentLoaded', function() {
             notice.style.display = 'block';
         }
     }
+    
+    // Make showNotification globally available
+    window.showNotification = showNotification;
+    
+    // Listen for language changes and update calendar
+    document.addEventListener('languageChanged', function(e) {
+        console.log('Language changed to:', e.detail.language);
+        // Regenerate calendar with new month names
+        generateCalendar(currentMonth, currentYear);
+        // Update any dynamic content
+        if (googleConnected) {
+            loadGoogleCalendarEvents();
+        }
+    });
 });
+
+// Day Details Modal Functions - Global scope
+let selectedDay = null;
+let selectedMonth = null;
+let selectedYear = null;
+
+function showDayDetails(day, month, year) {
+    selectedDay = day;
+    selectedMonth = month;
+    selectedYear = year;
+    
+    const selectedDate = new Date(year, month, day);
+    const dateString = selectedDate.toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+    });
+    
+    // Update modal title and date display
+    document.getElementById('dayDetailsTitle').textContent = `Events - ${selectedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+    document.getElementById('selectedDateDisplay').textContent = dateString;
+    
+    // Get events for this day from global googleEvents variable
+    const dayEvents = window.googleEvents ? window.googleEvents.filter(event => {
+        const eventDate = new Date(event.start);
+        return eventDate.getDate() === day && 
+               eventDate.getMonth() === month && 
+               eventDate.getFullYear() === year;
+    }) : [];
+    
+    // Populate events list
+    populateDayEventsList(dayEvents);
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('dayDetailsModal'));
+    modal.show();
+}
+
+// Make showDayDetails available globally immediately
+window.showDayDetails = showDayDetails;
+
+// Categorize events based on user selection or title and description - Global scope
+function categorizeEvent(event) {
+    // If event has a manually selected category, use that
+    if (event.category && ['work', 'meeting', 'personal', 'reminder'].includes(event.category)) {
+        return event.category;
+    }
+    
+    // Check local storage for category override (fallback if backend doesn't support categories)
+    if (event.id) {
+        const localCategory = getEventCategory(event.id);
+        if (localCategory && ['work', 'meeting', 'personal', 'reminder'].includes(localCategory)) {
+            return localCategory;
+        }
+    }
+    
+    // Otherwise, auto-categorize based on title and description
+    const title = event.title ? event.title.toLowerCase() : '';
+    const description = event.description ? event.description.toLowerCase() : '';
+    const combined = title + ' ' + description;
+    
+    // Work-related keywords
+    if (combined.match(/meeting|call|conference|standup|review|project|work|office|client|deadline|presentation|interview/)) {
+        return 'work';
+    }
+    
+    // Meeting-specific keywords (more specific than work)
+    if (combined.match(/meet|zoom|teams|skype|video call|conference call|discussion|appointment/)) {
+        return 'meeting';
+    }
+    
+    // Personal keywords
+    if (combined.match(/personal|family|doctor|dentist|appointment|vacation|holiday|birthday|anniversary|dinner|lunch|gym|workout|private/)) {
+        return 'personal';
+    }
+    
+    // Reminder keywords
+    if (combined.match(/reminder|remember|don't forget|deadline|due|task|todo|note|follow.?up/)) {
+        return 'reminder';
+    }
+    
+    // Default category
+    return 'work';
+}
+
+// Helper function to get event category from local storage
+function getEventCategory(eventId) {
+    try {
+        const categories = JSON.parse(localStorage.getItem('eventCategories') || '{}');
+        return categories[eventId];
+    } catch (error) {
+        return null;
+    }
+}
+
+function populateDayEventsList(events) {
+    const dayEventsList = document.getElementById('dayEventsList');
+    const noDayEventsMessage = document.getElementById('noDayEventsMessage');
+    
+    if (events.length === 0) {
+        dayEventsList.style.display = 'none';
+        noDayEventsMessage.style.display = 'block';
+    } else {
+        dayEventsList.style.display = 'block';
+        noDayEventsMessage.style.display = 'none';
+        
+        dayEventsList.innerHTML = events.map(event => {
+            const eventDate = new Date(event.start);
+            const endDate = new Date(event.end);
+            
+            let timeDisplay = '';
+            if (!event.allDay) {
+                timeDisplay = `${eventDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - ${endDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+            } else {
+                timeDisplay = 'All day';
+            }
+            
+            // Get event category for styling - use user-selected colors
+            const eventType = categorizeEvent(event);
+            const userColors = loadUserColors();
+            const categoryColors = {
+                work: { bg: userColors.work, text: 'Work' },
+                meeting: { bg: userColors.meeting, text: 'Meeting' },
+                personal: { bg: userColors.personal, text: 'Personal' },
+                reminder: { bg: userColors.reminder, text: 'Reminder' }
+            };
+            const categoryStyle = categoryColors[eventType] || categoryColors.work;
+            
+            return `
+                <div class="day-event-item" onclick="window.showEventDetails(${JSON.stringify(event).replace(/"/g, '&quot;')})">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <div class="d-flex align-items-center mb-2">
+                                <h6 class="mb-0 me-2">${event.title}</h6>
+                                <span class="badge text-white" style="background-color: ${categoryStyle.bg};">${categoryStyle.text}</span>
+                            </div>
+                            <div class="event-time">
+                                <i class="bi bi-clock me-1"></i>${timeDisplay}
+                            </div>
+                            ${event.location ? `<div class="event-location"><i class="bi bi-geo-alt me-1"></i>${event.location}</div>` : ''}
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-dark">Google Calendar</span>
+                        </div>
+                    </div>
+                    ${event.description ? `<div class="event-description mt-2">${event.description.substring(0, 150)}${event.description.length > 150 ? '...' : ''}</div>` : ''}
+                </div>
+            `;
+        }).join('');
+    }
+}
+
+function createEventForSelectedDay() {
+    if (selectedDay && selectedMonth !== null && selectedYear) {
+        // Close day details modal
+        const dayModal = bootstrap.Modal.getInstance(document.getElementById('dayDetailsModal'));
+        if (dayModal) dayModal.hide();
+        
+        // Set the date in the create event form
+        const selectedDateString = new Date(selectedYear, selectedMonth, selectedDay).toISOString().split('T')[0];
+        
+        // Open create event modal
+        const createModal = new bootstrap.Modal(document.getElementById('addEventModal'));
+        createModal.show();
+        
+        // Pre-fill the date fields after modal is shown
+        setTimeout(() => {
+            const startDateField = document.getElementById('startDate');
+            const endDateField = document.getElementById('endDate');
+            if (startDateField) startDateField.value = selectedDateString;
+            if (endDateField) endDateField.value = selectedDateString;
+        }, 100);
+    }
+}
+
+function showEventDetails(event) {
+    // Close the day details modal if it's open
+    const dayModal = bootstrap.Modal.getInstance(document.getElementById('dayDetailsModal'));
+    if (dayModal) {
+        dayModal.hide();
+    }
+    
+    // Store the event for potential editing/deleting
+    currentEventForEdit = event;
+    window.currentEventForEdit = event; // Also store globally
+    
+    const modal = new bootstrap.Modal(document.getElementById('viewEventModal'));
+    const content = document.getElementById('eventDetailsContent');
+    
+    const eventDate = new Date(event.start);
+    const endDate = new Date(event.end);
+    
+    let timeDisplay = '';
+    if (!event.allDay) {
+        timeDisplay = `${eventDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - ${endDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+    } else {
+        timeDisplay = window.LanguageManager ? window.LanguageManager.t('calendar.allDay') : 'All day';
+    }
+    
+    const t = (key, fallback) => window.LanguageManager ? window.LanguageManager.t(key) : fallback;
+    
+    content.innerHTML = `
+        <div class="row">
+            <div class="col-12 mb-4">
+                <h4 class="text-primary mb-3">${event.title}</h4>
+                
+                <div class="mb-3">
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="bi bi-calendar3 me-2 text-muted"></i>
+                        <strong>${t('calendar.date', 'Date')}:</strong>
+                        <span class="ms-2">${eventDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                    </div>
+                    
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="bi bi-clock me-2 text-muted"></i>
+                        <strong>${t('calendar.time', 'Time')}:</strong>
+                        <span class="ms-2">${timeDisplay}</span>
+                    </div>
+                    
+                    ${event.location ? `
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-geo-alt me-2 text-muted"></i>
+                            <strong>${t('calendar.location', 'Location')}:</strong>
+                            <span class="ms-2">${event.location}</span>
+                        </div>
+                    ` : ''}
+                    
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="bi bi-tag me-2 text-muted"></i>
+                        <strong>${t('calendar.source', 'Source')}:</strong>
+                        <span class="badge bg-success ms-2">${t('calendar.googleCalendar', 'Google Calendar')}</span>
+                    </div>
+                </div>
+                
+                ${event.description ? `
+                    <div class="mb-3">
+                        <strong class="d-block mb-2">${t('calendar.description', 'Description')}:</strong>
+                        <div class="p-3 bg-light rounded">${event.description}</div>
+                    </div>
+                ` : ''}
+                
+                <div class="mt-4 p-3 bg-light rounded">
+                    <small class="text-muted">
+                        <i class="bi bi-info-circle me-1"></i>
+                        ${t('calendar.eventFromGoogle', 'This event is from your Google Calendar. You can edit or delete it using the buttons below.')}
+                    </small>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    modal.show();
+}
+
+// Make showEventDetails available globally immediately
+window.showEventDetails = showEventDetails;
+
+// Color Management System
+const defaultColors = {
+    work: '#5fb3d4',
+    meeting: '#28a745', 
+    personal: '#dc3545',
+    reminder: '#ffc107'
+};
+
+// Local category storage for events (fallback if backend doesn't support categories)
+function saveEventCategory(eventId, category) {
+    const categories = JSON.parse(localStorage.getItem('eventCategories') || '{}');
+    categories[eventId] = category;
+    localStorage.setItem('eventCategories', JSON.stringify(categories));
+}
+
+function loadUserColors() {
+    const saved = localStorage.getItem('calendarEventColors');
+    if (saved) {
+        try {
+            return JSON.parse(saved);
+        } catch (e) {
+            console.warn('Failed to parse saved colors, using defaults');
+        }
+    }
+    return { ...defaultColors };
+}
+
+function saveUserColors(colors) {
+    localStorage.setItem('calendarEventColors', JSON.stringify(colors));
+    applyColors(colors);
+}
+
+function applyColors(colors) {
+    // Create or update dynamic stylesheet
+    let styleElement = document.getElementById('dynamicEventColors');
+    if (!styleElement) {
+        styleElement = document.createElement('style');
+        styleElement.id = 'dynamicEventColors';
+        document.head.appendChild(styleElement);
+    }
+    
+    // Generate CSS with user colors
+    const css = `
+        .event-title.event-work {
+            background: linear-gradient(135deg, ${colors.work}, ${darkenColor(colors.work, 20)}) !important;
+            border-left-color: ${darkenColor(colors.work, 20)} !important;
+        }
+        .event-title.event-meeting {
+            background: linear-gradient(135deg, ${colors.meeting}, ${darkenColor(colors.meeting, 20)}) !important;
+            border-left-color: ${darkenColor(colors.meeting, 20)} !important;
+        }
+        .event-title.event-personal {
+            background: linear-gradient(135deg, ${colors.personal}, ${darkenColor(colors.personal, 20)}) !important;
+            border-left-color: ${darkenColor(colors.personal, 20)} !important;
+        }
+        .event-title.event-reminder {
+            background: linear-gradient(135deg, ${colors.reminder}, ${darkenColor(colors.reminder, 20)}) !important;
+            border-left-color: ${darkenColor(colors.reminder, 20)} !important;
+        }
+    `;
+    
+    styleElement.textContent = css;
+}
+
+function darkenColor(color, percent) {
+    // Convert hex to RGB
+    const hex = color.replace('#', '');
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+    
+    // Darken by percentage
+    const darkenedR = Math.max(0, Math.floor(r * (100 - percent) / 100));
+    const darkenedG = Math.max(0, Math.floor(g * (100 - percent) / 100));
+    const darkenedB = Math.max(0, Math.floor(b * (100 - percent) / 100));
+    
+    // Convert back to hex
+    return `#${darkenedR.toString(16).padStart(2, '0')}${darkenedG.toString(16).padStart(2, '0')}${darkenedB.toString(16).padStart(2, '0')}`;
+}
+
+function updatePreview(category, color) {
+    const preview = document.getElementById(`${category}Preview`);
+    if (preview) {
+        const eventElement = preview.querySelector('.event-title');
+        if (eventElement) {
+            const darkerColor = darkenColor(color, 20);
+            eventElement.style.background = `linear-gradient(135deg, ${color}, ${darkerColor})`;
+            eventElement.style.borderLeftColor = darkerColor;
+        }
+    }
+}
+
+function initializeColorSettings() {
+    const userColors = loadUserColors();
+    
+    // Set color picker values
+    document.getElementById('workColorPicker').value = userColors.work;
+    document.getElementById('meetingColorPicker').value = userColors.meeting;
+    document.getElementById('personalColorPicker').value = userColors.personal;
+    document.getElementById('reminderColorPicker').value = userColors.reminder;
+    
+    // Update previews
+    updatePreview('work', userColors.work);
+    updatePreview('meeting', userColors.meeting);
+    updatePreview('personal', userColors.personal);
+    updatePreview('reminder', userColors.reminder);
+    
+    // Apply colors to calendar
+    applyColors(userColors);
+    
+    // Add event listeners to color pickers
+    ['work', 'meeting', 'personal', 'reminder'].forEach(category => {
+        const picker = document.getElementById(`${category}ColorPicker`);
+        if (picker) {
+            picker.addEventListener('input', function() {
+                updatePreview(category, this.value);
+            });
+        }
+    });
+    
+    // Save colors button
+    document.getElementById('saveColorsBtn').addEventListener('click', function() {
+        const colors = {
+            work: document.getElementById('workColorPicker').value,
+            meeting: document.getElementById('meetingColorPicker').value,
+            personal: document.getElementById('personalColorPicker').value,
+            reminder: document.getElementById('reminderColorPicker').value
+        };
+        
+        saveUserColors(colors);
+        
+        // Show success message
+        const modal = bootstrap.Modal.getInstance(document.getElementById('colorSettingsModal'));
+        modal.hide();
+        
+        // Refresh calendar to show new colors
+        if (window.loadGoogleCalendarEvents) {
+            window.loadGoogleCalendarEvents();
+        }
+        
+        // Show notification
+        if (window.showNotification) {
+            window.showNotification('Event colors saved successfully!', 'success');
+        }
+    });
+    
+    // Reset colors button
+    document.getElementById('resetColorsBtn').addEventListener('click', function() {
+        // Reset to defaults
+        document.getElementById('workColorPicker').value = defaultColors.work;
+        document.getElementById('meetingColorPicker').value = defaultColors.meeting;
+        document.getElementById('personalColorPicker').value = defaultColors.personal;
+        document.getElementById('reminderColorPicker').value = defaultColors.reminder;
+        
+        // Update previews
+        updatePreview('work', defaultColors.work);
+        updatePreview('meeting', defaultColors.meeting);
+        updatePreview('personal', defaultColors.personal);
+        updatePreview('reminder', defaultColors.reminder);
+    });
+}
+
+// Make functions globally available
+window.createEventForSelectedDay = createEventForSelectedDay;
+window.initializeColorSettings = initializeColorSettings;
 
 // Global variables needed by the event handling functions
 let currentEventForEdit = null;
-let showAlert, loadGoogleCalendarEvents; // Will be assigned from DOMContentLoaded functions
 
 // Make functions globally available for onclick handlers (outside DOMContentLoaded)
 window.createEvent = function() {
@@ -1142,6 +2506,7 @@ window.createEvent = function() {
         title: formData.get('title'),
         description: formData.get('description'),
         location: formData.get('location'),
+        category: formData.get('category'),
         start: start,
         end: end,
         allDay: isAllDay
@@ -1163,6 +2528,11 @@ window.createEvent = function() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
+            // Save category locally as fallback
+            if (data.event && data.event.id && eventData.category) {
+                saveEventCategory(data.event.id, eventData.category);
+            }
+            
             // Hide modal
             const modal = bootstrap.Modal.getInstance(document.getElementById('addEventModal'));
             modal.hide();
@@ -1252,6 +2622,13 @@ window.editEventFromView = function() {
         document.getElementById('editAllDay').checked = false;
         const timeFields = document.getElementById('editTimeFields');
         if (timeFields) timeFields.style.display = 'block';
+    }
+    
+    // Set category if available, otherwise determine from event content
+    const eventCategory = window.currentEventForEdit.category || categorizeEvent(window.currentEventForEdit);
+    const categorySelect = document.getElementById('editCategory');
+    if (categorySelect) {
+        categorySelect.value = eventCategory;
     }
     
     // Show edit modal
@@ -1357,6 +2734,7 @@ window.updateEvent = function() {
         title: formData.get('title'),
         description: formData.get('description'),
         location: formData.get('location'),
+        category: formData.get('category'),
         start: start,
         end: end,
         allDay: isAllDay
@@ -1380,6 +2758,11 @@ window.updateEvent = function() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
+            // Save category locally as fallback
+            if (eventId && eventData.category) {
+                saveEventCategory(eventId, eventData.category);
+            }
+            
             // Hide modal
             const modal = bootstrap.Modal.getInstance(document.getElementById('editEventModal'));
             if (modal) modal.hide();
@@ -1430,15 +2813,7 @@ window.reauthorizeCalendar = function() {
     window.location.href = 'http://localhost:3000/auth/google';
 };
 
-// Listen for language changes and update calendar
-document.addEventListener('languageChanged', function(e) {
-    console.log('Language changed to:', e.detail.language);
-    // Regenerate calendar with new month names
-    generateCalendar(currentMonth, currentYear);
-    // Update any dynamic content
-    if (googleConnected) {
-        loadGoogleCalendarEvents();
-    }
-});
+// Make createEventForSelectedDay globally available
+window.createEventForSelectedDay = createEventForSelectedDay;
 
 </script>
