@@ -49,14 +49,20 @@
                                 <button type="button" class="btn btn-outline-light btn-sm" id="weekViewBtn" title="Week View">
                                     <i class="bi bi-calendar-week me-1"></i>Week
                                 </button>
+                                <button type="button" class="btn btn-outline-light btn-sm" id="dayViewBtn" title="Day View">
+                                    <i class="bi bi-calendar-day me-1"></i>Day
+                                </button>
+                                <button type="button" class="btn btn-outline-light btn-sm" id="agendaViewBtn" title="Agenda View">
+                                    <i class="bi bi-list-ul me-1"></i>Agenda
+                                </button>
                             </div>
                         </div>
                         <div class="btn-group" role="group">
-                            <button type="button" class="calendar-nav-btn" id="prevPeriod" data-translate="calendar.previousMonth" title="Previous">
+                            <button type="button" class="calendar-nav-btn" id="prevPeriod" title="Previous">
                                 <i class="bi bi-chevron-left"></i>
                             </button>
                             <button type="button" class="calendar-today-btn calendar-nav-btn" id="todayBtn" data-translate="calendar.today">Today</button>
-                            <button type="button" class="calendar-nav-btn" id="nextPeriod" data-translate="calendar.nextMonth" title="Next">
+                            <button type="button" class="calendar-nav-btn" id="nextPeriod" title="Next">
                                 <i class="bi bi-chevron-right"></i>
                             </button>
                             <button type="button" class="calendar-nav-btn" id="colorSettingsBtn" data-bs-toggle="modal" data-bs-target="#colorSettingsModal" title="Color Settings">
@@ -239,15 +245,17 @@
                     </div>
                     
                     <div class="row mb-4">
-                        <div class="col-md-6">
-                            <label for="startDate" class="form-label" data-translate="calendar.startDate">Start Date</label>
+                        <div class="col-12">
+                            <label for="dateRange" class="form-label" data-translate="calendar.eventDates">Event Dates</label>
                             <span class="text-danger">*</span>
-                            <input type="date" class="enhanced-form-control" id="startDate" name="startDate" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="endDate" class="form-label" data-translate="calendar.endDate">End Date</label>
-                            <span class="text-danger">*</span>
-                            <input type="date" class="enhanced-form-control" id="endDate" name="endDate" required>
+                            <div class="simple-datepicker-container">
+                                <input type="text" class="enhanced-form-control simple-datepicker" id="dateRange" name="dateRange" required readonly placeholder="Click to select start and end dates">
+                                <i class="bi bi-calendar3 datepicker-icon"></i>
+                            </div>
+                            <small class="text-muted">Click to select start date, then end date</small>
+                            <!-- Hidden inputs for form submission -->
+                            <input type="hidden" id="startDate" name="startDate">
+                            <input type="hidden" id="endDate" name="endDate">
                         </div>
                     </div>
                     
@@ -265,11 +273,28 @@
                     <div class="row mb-4" id="timeFields">
                         <div class="col-md-6">
                             <label for="startTime" class="form-label" data-translate="calendar.startTime">Start Time</label>
-                            <input type="time" class="enhanced-form-control" id="startTime" name="startTime">
+                            <div class="time-input-container">
+                                <div class="time-input-display" id="startTimeDisplay" data-target="startTime">
+                                    Select time...
+                                </div>
+                                <button type="button" class="time-input-btn" onclick="openTimePicker('startTime')">
+                                    <i class="bi bi-clock"></i>
+                                </button>
+                                <input type="hidden" id="startTime" name="startTime" value="">
+                            </div>
                         </div>
                         <div class="col-md-6">
                             <label for="endTime" class="form-label" data-translate="calendar.endTime">End Time</label>
-                            <input type="time" class="enhanced-form-control" id="endTime" name="endTime">
+                            <div class="time-input-container">
+                                <div class="time-input-display" id="endTimeDisplay" data-target="endTime">
+                                    Select time...
+                                </div>
+                                <button type="button" class="time-input-btn" onclick="openTimePicker('endTime')">
+                                    <i class="bi bi-clock"></i>
+                                </button>
+                                <input type="hidden" id="endTime" name="endTime" value="">
+                            </div>
+                            <small class="text-muted duration-helper">Duration will be calculated automatically</small>
                         </div>
                     </div>
                     
@@ -292,6 +317,70 @@
                     <div class="mb-3">
                         <label for="description" class="form-label" data-translate="calendar.description">Description</label>
                         <textarea class="enhanced-form-control" id="description" name="description" rows="3" placeholder="Add event details..."></textarea>
+                    </div>
+                    
+                    <!-- Enhanced Fields -->
+                    <div class="mb-4">
+                        <label for="attendees" class="form-label">
+                            <i class="bi bi-people me-1"></i>Attendees
+                        </label>
+                        <input type="text" class="enhanced-form-control" id="attendees" name="attendees" 
+                               placeholder="Enter email addresses separated by commas">
+                        <small class="form-text text-muted">Add attendee email addresses (comma-separated)</small>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="reminder" class="form-label">
+                                <i class="bi bi-bell me-1"></i>Reminder
+                            </label>
+                            <select class="enhanced-form-control" id="reminder" name="reminder">
+                                <option value="">No reminder</option>
+                                <option value="5">5 minutes before</option>
+                                <option value="15">15 minutes before</option>
+                                <option value="30">30 minutes before</option>
+                                <option value="60">1 hour before</option>
+                                <option value="1440">1 day before</option>
+                                <option value="10080">1 week before</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="priority" class="form-label">
+                                <i class="bi bi-flag me-1"></i>Priority
+                            </label>
+                            <select class="enhanced-form-control" id="priority" name="priority">
+                                <option value="normal">Normal</option>
+                                <option value="high">High</option>
+                                <option value="urgent">Urgent</option>
+                                <option value="low">Low</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="recurring" name="recurring">
+                            <label class="form-check-label" for="recurring">
+                                <i class="bi bi-arrow-repeat me-1"></i>Recurring Event
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3" id="recurringOptions" style="display: none;">
+                        <div class="col-md-6">
+                            <label for="recurringType" class="form-label">Repeat Type</label>
+                            <select class="enhanced-form-control" id="recurringType" name="recurringType">
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="monthly">Monthly</option>
+                                <option value="yearly">Yearly</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="recurringEnd" class="form-label">End Date</label>
+                            <input type="date" class="enhanced-form-control" id="recurringEnd" name="recurringEnd">
+                            <small class="form-text text-muted">Leave empty for no end date</small>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -354,13 +443,16 @@
                     </div>
                     
                     <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label for="editStartDate" class="form-label" data-translate="calendar.startDate">Start Date</label> <span class="text-danger">*</span>
-                            <input type="date" class="form-control" id="editStartDate" name="startDate" required>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="editEndDate" class="form-label" data-translate="calendar.endDate">End Date</label> <span class="text-danger">*</span>
-                            <input type="date" class="form-control" id="editEndDate" name="endDate" required>
+                        <div class="col-12">
+                            <label for="editDateRange" class="form-label" data-translate="calendar.eventDates">Event Dates</label> <span class="text-danger">*</span>
+                            <div class="simple-datepicker-container">
+                                <input type="text" class="form-control simple-datepicker" id="editDateRange" name="dateRange" required readonly placeholder="Click to select start and end dates">
+                                <i class="bi bi-calendar3 datepicker-icon"></i>
+                            </div>
+                            <small class="text-muted">Click to select start date, then end date</small>
+                            <!-- Hidden inputs for form submission -->
+                            <input type="hidden" id="editStartDate" name="startDate">
+                            <input type="hidden" id="editEndDate" name="endDate">
                         </div>
                     </div>
                     
@@ -378,11 +470,28 @@
                     <div class="row mb-3" id="editTimeFields">
                         <div class="col-md-6">
                             <label for="editStartTime" class="form-label" data-translate="calendar.startTime">Start Time</label>
-                            <input type="time" class="form-control" id="editStartTime" name="startTime">
+                            <div class="time-input-container">
+                                <div class="time-input-display" id="editStartTimeDisplay" data-target="editStartTime">
+                                    Select time...
+                                </div>
+                                <button type="button" class="time-input-btn" onclick="openTimePicker('editStartTime')">
+                                    <i class="bi bi-clock"></i>
+                                </button>
+                                <input type="hidden" id="editStartTime" name="startTime" value="">
+                            </div>
                         </div>
                         <div class="col-md-6">
                             <label for="editEndTime" class="form-label" data-translate="calendar.endTime">End Time</label>
-                            <input type="time" class="form-control" id="editEndTime" name="endTime">
+                            <div class="time-input-container">
+                                <div class="time-input-display" id="editEndTimeDisplay" data-target="editEndTime">
+                                    Select time...
+                                </div>
+                                <button type="button" class="time-input-btn" onclick="openTimePicker('editEndTime')">
+                                    <i class="bi bi-clock"></i>
+                                </button>
+                                <input type="hidden" id="editEndTime" name="endTime" value="">
+                            </div>
+                            <small class="text-muted duration-helper">Duration will be calculated automatically</small>
                         </div>
                     </div>
                     
@@ -412,6 +521,74 @@
                             <label for="editDescription" class="form-label" data-translate="calendar.description">Description</label>
                             <textarea class="form-control" id="editDescription" name="description" 
                                       rows="3" placeholder="Enter event description"></textarea>
+                        </div>
+                    </div>
+                    
+                    <!-- Enhanced Fields -->
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <label for="editAttendees" class="form-label">
+                                <i class="bi bi-people me-1"></i>Attendees
+                            </label>
+                            <input type="text" class="form-control" id="editAttendees" name="attendees" 
+                                   placeholder="Enter email addresses separated by commas">
+                            <small class="form-text text-muted">Add attendee email addresses (comma-separated)</small>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="editReminder" class="form-label">
+                                <i class="bi bi-bell me-1"></i>Reminder
+                            </label>
+                            <select class="form-control" id="editReminder" name="reminder">
+                                <option value="">No reminder</option>
+                                <option value="5">5 minutes before</option>
+                                <option value="15">15 minutes before</option>
+                                <option value="30">30 minutes before</option>
+                                <option value="60">1 hour before</option>
+                                <option value="1440">1 day before</option>
+                                <option value="10080">1 week before</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editPriority" class="form-label">
+                                <i class="bi bi-flag me-1"></i>Priority
+                            </label>
+                            <select class="form-control" id="editPriority" name="priority">
+                                <option value="normal">Normal</option>
+                                <option value="high">High</option>
+                                <option value="urgent">Urgent</option>
+                                <option value="low">Low</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="editRecurring" name="recurring">
+                                <label class="form-check-label" for="editRecurring">
+                                    <i class="bi bi-arrow-repeat me-1"></i>Recurring Event
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3" id="editRecurringOptions" style="display: none;">
+                        <div class="col-md-6">
+                            <label for="editRecurringType" class="form-label">Repeat Type</label>
+                            <select class="form-control" id="editRecurringType" name="recurringType">
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="monthly">Monthly</option>
+                                <option value="yearly">Yearly</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="editRecurringEnd" class="form-label">End Date</label>
+                            <input type="date" class="form-control" id="editRecurringEnd" name="recurringEnd">
+                            <small class="form-text text-muted">Leave empty for no end date</small>
                         </div>
                     </div>
                 </form>
@@ -576,6 +753,92 @@
     </div>
 </div>
 
+<!-- Circular Time Picker -->
+<div class="circular-timepicker-overlay" id="circularTimePicker">
+    <div class="circular-timepicker">
+        <div class="time-display" id="timeDisplay">12:00</div>
+        
+        <!-- Mode Toggle -->
+        <div class="time-mode-toggle">
+            <button class="time-mode-btn active" id="hourModeBtn" onclick="setTimeMode('hours')">
+                <i class="bi bi-clock"></i> Hours
+            </button>
+            <button class="time-mode-btn" id="minuteModeBtn" onclick="setTimeMode('minutes')">
+                <i class="bi bi-stopwatch"></i> Minutes
+            </button>
+        </div>
+        
+        <div class="clock-face" id="clockFace">
+            <div class="clock-center"></div>
+            
+            <!-- Only show relevant numbers based on mode -->
+            <div class="clock-numbers-container" id="clockNumbers">
+                <!-- Numbers will be dynamically generated -->
+            </div>
+        </div>
+        
+        <!-- Instructions -->
+        <div class="time-picker-instructions">
+            <span id="modeInstructions">Select hour (1-24)</span>
+        </div>
+        
+        <div class="timepicker-actions">
+            <button class="timepicker-btn clear" onclick="clearTime()">CLEAR</button>
+            <button class="timepicker-btn cancel" onclick="closeTimePicker()">CANCEL</button>
+            <button class="timepicker-btn ok" onclick="confirmTime()">OK</button>
+        </div>
+    </div>
+</div>
+
+<!-- Simple Date Picker Modal -->
+<div class="modal fade" id="simpleDatePickerModal" tabindex="-1" aria-labelledby="simpleDatePickerLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="simpleDatePickerLabel">Select Date</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            
+            <!-- Calendar Header with Navigation -->
+            <div class="simple-calendar-header">
+                <button type="button" class="simple-calendar-nav" id="simplePrevMonth">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+                <div id="simpleMonthYear">January 2025</div>
+                <button type="button" class="simple-calendar-nav" id="simpleNextMonth">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+            </div>
+            
+            <!-- (Quick buttons & status removed for simpler UI) -->
+            
+            <!-- Calendar Grid -->
+            <div class="simple-calendar-grid">
+                <!-- Weekday Headers -->
+                <div class="simple-weekdays">
+                    <div class="simple-weekday">Sun</div>
+                    <div class="simple-weekday">Mon</div>
+                    <div class="simple-weekday">Tue</div>
+                    <div class="simple-weekday">Wed</div>
+                    <div class="simple-weekday">Thu</div>
+                    <div class="simple-weekday">Fri</div>
+                    <div class="simple-weekday">Sat</div>
+                </div>
+                
+                <!-- Calendar Days Container -->
+                <div id="simpleDays">
+                    <!-- Days will be generated by JavaScript -->
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmDateBtn" data-bs-dismiss="modal">Select</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const currentDate = new Date();
@@ -589,6 +852,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const dayOfWeek = today.getDay();
     currentWeekStart = new Date(today);
     currentWeekStart.setDate(today.getDate() - dayOfWeek);
+
+    // Circular Time Picker State (moved here to avoid initialization issues)
+    window.currentTimePicker = {
+        targetElement: null,
+        displayElement: null,
+        hours: 12,
+        minutes: 0,
+        ampm: 'AM',
+        selectingMinutes: false
+    };
 
     // Translated month names - will be updated by language system
     let monthNames = [
@@ -636,35 +909,34 @@ document.addEventListener('DOMContentLoaded', function() {
         const firstDay = new Date(year, month, 1).getDay();
         const daysInMonth = new Date(year, month + 1, 0).getDate();
         const today = new Date();
-        
+
         // Show thead for month view
         const thead = document.querySelector('#calendarTable thead');
         if (thead) {
             thead.style.display = 'table-header-group';
             thead.style.visibility = 'visible';
         }
-        
+
         const translatedMonthNames = getMonthNames();
         document.getElementById('currentMonth').textContent = `${translatedMonthNames[month]} ${year}`;
-        
+
         const calendarBody = document.getElementById('calendarBody');
         calendarBody.innerHTML = '';
-        
+
         let date = 1;
-        
+
         // Create calendar rows
         for (let i = 0; i < 6; i++) {
             const row = document.createElement('tr');
-            
+
             for (let j = 0; j < 7; j++) {
                 const cell = document.createElement('td');
                 cell.className = 'text-center calendar-day position-relative';
-                cell.style.height = '90px';
+                cell.style.height = '85px';
                 cell.style.verticalAlign = 'top';
                 cell.style.cursor = 'pointer';
-                cell.style.padding = '2px';
-                cell.style.border = '1px solid var(--bs-border-color)';
-                cell.style.transition = 'all 0.2s ease';
+                cell.style.padding = '6px';
+                cell.style.transition = 'background .15s ease';
                 
                 // Add hover effect for the entire cell
                 cell.addEventListener('mouseenter', function() {
@@ -802,7 +1074,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 row.appendChild(cell);
             }
-            
             calendarBody.appendChild(row);
             
             // Break if we've filled all days
@@ -844,14 +1115,13 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Empty cell for time column
         const timeHeaderCell = document.createElement('th');
-        timeHeaderCell.className = 'time-column-header';
+        timeHeaderCell.className = 'time-column-header week-time-header';
         timeHeaderCell.style.width = '80px';
         timeHeaderCell.style.minWidth = '80px';
         timeHeaderCell.style.border = '1px solid var(--bs-border-color)';
-        timeHeaderCell.style.backgroundColor = 'var(--bs-light)';
         timeHeaderCell.style.fontWeight = 'bold';
-        timeHeaderCell.style.fontSize = '0.85rem';
-        timeHeaderCell.style.padding = '8px 4px';
+        timeHeaderCell.style.fontSize = '0.65rem';
+        timeHeaderCell.style.padding = '6px 2px';
         timeHeaderCell.style.position = 'sticky';
         timeHeaderCell.style.top = '0';
         timeHeaderCell.style.zIndex = '10';
@@ -864,9 +1134,8 @@ document.addEventListener('DOMContentLoaded', function() {
             currentDay.setDate(weekStart.getDate() + i);
             
             const dayHeaderCell = document.createElement('th');
-            dayHeaderCell.className = 'day-header-cell text-center';
+            dayHeaderCell.className = 'day-header-cell text-center week-day-header';
             dayHeaderCell.style.border = '1px solid var(--bs-border-color)';
-            dayHeaderCell.style.backgroundColor = 'var(--bs-light)';
             dayHeaderCell.style.fontWeight = 'bold';
             dayHeaderCell.style.padding = '8px 4px';
             dayHeaderCell.style.position = 'sticky';
@@ -882,15 +1151,12 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Highlight today with similar styling to month view
             if (currentDay.toDateString() === today.toDateString()) {
-                dayHeaderCell.style.backgroundColor = 'rgba(var(--bs-primary-rgb), 0.1)';
-                dayHeaderCell.style.color = 'var(--bs-primary)';
+                dayHeaderCell.classList.add('today-header');
             }
             
             // Weekend styling
             if (i === 0 || i === 6) {
                 dayHeaderCell.classList.add('weekend-header');
-                dayHeaderCell.style.backgroundColor = 'rgba(var(--bs-secondary-rgb), 0.1)';
-                dayHeaderCell.style.color = 'var(--bs-secondary)';
             }
             
             headerRow.appendChild(dayHeaderCell);
@@ -908,12 +1174,9 @@ document.addEventListener('DOMContentLoaded', function() {
         allDayTimeCell.style.width = '80px';
         allDayTimeCell.style.minWidth = '80px';
         allDayTimeCell.style.border = '1px solid var(--bs-border-color)';
-        allDayTimeCell.style.backgroundColor = 'var(--bs-light)';
         allDayTimeCell.style.textAlign = 'center';
         allDayTimeCell.style.fontWeight = 'bold';
-        allDayTimeCell.style.fontSize = '0.75rem';
-        allDayTimeCell.style.padding = '4px';
-        allDayTimeCell.style.height = '30px';
+        allDayTimeCell.style.fontSize = '0.65rem';
         allDayTimeCell.style.verticalAlign = 'middle';
         allDayTimeCell.style.borderRight = '2px solid var(--bs-border-color)';
         allDayTimeCell.textContent = 'All Day';
@@ -927,10 +1190,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const allDayCell = document.createElement('td');
             allDayCell.className = 'calendar-day all-day-cell position-relative';
             allDayCell.style.border = '1px solid var(--bs-border-color)';
-            allDayCell.style.height = '25px';
             allDayCell.style.verticalAlign = 'top';
-            allDayCell.style.padding = '2px';
-            allDayCell.style.minWidth = '120px';
             allDayCell.style.backgroundColor = 'rgba(var(--bs-info-rgb), 0.05)';
             
             // Add data attributes for all-day event positioning
@@ -967,12 +1227,10 @@ document.addEventListener('DOMContentLoaded', function() {
             timeCell.style.width = '80px';
             timeCell.style.minWidth = '80px';
             timeCell.style.border = '1px solid var(--bs-border-color)';
-            timeCell.style.backgroundColor = 'var(--bs-light)';
             timeCell.style.textAlign = 'center';
             timeCell.style.fontWeight = 'bold';
-            timeCell.style.fontSize = '0.8rem';
-            timeCell.style.padding = '4px';
-            timeCell.style.height = '20px'; // Reduced from 30px to 20px
+            timeCell.style.fontSize = '0.7rem';
+            timeCell.style.padding = '2px';
             timeCell.style.verticalAlign = 'middle';
             timeCell.style.borderRight = '2px solid var(--bs-border-color)';
             
@@ -991,10 +1249,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const dayCell = document.createElement('td');
                 dayCell.className = 'calendar-day time-slot-cell position-relative';
                 dayCell.style.border = '1px solid var(--bs-border-color)';
-                dayCell.style.height = '20px'; // Reduced from 30px to 20px
                 dayCell.style.verticalAlign = 'top';
-                dayCell.style.padding = '2px';
-                dayCell.style.minWidth = '120px';
                 dayCell.style.cursor = 'pointer';
                 dayCell.style.transition = 'all 0.2s ease';
                 
@@ -1131,6 +1386,32 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // Function to update navigation button text based on view mode
+    function updateNavigationButtonText() {
+        const prevButton = document.getElementById('prevPeriod');
+        const nextButton = document.getElementById('nextPeriod');
+        
+        if (currentViewMode === 'week') {
+            // Update tooltip for week mode
+            if (window.LanguageManager && window.LanguageManager.t) {
+                prevButton.title = window.LanguageManager.t('calendar.previousWeek') || 'Previous Week';
+                nextButton.title = window.LanguageManager.t('calendar.nextWeek') || 'Next Week';
+            } else {
+                prevButton.title = 'Previous Week';
+                nextButton.title = 'Next Week';
+            }
+        } else {
+            // Update tooltip for month mode
+            if (window.LanguageManager && window.LanguageManager.t) {
+                prevButton.title = window.LanguageManager.t('calendar.previousMonth') || 'Previous Month';
+                nextButton.title = window.LanguageManager.t('calendar.nextMonth') || 'Next Month';
+            } else {
+                prevButton.title = 'Previous Month';
+                nextButton.title = 'Next Month';
+            }
+        }
+    }
+
     // View mode switchers
     document.getElementById('monthViewBtn').addEventListener('click', function() {
         console.log('Month view button clicked! Current mode:', currentViewMode);
@@ -1141,6 +1422,9 @@ document.addEventListener('DOMContentLoaded', function() {
             // Update button states
             this.classList.add('active');
             document.getElementById('weekViewBtn').classList.remove('active');
+            
+            // Update navigation button text
+            updateNavigationButtonText();
             
             // Generate month view
             generateCalendar(currentMonth, currentYear);
@@ -1162,6 +1446,9 @@ document.addEventListener('DOMContentLoaded', function() {
             // Update button states
             this.classList.add('active');
             document.getElementById('monthViewBtn').classList.remove('active');
+            
+            // Update navigation button text
+            updateNavigationButtonText();
             
             // Set week start based on current month view
             const firstOfMonth = new Date(currentYear, currentMonth, 1);
@@ -1190,6 +1477,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Generate initial calendar
     generateCalendar(currentMonth, currentYear);
+    
+    // Set initial navigation button text for month mode
+    updateNavigationButtonText();
 
     // Google Calendar Integration functionality
     let googleConnected = false;
@@ -1352,38 +1642,73 @@ document.addEventListener('DOMContentLoaded', function() {
         window.googleEvents.forEach((event, index) => {
             console.log(`📅 Processing event ${index + 1}:`, event);
             
-            const eventDate = new Date(event.start);
-            console.log(`📅 Event date: ${eventDate}, View mode: ${currentViewMode}`);
-            
-            let shouldShowEvent = false;
+            const eventStart = new Date(event.start);
+            const eventEnd = new Date(event.end);
+            console.log(`📅 Event: ${event.title}, Start: ${eventStart}, End: ${eventEnd}, View mode: ${currentViewMode}`);
             
             if (currentViewMode === 'month') {
                 // Month view - show events for current month
-                shouldShowEvent = eventDate.getMonth() === currentMonth && eventDate.getFullYear() === currentYear;
-            } else {
-                // Week view - show events for current week
-                const weekEnd = new Date(currentWeekStart);
-                weekEnd.setDate(currentWeekStart.getDate() + 6);
-                shouldShowEvent = eventDate >= currentWeekStart && eventDate <= weekEnd;
-            }
-            
-            if (shouldShowEvent) {
-                const dayCell = findDayCell(eventDate);
-                console.log(`📅 Found day cell for date ${eventDate.toDateString()}:`, dayCell ? 'Yes' : 'No');
+                const shouldShowEvent = eventStart.getMonth() === currentMonth && eventStart.getFullYear() === currentYear;
                 
-                if (dayCell) {
-                    // Check if it's not an empty cell (only relevant for month view)
-                    const isEmptyCell = currentViewMode === 'month' && dayCell.classList && dayCell.classList.contains('empty-cell');
-                    
-                    if (!isEmptyCell) {
-                        addEventIndicator(dayCell, event, eventDate.getMonth(), eventDate.getFullYear());
+                if (shouldShowEvent) {
+                    const dayCell = findDayCell(eventStart);
+                    if (dayCell && !(dayCell.classList && dayCell.classList.contains('empty-cell'))) {
+                        addEventIndicator(dayCell, event, eventStart.getMonth(), eventStart.getFullYear());
                         eventsAdded++;
                         console.log(`✅ Added event indicator for: ${event.title}`);
-                    } else {
-                        console.log(`⚠️ Skipping empty cell for: ${event.title}`);
                     }
-                } else {
-                    console.log(`❌ No day cell found for: ${event.title} on ${eventDate.toDateString()}`);
+                }
+            } else {
+                // Week view - handle multi-day events properly
+                const weekEnd = new Date(currentWeekStart);
+                weekEnd.setDate(currentWeekStart.getDate() + 6);
+                
+                // Check if event overlaps with current week
+                const eventStartDate = new Date(eventStart.getFullYear(), eventStart.getMonth(), eventStart.getDate());
+                const eventEndDate = new Date(eventEnd.getFullYear(), eventEnd.getMonth(), eventEnd.getDate());
+                
+                const weekStartDate = new Date(currentWeekStart.getFullYear(), currentWeekStart.getMonth(), currentWeekStart.getDate());
+                const weekEndDate = new Date(weekEnd.getFullYear(), weekEnd.getMonth(), weekEnd.getDate());
+                
+                if (eventStartDate <= weekEndDate && eventEndDate >= weekStartDate) {
+                    // Event overlaps with the current week
+                    
+                    // Calculate which days in the week this event should appear on
+                    const displayStartDate = new Date(Math.max(eventStartDate.getTime(), weekStartDate.getTime()));
+                    const displayEndDate = new Date(Math.min(eventEndDate.getTime(), weekEndDate.getTime()));
+                    
+                    // Create event indicators for each day the event spans in this week
+                    const currentDate = new Date(displayStartDate);
+                    while (currentDate <= displayEndDate) {
+                        const dayCell = findDayCell(currentDate);
+                        console.log(`📅 Checking day cell for ${currentDate.toDateString()}:`, dayCell ? 'Found' : 'Not found');
+                        
+                        if (dayCell) {
+                            // For multi-day events, mark which day of the span this is
+                            const isFirstDay = currentDate.getTime() === eventStartDate.getTime();
+                            const isLastDay = currentDate.getTime() === eventEndDate.getTime();
+                            const dayOfSpan = Math.floor((currentDate - eventStartDate) / (1000 * 60 * 60 * 24)) + 1;
+                            const totalDays = Math.floor((eventEndDate - eventStartDate) / (1000 * 60 * 60 * 24)) + 1;
+                            
+                            // Add metadata for multi-day rendering
+                            const eventWithSpanInfo = {
+                                ...event,
+                                isFirstDay,
+                                isLastDay,
+                                dayOfSpan,
+                                totalDays,
+                                spanStartDate: eventStartDate,
+                                spanEndDate: eventEndDate
+                            };
+                            
+                            addEventIndicator(dayCell, eventWithSpanInfo, currentDate.getMonth(), currentDate.getFullYear());
+                            eventsAdded++;
+                            console.log(`✅ Added event indicator for: ${event.title} (day ${dayOfSpan}/${totalDays})`);
+                        }
+                        
+                        // Move to next day
+                        currentDate.setDate(currentDate.getDate() + 1);
+                    }
                 }
             }
         });
@@ -1496,22 +1821,49 @@ document.addEventListener('DOMContentLoaded', function() {
                     const eventType = categorizeEvent(event);
                     eventElement.classList.add(`event-${eventType}`);
                     
+                    // Check if this is part of a multi-day event
+                    const isMultiDay = event.totalDays && event.totalDays > 1;
+                    let eventTitle = event.title;
+                    
+                    if (isMultiDay) {
+                        eventElement.classList.add('multi-day-event');
+                        
+                        // Add visual indicators for multi-day events
+                        if (event.isFirstDay && !event.isLastDay) {
+                            eventTitle = `${event.title} →`;
+                            eventElement.style.borderTopRightRadius = '0';
+                            eventElement.style.borderBottomRightRadius = '0';
+                        } else if (!event.isFirstDay && event.isLastDay) {
+                            eventTitle = `← ${event.title}`;
+                            eventElement.style.borderTopLeftRadius = '0';
+                            eventElement.style.borderBottomLeftRadius = '0';
+                        } else if (!event.isFirstDay && !event.isLastDay) {
+                            eventTitle = `← ${event.title} →`;
+                            eventElement.style.borderRadius = '0';
+                        }
+                        
+                        // Add day indicator for multi-day events
+                        if (event.totalDays > 2) {
+                            eventTitle += ` (${event.dayOfSpan}/${event.totalDays})`;
+                        }
+                    }
+                    
                     eventElement.style.width = '100%';
-                    eventElement.style.height = '20px';
+                    eventElement.style.height = '16px';
                     eventElement.style.backgroundColor = 'rgba(var(--bs-info-rgb), 0.8)';
                     eventElement.style.border = '1px solid rgba(var(--bs-info-rgb), 1)';
-                    eventElement.style.borderRadius = '3px';
-                    eventElement.style.padding = '1px 4px';
-                    eventElement.style.fontSize = '0.6rem';
+                    eventElement.style.borderRadius = isMultiDay ? eventElement.style.borderRadius || '2px' : '2px';
+                    eventElement.style.padding = '1px 3px';
+                    eventElement.style.fontSize = '0.55rem';
                     eventElement.style.color = 'white';
                     eventElement.style.overflow = 'hidden';
                     eventElement.style.cursor = 'pointer';
                     eventElement.style.marginBottom = '1px';
                     eventElement.style.textAlign = 'center';
-                    eventElement.style.lineHeight = '18px';
+                    eventElement.style.lineHeight = '14px';
                     
-                    eventElement.innerHTML = `<div style="font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${event.title}</div>`;
-                    eventElement.title = `${event.title} (All Day)\nClick: View event details`;
+                    eventElement.innerHTML = `<div style="font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${eventTitle}</div>`;
+                    eventElement.title = `${event.title} (All Day)${isMultiDay ? ` - Day ${event.dayOfSpan} of ${event.totalDays}` : ''}\nClick: View event details`;
                     
                     // Click handler
                     eventElement.addEventListener('click', function(e) {
@@ -1570,6 +1922,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     const eventType = categorizeEvent(event);
                     eventElement.classList.add(`event-${eventType}`);
                     
+                    // Check if this is part of a multi-day event
+                    const isMultiDay = event.totalDays && event.totalDays > 1;
+                    if (isMultiDay) {
+                        eventElement.classList.add('multi-day-event');
+                    }
+                    
                     // Enhanced positioning for multi-hour events
                     const topOffset = (startMinutes / 60) * 40; // 40px per hour
                     
@@ -1578,7 +1936,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (durationInHours <= 1) {
                         // Short event - fit within time slots
                         const totalMinutes = (eventEnd - eventStart) / (1000 * 60);
-                        eventHeight = Math.max((totalMinutes / 60) * 40, 12); // Minimum 12px height
+                        eventHeight = Math.max((totalMinutes / 60) * 40, 8); // Reduced minimum to 8px height
                     } else {
                         // Multi-hour event - span across cells with better visual continuity
                         const cellHeight = 40; // Height per hour cell
@@ -1587,7 +1945,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         
                         // Calculate exact height from start to end time
                         eventHeight = totalHeight - topOffset - (cellHeight - endOffset);
-                        eventHeight = Math.max(eventHeight, 15); // Minimum height for visibility
+                        eventHeight = Math.max(eventHeight, 10); // Reduced minimum height for visibility
                     }
                     
                     // Position relative to the first cell
@@ -1596,10 +1954,27 @@ document.addEventListener('DOMContentLoaded', function() {
                     eventElement.style.right = '3px';
                     eventElement.style.height = `${eventHeight}px`;
                     eventElement.style.backgroundColor = 'rgba(var(--bs-primary-rgb), 0.9)';
-                    eventElement.style.border = '2px solid rgba(var(--bs-primary-rgb), 1)';
-                    eventElement.style.borderRadius = '6px';
-                    eventElement.style.padding = '2px 4px';
-                    eventElement.style.fontSize = eventHeight > 20 ? '0.65rem' : '0.55rem';
+                    eventElement.style.border = '1px solid rgba(var(--bs-primary-rgb), 1)';
+                    
+                    // Apply multi-day border styling
+                    if (isMultiDay) {
+                        if (event.isFirstDay && !event.isLastDay) {
+                            eventElement.style.borderTopRightRadius = '0';
+                            eventElement.style.borderBottomRightRadius = '0';
+                        } else if (!event.isFirstDay && event.isLastDay) {
+                            eventElement.style.borderTopLeftRadius = '0';
+                            eventElement.style.borderBottomLeftRadius = '0';
+                        } else if (!event.isFirstDay && !event.isLastDay) {
+                            eventElement.style.borderRadius = '0';
+                        } else {
+                            eventElement.style.borderRadius = '4px';
+                        }
+                    } else {
+                        eventElement.style.borderRadius = '4px';
+                    }
+                    
+                    eventElement.style.padding = '1px 3px';
+                    eventElement.style.fontSize = eventHeight > 20 ? '0.6rem' : '0.5rem';
                     eventElement.style.color = 'white';
                     eventElement.style.overflow = 'hidden';
                     eventElement.style.zIndex = '5';
@@ -1608,28 +1983,54 @@ document.addEventListener('DOMContentLoaded', function() {
                     eventElement.style.lineHeight = '1.2';
                     eventElement.style.fontWeight = 'bold';
                     
-                    // Enhanced content based on event height
+                    // Enhanced content based on event height and multi-day status
                     const startTimeText = `${eventStart.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
                     const endTimeText = `${eventEnd.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
                     
-                    if (eventHeight > 30) {
-                        // Large event - show full details
-                        eventElement.innerHTML = `
-                            <div style="font-weight: bold; line-height: 1.1; margin-bottom: 1px;">${event.title}</div>
-                            <div style="font-size: 0.5rem; opacity: 0.9; line-height: 1;">${startTimeText} - ${endTimeText}</div>
-                        `;
-                    } else if (eventHeight > 18) {
-                        // Medium event - show title and start time
-                        eventElement.innerHTML = `
-                            <div style="font-weight: bold; line-height: 1.1;">${event.title}</div>
-                            <div style="font-size: 0.45rem; opacity: 0.8;">${startTimeText}</div>
-                        `;
-                    } else {
-                        // Small event - show only title
-                        eventElement.innerHTML = `<div style="font-weight: bold; line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${event.title}</div>`;
+                    // Prepare title with multi-day indicators
+                    let displayTitle = event.title;
+                    if (isMultiDay) {
+                        if (event.isFirstDay && !event.isLastDay) {
+                            displayTitle = `${event.title} →`;
+                        } else if (!event.isFirstDay && event.isLastDay) {
+                            displayTitle = `← ${event.title}`;
+                        } else if (!event.isFirstDay && !event.isLastDay) {
+                            displayTitle = `← ${event.title} →`;
+                        }
                     }
                     
-                    eventElement.title = `${event.title}\n${startTimeText} - ${endTimeText}\nDuration: ${durationInHours.toFixed(1)} hours\nClick: View event details`;
+                    if (eventHeight > 25) {
+                        // Large event - show full details with multi-day info
+                        let timeDisplay = `${startTimeText} - ${endTimeText}`;
+                        if (isMultiDay && event.totalDays > 2) {
+                            timeDisplay += ` (Day ${event.dayOfSpan}/${event.totalDays})`;
+                        }
+                        eventElement.innerHTML = `
+                            <div style="font-weight: bold; line-height: 1.1; margin-bottom: 1px;">${displayTitle}</div>
+                            <div style="font-size: 0.45rem; opacity: 0.9; line-height: 1;">${timeDisplay}</div>
+                        `;
+                    } else if (eventHeight > 15) {
+                        // Medium event - show title and start time
+                        let timeDisplay = startTimeText;
+                        if (isMultiDay && event.totalDays <= 3) {
+                            timeDisplay += ` (${event.dayOfSpan}/${event.totalDays})`;
+                        }
+                        eventElement.innerHTML = `
+                            <div style="font-weight: bold; line-height: 1.1;">${displayTitle}</div>
+                            <div style="font-size: 0.4rem; opacity: 0.8;">${timeDisplay}</div>
+                        `;
+                    } else {
+                        // Small event - show only title with minimal multi-day indicator
+                        eventElement.innerHTML = `<div style="font-weight: bold; line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${displayTitle}</div>`;
+                    }
+                    
+                    // Enhanced tooltip with multi-day information
+                    let tooltipText = `${event.title}\n${startTimeText} - ${endTimeText}\nDuration: ${durationInHours.toFixed(1)} hours`;
+                    if (isMultiDay) {
+                        tooltipText += `\nMulti-day event: Day ${event.dayOfSpan} of ${event.totalDays}`;
+                    }
+                    tooltipText += '\nClick: View event details';
+                    eventElement.title = tooltipText;
                     
                     // Click handler
                     eventElement.addEventListener('click', function(e) {
@@ -2492,14 +2893,106 @@ window.createEvent = function() {
     const endTime = formData.get('endTime');
     const isAllDay = formData.get('allDay') === 'on';
     
+    // Debug: Log the values to see what we're getting
+    console.log('Form values:', {
+        startDate,
+        startTime,
+        endDate,
+        endTime,
+        isAllDay
+    });
+    
     let start, end;
     
-    if (isAllDay) {
-        start = new Date(startDate).toISOString().split('T')[0];
-        end = new Date(endDate || startDate).toISOString().split('T')[0];
-    } else {
-        start = new Date(`${startDate}T${startTime}`).toISOString();
-        end = new Date(`${endDate || startDate}T${endTime}`).toISOString();
+    // Validate required fields
+    if (!startDate || startDate === 'null' || startDate === 'undefined') {
+        alert(window.LanguageManager ? window.LanguageManager.t('calendar.startDateRequired') : 'Start date is required');
+        return;
+    }
+    
+    if (!isAllDay && (!startTime || startTime === 'null' || startTime === 'undefined')) {
+        alert(window.LanguageManager ? window.LanguageManager.t('calendar.startTimeRequired') : 'Start time is required for timed events');
+        return;
+    }
+    
+    if (!isAllDay && (!endTime || endTime === 'null' || endTime === 'undefined')) {
+        alert(window.LanguageManager ? window.LanguageManager.t('calendar.endTimeRequired') : 'End time is required for timed events');
+        return;
+    }
+    
+    try {
+        // Convert date strings to proper format if needed
+        function parseAndFormatDate(dateStr) {
+            if (!dateStr) return null;
+            
+            // If already in YYYY-MM-DD format, return as is
+            if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                return dateStr;
+            }
+            
+            // Handle formats like "Thu, Aug 14, 2025"
+            const tempDate = new Date(dateStr);
+            if (isNaN(tempDate.getTime())) {
+                throw new Error(`Cannot parse date: ${dateStr}`);
+            }
+            
+            // Convert to YYYY-MM-DD format
+            return tempDate.toISOString().split('T')[0];
+        }
+        
+        const formattedStartDate = parseAndFormatDate(startDate);
+        const formattedEndDate = parseAndFormatDate(endDate || startDate);
+        
+        console.log('Date parsing:', {
+            originalStartDate: startDate,
+            formattedStartDate: formattedStartDate,
+            originalEndDate: endDate,
+            formattedEndDate: formattedEndDate
+        });
+        
+        if (isAllDay) {
+            // For all-day events, ensure proper date parsing
+            const startDateObj = new Date(formattedStartDate + 'T00:00:00');
+            const endDateObj = new Date(formattedEndDate + 'T23:59:59');
+            
+            if (isNaN(startDateObj.getTime()) || isNaN(endDateObj.getTime())) {
+                throw new Error('Invalid date');
+            }
+            
+            start = startDateObj.toISOString().split('T')[0];
+            end = endDateObj.toISOString().split('T')[0];
+        } else {
+            // For timed events, validate time format
+            if (!startTime.match(/^\d{2}:\d{2}$/) || !endTime.match(/^\d{2}:\d{2}$/)) {
+                throw new Error('Invalid time format');
+            }
+            
+            const startDateTime = new Date(`${formattedStartDate}T${startTime}:00`);
+            const endDateTime = new Date(`${formattedEndDate}T${endTime}:00`);
+            
+            if (isNaN(startDateTime.getTime()) || isNaN(endDateTime.getTime())) {
+                throw new Error('Invalid date/time');
+            }
+            
+            // Ensure end time is after start time
+            if (endDateTime <= startDateTime) {
+                throw new Error('End time must be after start time');
+            }
+            
+            start = startDateTime.toISOString();
+            end = endDateTime.toISOString();
+        }
+    } catch (error) {
+        console.error('Date validation error:', error);
+        console.error('Values that caused error:', {
+            startDate,
+            startTime,
+            endDate,
+            endTime,
+            isAllDay
+        });
+        alert(window.LanguageManager ? window.LanguageManager.t('calendar.invalidDateTime') : `Invalid date/time: ${error.message}. Please check your inputs.`);
+        return;
     }
     
     const eventData = {
@@ -2815,5 +3308,485 @@ window.reauthorizeCalendar = function() {
 
 // Make createEventForSelectedDay globally available
 window.createEventForSelectedDay = createEventForSelectedDay;
+
+// ===== SIMPLE DATE AND TIME PICKER FUNCTIONALITY =====
+
+// Initialize simple pickers
+document.addEventListener('DOMContentLoaded', function() {
+    // initializeSimplePickers(); // Commented out - using external picker components
+    
+    // Keep only the essential calendar initialization
+    initializeCalendar();
+});
+
+function initializeSimplePickers() {
+    console.log('🎯 Initializing simple date and time pickers...');
+    
+    // Initialize time picker options
+    initializeSimpleTimePickers();
+    
+    // Initialize date picker functionality
+    initializeSimpleDatePickers();
+    
+    // Initialize all-day toggle functionality
+    initializeAllDayToggle();
+    
+    console.log('✅ Simple pickers initialized successfully');
+}
+
+// Initialize time picker dropdowns with 30-minute intervals
+function initializeSimpleTimePickers() {
+    const timePickers = document.querySelectorAll('.simple-timepicker');
+    
+    timePickers.forEach(picker => {
+        // Clear existing options except the first one
+        while (picker.children.length > 1) {
+            picker.removeChild(picker.lastChild);
+        }
+        
+        // Generate time options (30-minute intervals)
+        for (let hours = 0; hours < 24; hours++) {
+            for (let minutes = 0; minutes < 60; minutes += 30) {
+                const timeValue = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+                const displayTime = formatTimeDisplay(hours, minutes);
+                
+                const option = document.createElement('option');
+                option.value = timeValue;
+                option.textContent = displayTime;
+                picker.appendChild(option);
+            }
+        }
+    });
+}
+
+// Format time for display (12-hour format with AM/PM)
+function formatTimeDisplay(hours, minutes) {
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
+    const displayMinutes = minutes.toString().padStart(2, '0');
+    return `${displayHours}:${displayMinutes} ${period}`;
+}
+
+// Initialize simple date picker functionality
+function initializeSimpleDatePickers() {
+    let currentTarget = null;
+    let pickerDate = new Date();
+    let startDate = null;
+    let endDate = null;
+    let selectingStart = true; // Track what we're selecting
+    
+    // Handle date input clicks
+    document.querySelectorAll('.simple-datepicker').forEach(input => {
+        input.addEventListener('click', function() {
+            currentTarget = this;
+            startDate = null;
+            endDate = null;
+            selectingStart = true;
+            
+            // Clear any existing selection
+            document.querySelectorAll('.calendar-day.selected').forEach(cell => {
+                cell.classList.remove('selected');
+            });
+            document.querySelectorAll('.calendar-day.range-start').forEach(cell => {
+                cell.classList.remove('range-start');
+            });
+            document.querySelectorAll('.calendar-day.range-end').forEach(cell => {
+                cell.classList.remove('range-end');
+            });
+            document.querySelectorAll('.calendar-day.in-range').forEach(cell => {
+                cell.classList.remove('in-range');
+            });
+            
+            pickerDate = new Date();
+            updateSimpleCalendar();
+            const modal = new bootstrap.Modal(document.getElementById('simpleDatePickerModal'));
+            modal.show();
+            
+            // Update modal title and status
+            // Static label; no dynamic instructions
+        });
+    });
+    
+    // Navigation buttons
+    document.getElementById('simplePrevMonth').addEventListener('click', function() {
+        pickerDate.setMonth(pickerDate.getMonth() - 1);
+        updateSimpleCalendar();
+    });
+    
+    document.getElementById('simpleNextMonth').addEventListener('click', function() {
+        pickerDate.setMonth(pickerDate.getMonth() + 1);
+        updateSimpleCalendar();
+    });
+    
+    // Confirm date selection
+    document.getElementById('confirmDateBtn').addEventListener('click', function() {
+        if (currentTarget && startDate && endDate) {
+            // Update the visible input
+            const startStr = formatDateForInput(startDate);
+            const endStr = formatDateForInput(endDate);
+            
+            if (startDate.toDateString() === endDate.toDateString()) {
+                currentTarget.value = startStr;
+            } else {
+                currentTarget.value = `${startStr} → ${endStr}`;
+            }
+            
+            // Update hidden inputs based on which picker was used
+            if (currentTarget.id === 'dateRange') {
+                document.getElementById('startDate').value = formatDateForInput(startDate);
+                document.getElementById('endDate').value = formatDateForInput(endDate);
+            } else if (currentTarget.id === 'editDateRange') {
+                document.getElementById('editStartDate').value = formatDateForInput(startDate);
+                document.getElementById('editEndDate').value = formatDateForInput(endDate);
+            }
+        }
+    });
+    
+    function updateSimpleCalendar() {
+        // Update month/year display
+        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                           'July', 'August', 'September', 'October', 'November', 'December'];
+        document.getElementById('simpleMonthYear').textContent = 
+            `${monthNames[pickerDate.getMonth()]} ${pickerDate.getFullYear()}`;
+        
+        // Generate calendar days
+        const daysContainer = document.getElementById('simpleDays');
+        daysContainer.innerHTML = '';
+        
+        const firstDay = new Date(pickerDate.getFullYear(), pickerDate.getMonth(), 1);
+        const lastDay = new Date(pickerDate.getFullYear(), pickerDate.getMonth() + 1, 0);
+        const startOfCalendar = new Date(firstDay);
+        startOfCalendar.setDate(startOfCalendar.getDate() - firstDay.getDay());
+        
+        const today = new Date();
+        
+        for (let week = 0; week < 6; week++) {
+            const weekRow = document.createElement('div');
+            weekRow.className = 'calendar-week';
+            
+            for (let day = 0; day < 7; day++) {
+                const currentDate = new Date(startOfCalendar);
+                currentDate.setDate(startOfCalendar.getDate() + (week * 7) + day);
+                
+                const dayCell = document.createElement('div');
+                dayCell.className = 'calendar-day';
+                dayCell.textContent = currentDate.getDate();
+                
+                // Add classes for styling
+                if (currentDate.getMonth() !== pickerDate.getMonth()) {
+                    dayCell.classList.add('other-month');
+                }
+                if (currentDate.toDateString() === today.toDateString()) {
+                    dayCell.classList.add('today');
+                }
+                
+                // Handle date range selection
+                if (startDate && endDate) {
+                    if (currentDate.toDateString() === startDate.toDateString()) {
+                        dayCell.classList.add('range-start');
+                    }
+                    if (currentDate.toDateString() === endDate.toDateString()) {
+                        dayCell.classList.add('range-end');
+                    }
+                    if (currentDate > startDate && currentDate < endDate) {
+                        dayCell.classList.add('in-range');
+                    }
+                } else if (startDate && currentDate.toDateString() === startDate.toDateString()) {
+                    dayCell.classList.add('selected');
+                }
+                
+                // Click handler for range selection
+                dayCell.addEventListener('click', function() {
+                    const clickedDate = new Date(currentDate);
+                    
+                    if (selectingStart) {
+                        startDate = clickedDate;
+                        endDate = null;
+                        selectingStart = false;
+                    } else {
+                        if (clickedDate < startDate) {
+                            endDate = startDate;
+                            startDate = clickedDate;
+                        } else {
+                            endDate = clickedDate;
+                        }
+                        selectingStart = true;
+                    }
+                    
+                    updateSimpleCalendar(); // Refresh the calendar display
+                });
+                
+                weekRow.appendChild(dayCell);
+            }
+            
+            daysContainer.appendChild(weekRow);
+        }
+    }
+}
+
+// (Quick date helper functions removed for ultra-simple picker)
+
+function formatDateForInput(date) {
+    const options = { 
+        weekday: 'short', 
+        month: 'short', 
+        day: 'numeric', 
+        year: 'numeric' 
+    };
+    return date.toLocaleDateString('en-US', options);
+}
+
+// Initialize all-day toggle functionality
+function initializeAllDayToggle() {
+    // Handle all-day checkbox for create modal
+    const allDayCheckbox = document.getElementById('allDay');
+    if (allDayCheckbox) {
+        allDayCheckbox.addEventListener('change', function() {
+            const timeFields = document.getElementById('timeFields');
+            if (timeFields) {
+                timeFields.style.display = this.checked ? 'none' : 'block';
+            }
+        });
+    }
+    
+    // Handle all-day checkbox for edit modal
+    const editAllDayCheckbox = document.getElementById('editAllDay');
+    if (editAllDayCheckbox) {
+        editAllDayCheckbox.addEventListener('change', function() {
+            const editTimeFields = document.getElementById('editTimeFields');
+            if (editTimeFields) {
+                editTimeFields.style.display = this.checked ? 'none' : 'block';
+            }
+        });
+    }
+}
+
+// Make functions globally available
+window.initializeSimplePickers = initializeSimplePickers;
+
+// ===== CIRCULAR TIME PICKER FUNCTIONS =====
+
+// Initialize time picker state
+window.currentTimePicker = {
+    targetElement: null,
+    displayElement: null,
+    hours: 12,
+    minutes: 0,
+    mode: 'hours' // 'hours' or 'minutes'
+};
+
+// Open time picker
+function openTimePicker(targetId) {
+    window.currentTimePicker.targetElement = document.getElementById(targetId);
+    window.currentTimePicker.displayElement = document.getElementById(targetId + 'Display');
+    
+    // Get current value if any
+    const currentValue = window.currentTimePicker.targetElement.value;
+    if (currentValue) {
+        const [hours, minutes] = currentValue.split(':');
+        window.currentTimePicker.hours = parseInt(hours);
+        window.currentTimePicker.minutes = parseInt(minutes);
+    } else {
+        // Default to current time
+        const now = new Date();
+        window.currentTimePicker.hours = now.getHours();
+        window.currentTimePicker.minutes = Math.round(now.getMinutes() / 5) * 5;
+    }
+    
+    // Always start with hours mode
+    setTimeMode('hours');
+    updateTimeDisplay();
+    
+    document.getElementById('circularTimePicker').classList.add('show');
+}
+
+// Close time picker
+function closeTimePicker() {
+    document.getElementById('circularTimePicker').classList.remove('show');
+}
+
+// Set time mode (hours or minutes)
+function setTimeMode(mode) {
+    window.currentTimePicker.mode = mode;
+    
+    // Update button states
+    document.getElementById('hourModeBtn').classList.toggle('active', mode === 'hours');
+    document.getElementById('minuteModeBtn').classList.toggle('active', mode === 'minutes');
+    
+    // Update instructions
+    const instructions = document.getElementById('modeInstructions');
+    
+    // Generate appropriate numbers
+    generateClockNumbers(mode);
+    
+    if (mode === 'hours') {
+        instructions.textContent = 'Inner circle: 13-24, Outer circle: 1-12';
+    } else {
+        instructions.textContent = 'Select minutes (5-minute intervals)';
+    }
+}
+
+// Generate clock numbers dynamically
+function generateClockNumbers(mode) {
+    const container = document.getElementById('clockNumbers');
+    container.innerHTML = '';
+    
+    if (mode === 'hours') {
+        // Generate inner circle (13-24) - closer to center
+        for (let i = 13; i <= 24; i++) {
+            const angle = (i - 13) * 30; // Start from 13 (like 1 o'clock position)
+            const radius = 70; // Inner circle radius - more spaced from center
+            
+            const x = Math.sin(angle * Math.PI / 180) * radius;
+            const y = -Math.cos(angle * Math.PI / 180) * radius;
+            
+            const number = document.createElement('div');
+            number.className = 'clock-number inner-circle';
+            number.textContent = i === 24 ? '00' : i;
+            number.setAttribute('data-value', i === 24 ? 0 : i);
+            number.style.left = `calc(50% + ${x}px - 22px)`;
+            number.style.top = `calc(50% + ${y}px - 22px)`;
+            
+            // Highlight current selection
+            const hourValue = i === 24 ? 0 : i;
+            if (hourValue === window.currentTimePicker.hours) {
+                number.classList.add('selected');
+            }
+            
+            container.appendChild(number);
+        }
+        
+        // Generate outer circle (1-12) - on the edge
+        for (let i = 1; i <= 12; i++) {
+            const angle = (i - 1) * 30; // 360/12 = 30 degrees each
+            const radius = 130; // Outer circle radius - further out
+            
+            const x = Math.sin(angle * Math.PI / 180) * radius;
+            const y = -Math.cos(angle * Math.PI / 180) * radius;
+            
+            const number = document.createElement('div');
+            number.className = 'clock-number outer-circle';
+            number.textContent = i;
+            number.setAttribute('data-value', i);
+            number.style.left = `calc(50% + ${x}px - 22px)`;
+            number.style.top = `calc(50% + ${y}px - 22px)`;
+            
+            // Highlight current selection
+            if (i === window.currentTimePicker.hours) {
+                number.classList.add('selected');
+            }
+            
+            container.appendChild(number);
+        }
+    } else {
+        // Generate minutes (0, 5, 10, 15, ..., 55) in middle circle
+        for (let i = 0; i < 12; i++) {
+            const minute = i * 5;
+            const angle = i * 30; // 360/12 = 30 degrees each
+            const radius = 105; // Middle radius for minutes
+            
+            const x = Math.sin(angle * Math.PI / 180) * radius;
+            const y = -Math.cos(angle * Math.PI / 180) * radius;
+            
+            const number = document.createElement('div');
+            number.className = 'clock-number minute-circle';
+            number.textContent = minute.toString().padStart(2, '0');
+            number.setAttribute('data-value', minute);
+            number.style.left = `calc(50% + ${x}px - 22px)`;
+            number.style.top = `calc(50% + ${y}px - 22px)`;
+            
+            // Highlight current selection
+            if (minute === window.currentTimePicker.minutes) {
+                number.classList.add('selected');
+            }
+            
+            container.appendChild(number);
+        }
+    }
+}
+
+// Clear time
+function clearTime() {
+    window.currentTimePicker.targetElement.value = '';
+    window.currentTimePicker.displayElement.textContent = 'Select time...';
+    closeTimePicker();
+}
+
+// Confirm time selection
+function confirmTime() {
+    const timeString = formatTime24(window.currentTimePicker.hours, window.currentTimePicker.minutes);
+    const displayTimeString = formatTimeDisplay(window.currentTimePicker.hours, window.currentTimePicker.minutes);
+    
+    window.currentTimePicker.targetElement.value = timeString;
+    window.currentTimePicker.displayElement.textContent = displayTimeString;
+    
+    closeTimePicker();
+}
+
+// Update time display
+function updateTimeDisplay() {
+    const displayTimeString = formatTimeDisplay(window.currentTimePicker.hours, window.currentTimePicker.minutes);
+    document.getElementById('timeDisplay').textContent = displayTimeString;
+}
+
+// Format time for display (24-hour format)
+function formatTimeDisplay(hours, minutes) {
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+}
+
+// Format time for input (24-hour format)
+function formatTime24(hours, minutes) {
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+}
+
+// Initialize clock interactions
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle number clicks
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('clock-number')) {
+            const value = parseInt(e.target.getAttribute('data-value'));
+            
+            if (window.currentTimePicker.mode === 'hours') {
+                window.currentTimePicker.hours = value;
+                updateTimeDisplay();
+                
+                // Update visual selection
+                document.querySelectorAll('.clock-number').forEach(num => {
+                    num.classList.remove('selected');
+                });
+                e.target.classList.add('selected');
+                
+                // Auto-switch to minutes after 0.8 seconds
+                setTimeout(() => {
+                    setTimeMode('minutes');
+                }, 800);
+                
+            } else if (window.currentTimePicker.mode === 'minutes') {
+                window.currentTimePicker.minutes = value;
+                updateTimeDisplay();
+                
+                // Update visual selection
+                document.querySelectorAll('.clock-number').forEach(num => {
+                    num.classList.remove('selected');
+                });
+                e.target.classList.add('selected');
+            }
+        }
+    });
+    
+    // Close on overlay click
+    document.getElementById('circularTimePicker').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeTimePicker();
+        }
+    });
+});
+
+// Make time picker functions globally available
+window.openTimePicker = openTimePicker;
+window.closeTimePicker = closeTimePicker;
+window.setTimeMode = setTimeMode;
+window.clearTime = clearTime;
+window.confirmTime = confirmTime;
 
 </script>

@@ -146,6 +146,8 @@
         "currentMonth": "Mois Actuel",
         "previousMonth": "Mois Précédent",
         "nextMonth": "Mois Suivant",
+        "previousWeek": "Semaine Précédente",
+        "nextWeek": "Semaine Suivante",
         "today": "Aujourd'hui",
         "tomorrow": "Demain",
         "quickActions": "Actions Rapides",

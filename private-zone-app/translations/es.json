@@ -74,6 +74,8 @@
         "currentMonth": "Mes Actual",
         "previousMonth": "Mes Anterior",
         "nextMonth": "Mes Siguiente",
+        "previousWeek": "Semana Anterior",
+        "nextWeek": "Semana Siguiente",
         "today": "Hoy",
         "tomorrow": "Mañana",
         "quickActions": "Acciones Rápidas",
