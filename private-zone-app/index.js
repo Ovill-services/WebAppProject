@@ -418,7 +418,7 @@ app.post('/api/google/calendar/events', requireAuth, async (req, res) => {
 // Calendar page route for creating events (alternative endpoint)
 app.post('/calendar/create-event', requireAuth, async (req, res) => {
     try {
-        const { title, description, start, end, location, allDay } = req.body;
+    const { title, description, start, end, location, allDay, recurring, recurringType, recurringEnd } = req.body;
         
         // Get user's Google Calendar tokens
         const tokenResult = await db.query(
@@ -470,7 +470,10 @@ app.post('/calendar/create-event', requireAuth, async (req, res) => {
             start: startDate,
             end: endDate,
             location,
-            allDay
+            allDay,
+            recurring,
+            recurringType,
+            recurringEnd
         };
         
         const createdEvent = await googleCalendarService.createEvent(eventData);

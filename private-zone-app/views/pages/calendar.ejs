@@ -4254,6 +4254,11 @@ window.createEvent = function() {
         return;
     }
     
+    // Recurring event fields
+    const isRecurring = formData.get('recurring') === 'on';
+    const recurringType = formData.get('recurringType');
+    const recurringEnd = formData.get('recurringEnd');
+
     const eventData = {
         title: formData.get('title'),
         description: formData.get('description'),
@@ -4261,7 +4266,10 @@ window.createEvent = function() {
         category: formData.get('category'),
         start: start,
         end: end,
-        allDay: isAllDay
+        allDay: isAllDay,
+        recurring: isRecurring,
+        recurringType: isRecurring ? recurringType : null,
+        recurringEnd: isRecurring ? recurringEnd : null
     };
 
     // Block event creation if title is empty

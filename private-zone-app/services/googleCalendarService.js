@@ -93,6 +93,7 @@ export class GoogleCalendarService {
 
     // Create a new event
     async createEvent(eventData) {
+
         try {
             const event = {
                 summary: eventData.title,
@@ -103,7 +104,6 @@ export class GoogleCalendarService {
 
             // Handle all-day vs timed events
             if (eventData.allDay) {
-                // For all-day events, use date format
                 event.start = {
                     date: eventData.start,
                     timeZone: 'America/New_York',
@@ -113,7 +113,6 @@ export class GoogleCalendarService {
                     timeZone: 'America/New_York',
                 };
             } else {
-                // For timed events, use dateTime format
                 event.start = {
                     dateTime: eventData.start,
                     timeZone: 'America/New_York',
@@ -122,6 +121,26 @@ export class GoogleCalendarService {
                     dateTime: eventData.end,
                     timeZone: 'America/New_York',
                 };
+            }
+
+            // Add recurrence rule if recurring
+            if (eventData.recurring && eventData.recurringType) {
+                let freq = '';
+                switch (eventData.recurringType) {
+                    case 'daily': freq = 'DAILY'; break;
+                    case 'weekly': freq = 'WEEKLY'; break;
+                    case 'monthly': freq = 'MONTHLY'; break;
+                    case 'yearly': freq = 'YEARLY'; break;
+                }
+                if (freq) {
+                    let rrule = `RRULE:FREQ=${freq}`;
+                    if (eventData.recurringEnd) {
+                        // Google expects UNTIL in YYYYMMDDT235959Z format
+                        const until = eventData.recurringEnd.replace(/-/g, '') + 'T235959Z';
+                        rrule += `;UNTIL=${until}`;
+                    }
+                    event.recurrence = [rrule];
+                }
             }
 
             const response = await this.calendar.events.insert({
