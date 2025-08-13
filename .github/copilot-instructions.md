@@ -68,6 +68,7 @@ app.get('/api/resource', requireAuth, async (req, res) => {
 - Tasks have `source` field for integration tracking
 
 
+- always when changing something write very in depth what you have done
 
 ## How To Run the Application
 - cd to the project directory

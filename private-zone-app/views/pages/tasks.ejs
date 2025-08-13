@@ -1,21 +1,21 @@
 <div class="main-content">
     <div class="mt-5 container">
         <!-- Enhanced page header -->
-        <div class="page-header">
+        <div class="enhanced-page-header">
             <div class="d-flex justify-content-between align-items-center">
                 <div class="d-flex align-items-center">
                     <div class="me-3">
-                        <div class="bg-primary bg-opacity-10 rounded-circle p-3">
-                            <i class="bi bi-check2-square text-primary fs-4"></i>
+                        <div class="page-header-icon">
+                            <i class="bi bi-calendar-event"></i>
                         </div>
                     </div>
                     <div>
-                        <h1 class="mb-1" data-translate="tasks.title">Tasks</h1>
+                        <h1 class="mb-1" data-translate="calendar.title">Tasks</h1>
                         <p class="text-muted mb-0">Manage your tasks efficiently</p>
                     </div>
                 </div>
                 <div class="text-end">
-                    <div class="current-time-card card border-0 shadow-sm">
+                    <div class="enhanced-time-card card border-0">
                         <div class="card-body py-2 px-3">
                             <small class="text-muted d-block">Current Time</small>
                             <strong class="text-body">
@@ -29,25 +29,20 @@
         </div>
 
         <!-- Add New Task Card -->
-        <div class="card mb-4 shadow-sm border-0">
-            <div class="card-header bg-primary text-white py-3">
-                <h5 class="mb-0 d-flex align-items-center fw-bold">
-                    <i class="bi bi-plus-circle me-2"></i><span data-translate="tasks.addNewTask">Add New Task</span>
-                </h5>
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h6 class="mb-0 d-flex align-items-center">
+                    <i class="bi bi-plus-circle me-2"></i>
+                    <span data-translate="tasks.addNewTask">Add New Task</span>
+                </h6>
             </div>
             <div class="card-body">
-                                <form id="addTaskForm">
-                    <div class="row">
-                        <div class="col-md-9">
-                            <input type="text" class="form-control" id="taskInput" data-translate-placeholder="tasks.enterTask" placeholder="Enter your task..." required>
-                        </div>
-
-                        <div class="col-md-3">
-                            <button type="submit" class="page-action-btn btn btn-primary btn-lg w-100 d-flex align-items-center justify-content-center">
-                                <i class="bi bi-plus-lg me-2"></i><span data-translate="tasks.addTask">Add Task</span>
-                            </button>
-                        </div>
-                    </div>
+                <form id="addTaskForm" class="d-flex align-items-center">
+                    <input type="text" id="taskInput" class="form-control me-3" data-translate-placeholder="tasks.enterTask" placeholder="Enter your task..." required>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-plus-circle me-1"></i>
+                        <span data-translate="tasks.addTask">Add Task</span>
+                    </button>
                 </form>
             </div>
         </div>
@@ -1254,4 +1249,45 @@
         });
     });
 </script>
+
+<style>
+    /* Added hover effects for buttons */
+.page-action-btn:hover {
+    background-color: #0056b3;
+    color: #fff;
+    transition: background-color 0.3s ease;
+}
+
+/* Enhanced card shadow for better visibility */
+.card {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.3s ease;
+}
+.card:hover {
+    box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
+}
+
+/* Improved spacing for mobile responsiveness */
+@media (max-width: 768px) {
+    .container {
+        padding: 15px;
+    }
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .current-time-card {
+        margin-top: 10px;
+    }
+}
+
+/* Subtle animations for task items */
+.task-item {
+    transition: transform 0.2s ease, background-color 0.2s ease;
+}
+.task-item:hover {
+    transform: scale(1.02);
+    background-color: #f8f9fa;
+}
+</style>
 
