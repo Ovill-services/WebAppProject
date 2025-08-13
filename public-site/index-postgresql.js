@@ -1,13 +1,13 @@
 import ejs from 'ejs';
 import express from 'express';
-import { MongoClient, ObjectId } from 'mongodb';
+import pg from 'pg';
 import bodyParser from 'body-parser';
 import moment from 'moment';
 import crypto from 'crypto';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import session from 'express-session';
-import MongoStore from 'connect-mongo';
+import pgSession from 'connect-pg-simple';
 import dotenv from 'dotenv';
 import passport from 'passport';
 import { Strategy as LocalStrategy } from 'passport-local';
@@ -18,22 +18,35 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// MongoDB connection
-const mongoUri = process.env.MONGODB_URI || 'mongodb://admin:secretpassword@mongodb:27017/private_zone?authSource=admin';
-const client = new MongoClient(mongoUri);
-let db;
+// PostgreSQL session store
+const PgSession = pgSession(session);
+
+const db = new pg.Client({
+  user: process.env.DB_USER,
+  host: process.env.DB_HOST,
+  database: process.env.DB_NAME,
+  password: process.env.DB_PASSWORD,
+  port: process.env.DB_PORT,
+});
+
+// Create a separate pool for session store
+const sessionPool = new pg.Pool({
+  user: process.env.DB_USER,
+  host: process.env.DB_HOST,
+  database: process.env.DB_NAME,
+  password: process.env.DB_PASSWORD,
+  port: process.env.DB_PORT,
+});
 
 const app = express();
 const port = 3000;
 
 app.use(express.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-
-// MongoDB session store
 app.use(session({
-  store: MongoStore.create({
-    mongoUrl: mongoUri,
-    collectionName: 'sessions'
+  store: new PgSession({
+    pool: sessionPool,
+    tableName: 'session'
   }),
   secret: process.env.SESSION_SECRET || 'your-secret-key-change-this-in-production',
   resave: false,
@@ -55,18 +68,16 @@ passport.use(new LocalStrategy({
 }, async (email, password, done) => {
   try {
     const hash = crypto.createHash('sha256').update(password).digest('hex');
-    const user = await db.collection('users').findOne({
-      username: email,
-      password: hash
-    });
+    const query = 'SELECT * FROM users WHERE username = $1 AND password = $2';
+    const result = await db.query(query, [email, hash]);
     
-    if (user) {
-      const userObj = {
-        id: user._id,
-        email: user.username,
-        name: user.name
+    if (result.rows.length > 0) {
+      const user = {
+        id: result.rows[0].id,
+        email: result.rows[0].username,
+        name: result.rows[0].name
       };
-      return done(null, userObj);
+      return done(null, user);
     } else {
       return done(null, false, { message: 'Invalid email or password' });
     }
@@ -87,118 +98,127 @@ if (googleOAuthEnabled) {
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     callbackURL: process.env.GOOGLE_REDIRECT_URI || process.env.GOOGLE_CALLBACK_URL || 'http://localhost:3000/auth/google/callback'
   }, async (accessToken, refreshToken, profile, done) => {
-    try {
-      // Check if user exists with Google email
-      const existingUser = await db.collection('users').findOne({
-        username: profile.emails[0].value
-      });
+  try {
+    // Check if user exists with Google email
+    const checkQuery = 'SELECT * FROM users WHERE username = $1';
+    const checkResult = await db.query(checkQuery, [profile.emails[0].value]);
+    
+    let user;
+    if (checkResult.rows.length > 0) {
+      // User exists, return user
+      user = {
+        id: checkResult.rows[0].id,
+        email: checkResult.rows[0].username,
+        name: checkResult.rows[0].name
+      };
+    } else {
+      // Create new user
+      const insertQuery = 'INSERT INTO users (name, username, password, entrydate, lastlogin) VALUES ($1, $2, $3, $4, $5) RETURNING *';
+      const values = [
+        profile.displayName,
+        profile.emails[0].value,
+        'google_oauth', // placeholder password for OAuth users
+        moment().format('YYYY-MM-DD HH:mm:ss'),
+        moment().format('YYYY-MM-DD HH:mm:ss')
+      ];
       
-      let user;
-      if (existingUser) {
-        // User exists, return user
-        user = {
-          id: existingUser._id,
-          email: existingUser.username,
-          name: existingUser.name
-        };
-      } else {
-        // Create new user
-        const newUser = {
-          name: profile.displayName,
-          username: profile.emails[0].value,
-          password: 'google_oauth', // placeholder password for OAuth users
-          entrydate: new Date(),
-          lastlogin: new Date(),
-          created_at: new Date(),
-          updated_at: new Date(),
-          is_active: true,
-          role: 'user'
-        };
-        
-        const result = await db.collection('users').insertOne(newUser);
-        user = {
-          id: result.insertedId,
-          email: newUser.username,
-          name: newUser.name
-        };
-      }
-      
-      // Store Google Calendar tokens if available
-      if (accessToken && profile.emails && profile.emails[0]) {
-        try {
-          // Google OAuth tokens typically expire in 1 hour
-          const expiresAt = moment().add(1, 'hour').toDate();
-          
-          let calendarInfo = {};
-          let taskInfo = {};
-          
-          // Store calendar integration tokens
-          await db.collection('google_calendar_integration').replaceOne(
-            { user_email: profile.emails[0].value },
-            {
-              user_email: profile.emails[0].value,
-              access_token: accessToken,
-              refresh_token: refreshToken || null,
-              expires_at: expiresAt,
-              scope: 'https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/tasks https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.modify',
-              calendar_info: calendarInfo,
-              is_active: true,
-              created_at: new Date(),
-              updated_at: new Date()
-            },
-            { upsert: true }
-          );
-          
-          console.log('✅ Google Calendar integration stored for user:', profile.emails[0].value);
-          
-          // Store Google Tasks integration tokens
-          await db.collection('google_tasks_integration').replaceOne(
-            { user_email: profile.emails[0].value },
-            {
-              user_email: profile.emails[0].value,
-              access_token: accessToken,
-              refresh_token: refreshToken || null,
-              expires_at: expiresAt,
-              scope: 'https://www.googleapis.com/auth/tasks',
-              task_info: taskInfo,
-              is_active: true,
-              created_at: new Date(),
-              updated_at: new Date()
-            },
-            { upsert: true }
-          );
-          
-          console.log('✅ Google Tasks integration stored for user:', profile.emails[0].value);
-          
-          // Store Gmail integration tokens
-          await db.collection('gmail_integration').replaceOne(
-            { user_email: profile.emails[0].value },
-            {
-              user_email: profile.emails[0].value,
-              access_token: accessToken,
-              refresh_token: refreshToken || null,
-              expires_at: expiresAt,
-              gmail_email: profile.emails[0].value,
-              is_active: true,
-              created_at: new Date(),
-              updated_at: new Date()
-            },
-            { upsert: true }
-          );
-          
-          console.log('✅ Gmail integration stored for user:', profile.emails[0].value);
-          
-        } catch (integrationError) {
-          console.error('⚠️ Error storing Google integrations:', integrationError);
-          // Don't fail the login if integration storage fails
-        }
-      }
-      
-      return done(null, user);
-    } catch (error) {
-      return done(error);
+      const insertResult = await db.query(insertQuery, values);
+      user = {
+        id: insertResult.rows[0].id,
+        email: insertResult.rows[0].username,
+        name: insertResult.rows[0].name
+      };
     }
-  }));
+    
+    // Store Google Calendar tokens if available
+    if (accessToken && profile.emails && profile.emails[0]) {
+      try {
+        // Google OAuth tokens typically expire in 1 hour
+        // Since passport-google-oauth20 doesn't provide expires_in directly,
+        // we set expiry to 1 hour from now as per Google's standard
+        const expiresAt = moment().add(1, 'hour').toISOString();
+
+
+        let calendarInfo = {};
+        let taskInfo = {};
+
+        // If you have expires_in or expiry_date from the OAuth provider, use them.
+        // Otherwise, expiresAt will be null.
+
+        // Store calendar integration tokens
+        const calendarIntegrationQuery = `
+          INSERT INTO google_calendar_integration (user_email, access_token, refresh_token, expires_at, scope, calendar_info)
+          VALUES ($1, $2, $3, $4, $5, $6)
+        `;
+        
+        // Delete existing record first, then insert new one
+        const deleteCalendarQuery = 'DELETE FROM google_calendar_integration WHERE user_email = $1';
+        await db.query(deleteCalendarQuery, [profile.emails[0].value]);
+        
+        await db.query(calendarIntegrationQuery, [
+          profile.emails[0].value,
+          accessToken,
+          refreshToken || null,
+          expiresAt,
+          'https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/tasks https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.modify',
+          JSON.stringify(calendarInfo)
+        ]);
+        
+        console.log('✅ Google Calendar integration stored for user:', profile.emails[0].value);
+        
+        // Store Google Tasks integration tokens
+        const tasksIntegrationQuery = `
+          INSERT INTO google_tasks_integration (user_email, access_token, refresh_token, expires_at, scope, task_info)
+          VALUES ($1, $2, $3, $4, $5, $6)
+        `;
+        
+        // Delete existing record first, then insert new one
+        const deleteTasksQuery = 'DELETE FROM google_tasks_integration WHERE user_email = $1';
+        await db.query(deleteTasksQuery, [profile.emails[0].value]);
+        
+        await db.query(tasksIntegrationQuery, [
+          profile.emails[0].value,
+          accessToken,
+          refreshToken || null,
+          expiresAt,
+          'https://www.googleapis.com/auth/tasks',
+          JSON.stringify(taskInfo)
+        ]);
+        
+        console.log('✅ Google Tasks integration stored for user:', profile.emails[0].value);
+        
+        // Store Gmail integration tokens
+        const gmailIntegrationQuery = `
+          INSERT INTO gmail_integration (user_email, access_token, refresh_token, expires_at, scope, gmail_info)
+          VALUES ($1, $2, $3, $4, $5, $6)
+        `;
+        
+        // Delete existing record first, then insert new one
+        const deleteGmailQuery = 'DELETE FROM gmail_integration WHERE user_email = $1';
+        await db.query(deleteGmailQuery, [profile.emails[0].value]);
+        
+        await db.query(gmailIntegrationQuery, [
+          profile.emails[0].value,
+          accessToken,
+          refreshToken || null,
+          expiresAt,
+          'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.modify',
+          JSON.stringify({})
+        ]);
+        
+        console.log('✅ Gmail integration stored for user:', profile.emails[0].value);
+        
+      } catch (integrationError) {
+        console.error('⚠️ Error storing Google integrations:', integrationError);
+        // Don't fail the login if integration storage fails
+      }
+    }
+    
+    return done(null, user);
+  } catch (error) {
+    return done(error);
+  }
+}));
 
   console.log('Google OAuth enabled');
 } else {
@@ -212,15 +232,16 @@ passport.serializeUser((user, done) => {
 
 passport.deserializeUser(async (id, done) => {
   try {
-    const user = await db.collection('users').findOne({ _id: new ObjectId(id) });
+    const query = 'SELECT * FROM users WHERE id = $1';
+    const result = await db.query(query, [id]);
     
-    if (user) {
-      const userObj = {
-        id: user._id,
-        email: user.username,
-        name: user.name
+    if (result.rows.length > 0) {
+      const user = {
+        id: result.rows[0].id,
+        email: result.rows[0].username,
+        name: result.rows[0].name
       };
-      done(null, userObj);
+      done(null, user);
     } else {
       done(null, false);
     }
@@ -253,47 +274,40 @@ if (googleOAuthEnabled) {
     async (req, res) => {
       // Update lastlogin for Google OAuth users
       try {
-        await db.collection('users').updateOne(
-          { username: req.user.email },
-          { $set: { lastlogin: new Date(), updated_at: new Date() } }
-        );
+        const updateQuery = 'UPDATE users SET lastlogin = $1 WHERE username = $2';
+        await db.query(updateQuery, [moment().format('YYYY-MM-DD HH:mm:ss'), req.user.email]);
       } catch (error) {
         console.error('Error updating lastlogin for Google user:', error);
       }
     
-      // Set session user
-      req.session.user = {
-        email: req.user.email,
-        name: req.user.name
-      };
+    // Set session user
+    req.session.user = {
+      email: req.user.email,
+      name: req.user.name
+    };
+    
+    // Generate a temporary auth token for cross-app authentication
+    const authToken = crypto.randomBytes(32).toString('hex');
+    const expires = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+    
+    try {
+      // Store the token in database temporarily
+      await db.query('DELETE FROM temp_auth_tokens WHERE user_username = $1', [req.user.email]);
+      await db.query(
+        'INSERT INTO temp_auth_tokens (token, user_username, expires_at) VALUES ($1, $2, $3)',
+        [authToken, req.user.email, expires]
+      );
       
-      // Generate a temporary auth token for cross-app authentication
-      const authToken = crypto.randomBytes(32).toString('hex');
-      const expires = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
-      
-      try {
-        // Store the token in database temporarily
-        await db.collection('temp_auth_tokens').deleteMany({
-          user_username: req.user.email
-        });
-        
-        await db.collection('temp_auth_tokens').insertOne({
-          token: authToken,
-          user_username: req.user.email,
-          expires_at: expires,
-          created_at: new Date()
-        });
-        
-        // Redirect to private zone with token
-        const privateZoneUrl = process.env.PRIVATE_ZONE_URL || 'http://localhost:3001';
-        return res.redirect(`${privateZoneUrl}?token=${authToken}`);
-      } catch (error) {
-        console.error('Error creating Google OAuth token:', error);
-        // Fallback
-        const privateZoneUrl = process.env.PRIVATE_ZONE_URL || 'http://localhost:3001';
-        res.redirect(privateZoneUrl);
-      }
+      // Redirect to private zone with token
+      const privateZoneUrl = process.env.PRIVATE_ZONE_URL || 'http://localhost:3001';
+      return res.redirect(`${privateZoneUrl}?token=${authToken}`);
+    } catch (error) {
+      console.error('Error creating Google OAuth token:', error);
+      // Fallback
+      const privateZoneUrl = process.env.PRIVATE_ZONE_URL || 'http://localhost:3001';
+      res.redirect(privateZoneUrl);
     }
+  }
   );
 } else {
   // Provide disabled routes if Google OAuth is not configured
@@ -377,11 +391,10 @@ app.post('/register', async (req, res) => {
 
     try {
         // First check if email already exists
-        const existingUser = await db.collection('users').findOne({
-          username: email
-        });
+        const checkQuery = 'SELECT username FROM users WHERE username = $1';
+        const checkResult = await db.query(checkQuery, [email]);
         
-        if (existingUser) {
+        if (checkResult.rows.length > 0) {
             // Email already exists
             const sweetalertScript = `<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script><script>Swal.fire({icon: 'error', title: 'Email Already Registered', text: 'This email address is already registered. Please use a different email or try logging in.', confirmButtonColor: '#3085d6', theme: 'auto'});</script>`;
             return res.render('index.ejs', {
@@ -395,19 +408,10 @@ app.post('/register', async (req, res) => {
         // Hash the password using SHA256
         const hash = crypto.createHash('sha256').update(password).digest('hex');
 
-        const newUser = {
-          name: name,
-          username: email,
-          password: hash,
-          entrydate: new Date(),
-          lastlogin: new Date(),
-          created_at: new Date(),
-          updated_at: new Date(),
-          is_active: true,
-          role: 'user'
-        };
+        const query = 'INSERT INTO users (name, username, password, entrydate, lastlogin) VALUES ($1, $2, $3, $4, $5)';
+        const values = [name, email, hash, moment().format('YYYY-MM-DD HH:mm:ss'), moment().format('YYYY-MM-DD HH:mm:ss')];
         
-        await db.collection('users').insertOne(newUser);
+        await db.query(query, values);
         console.log('User registered successfully');
         res.render('index.ejs', {
             page: 'login',
@@ -463,10 +467,8 @@ app.post('/login', (req, res, next) => {
       
       // Update lastlogin
       try {
-        await db.collection('users').updateOne(
-          { username: user.email },
-          { $set: { lastlogin: new Date(), updated_at: new Date() } }
-        );
+        const updateQuery = 'UPDATE users SET lastlogin = $1 WHERE username = $2';
+        await db.query(updateQuery, [moment().format('YYYY-MM-DD HH:mm:ss'), user.email]);
       } catch (error) {
         console.error('Error updating lastlogin:', error);
       }
@@ -487,17 +489,13 @@ app.post('/login', (req, res, next) => {
       
       try {
         // First, delete any existing tokens for this user
-        await db.collection('temp_auth_tokens').deleteMany({
-          user_username: user.email
-        });
+        await db.query('DELETE FROM temp_auth_tokens WHERE user_username = $1', [user.email]);
         
         // Insert new token
-        await db.collection('temp_auth_tokens').insertOne({
-          token: authToken,
-          user_username: user.email,
-          expires_at: expires,
-          created_at: new Date()
-        });
+        await db.query(
+          'INSERT INTO temp_auth_tokens (token, user_username, expires_at) VALUES ($1, $2, $3)',
+          [authToken, user.email, expires]
+        );
         
         console.log('Auth token created successfully for user:', user.email);
         
@@ -517,14 +515,13 @@ app.post('/login', (req, res, next) => {
 // Database connection and server startup
 async function startServer() {
   try {
-    await client.connect();
-    db = client.db('private_zone');
-    console.log('Connected to MongoDB successfully');
+    await db.connect();
+    console.log('Connected to the database successfully');
     app.listen(port, () => {
       console.log(`Public Site is running at http://localhost:${port}`);
     });
   } catch (error) {
-    console.error('Error connecting to MongoDB:', error);
+    console.error('Error connecting to the database:', error);
     process.exit(1);
   }
 }

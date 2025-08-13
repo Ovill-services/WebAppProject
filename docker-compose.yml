@@ -16,22 +16,22 @@ services:
     networks:
       - app-network
 
-  # PostgreSQL Database (for transition period)
-  postgres:
-    image: postgres:15
-    container_name: postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: mysecretpassword
-      POSTGRES_DB: Ovill
-    ports:
-      - "5434:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./sql-init:/docker-entrypoint-initdb.d
-    networks:
-      - app-network
+  # PostgreSQL Database (commented out - migrated to MongoDB)
+  # postgres:
+  #   image: postgres:15
+  #   container_name: postgres
+  #   restart: unless-stopped
+  #   environment:
+  #     POSTGRES_USER: postgres
+  #     POSTGRES_PASSWORD: mysecretpassword
+  #     POSTGRES_DB: Ovill
+  #   ports:
+  #     - "5434:5432"
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #     - ./sql-init:/docker-entrypoint-initdb.d
+  #   networks:
+  #     - app-network
 
   # Private Zone App
   private-zone-app:
@@ -42,11 +42,6 @@ services:
     restart: unless-stopped
     environment:
       NODE_ENV: production
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_USER: postgres
-      DB_PASSWORD: mysecretpassword
-      DB_NAME: Ovill
       MONGODB_URI: mongodb://admin:secretpassword@mongodb:27017/private_zone?authSource=admin
       SESSION_SECRET: your-super-secret-session-key-change-in-production
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
@@ -58,7 +53,6 @@ services:
       - ./private-zone-app/public/uploads:/app/public/uploads
       - ./private-zone-app/translations:/app/translations
     depends_on:
-      - postgres
       - mongodb
     networks:
       - app-network
@@ -72,11 +66,6 @@ services:
     restart: unless-stopped
     environment:
       NODE_ENV: production
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_USER: postgres
-      DB_PASSWORD: mysecretpassword
-      DB_NAME: Ovill
       MONGODB_URI: mongodb://admin:secretpassword@mongodb:27017/private_zone?authSource=admin
       SESSION_SECRET: your-super-secret-session-key-change-in-production
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
@@ -86,7 +75,6 @@ services:
     ports:
       - "3000:3000"
     depends_on:
-      - postgres
       - mongodb
     networks:
       - app-network
@@ -111,8 +99,6 @@ services:
 
 volumes:
   mongodb_data:
-    driver: local
-  postgres_data:
     driver: local
 
 networks:
