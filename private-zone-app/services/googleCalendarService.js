@@ -75,16 +75,22 @@ export class GoogleCalendarService {
             const events = response.data.items || [];
             
             // Format events for our calendar
-            return events.map(event => ({
-                id: event.id,
-                title: event.summary || 'No Title',
-                description: event.description || '',
-                start: event.start.dateTime || event.start.date,
-                end: event.end.dateTime || event.end.date,
-                location: event.location || '',
-                allDay: !event.start.dateTime, // If no time, it's an all-day event
-                source: 'google'
-            }));
+            return events.map(event => {
+                const isRecurring = !!(event.recurringEventId || event.recurrence);
+                console.log(`Event "${event.summary}": recurringEventId=${event.recurringEventId}, recurrence=${!!event.recurrence}, isRecurring=${isRecurring}`);
+                
+                return {
+                    id: event.id,
+                    title: event.summary || 'No Title',
+                    description: event.description || '',
+                    start: event.start.dateTime || event.start.date,
+                    end: event.end.dateTime || event.end.date,
+                    location: event.location || '',
+                    allDay: !event.start.dateTime, // If no time, it's an all-day event
+                    recurring: isRecurring, // Check if it's a recurring event
+                    source: 'google'
+                };
+            });
         } catch (error) {
             console.error('Error fetching Google Calendar events:', error);
             throw error;
@@ -197,22 +203,92 @@ export class GoogleCalendarService {
                 };
             }
 
-            const response = await this.calendar.events.update({
-                calendarId: 'primary',
-                eventId: eventId,
-                resource: event,
-            });
+            // Handle recurring event editing scope
+            console.log(`Updating event ${eventId} with scope: ${eventData.recurringEditScope}`);
 
-            return {
-                id: response.data.id,
-                title: response.data.summary,
-                start: response.data.start.dateTime || response.data.start.date,
-                end: response.data.end.dateTime || response.data.end.date,
-                allDay: !response.data.start.dateTime,
-                location: response.data.location,
-                description: response.data.description,
-                source: 'google'
-            };
+            if (eventData.recurringEditScope === 'all') {
+                // Edit all events in series - update the master event
+                console.log('Updating entire recurring series');
+                
+                // Get event details to find master event if this is an instance
+                const eventDetails = await this.calendar.events.get({
+                    calendarId: 'primary',
+                    eventId: eventId
+                });
+
+                let masterEventId = eventId;
+                if (eventDetails.data.recurringEventId) {
+                    // This is an instance, update the master event
+                    masterEventId = eventDetails.data.recurringEventId;
+                    console.log(`Updating master event ID: ${masterEventId}`);
+                }
+
+                const response = await this.calendar.events.update({
+                    calendarId: 'primary',
+                    eventId: masterEventId,
+                    resource: event,
+                    sendUpdates: 'all'
+                });
+
+                return {
+                    id: response.data.id,
+                    title: response.data.summary,
+                    start: response.data.start.dateTime || response.data.start.date,
+                    end: response.data.end.dateTime || response.data.end.date,
+                    allDay: !response.data.start.dateTime,
+                    location: response.data.location,
+                    description: response.data.description,
+                    source: 'google'
+                };
+                
+            } else if (eventData.recurringEditScope === 'future') {
+                // Edit this and future events - complex operation
+                console.log('Updating this and future events (complex operation)');
+                
+                // For now, we'll update only this instance as implementing 
+                // "this and future" requires splitting the recurring series
+                console.log('Note: "This and future" editing not fully implemented - updating single instance');
+                
+                const response = await this.calendar.events.update({
+                    calendarId: 'primary',
+                    eventId: eventId,
+                    resource: event,
+                    sendUpdates: 'none'
+                });
+
+                return {
+                    id: response.data.id,
+                    title: response.data.summary,
+                    start: response.data.start.dateTime || response.data.start.date,
+                    end: response.data.end.dateTime || response.data.end.date,
+                    allDay: !response.data.start.dateTime,
+                    location: response.data.location,
+                    description: response.data.description,
+                    source: 'google'
+                };
+                
+            } else {
+                // Edit only this instance
+                console.log('Updating single instance');
+                
+                const response = await this.calendar.events.update({
+                    calendarId: 'primary',
+                    eventId: eventId,
+                    resource: event,
+                    sendUpdates: 'none'
+                });
+
+                return {
+                    id: response.data.id,
+                    title: response.data.summary,
+                    start: response.data.start.dateTime || response.data.start.date,
+                    end: response.data.end.dateTime || response.data.end.date,
+                    allDay: !response.data.start.dateTime,
+                    location: response.data.location,
+                    description: response.data.description,
+                    source: 'google'
+                };
+            }
         } catch (error) {
             console.error('Error updating Google Calendar event:', error);
             throw error;
@@ -220,12 +296,98 @@ export class GoogleCalendarService {
     }
 
     // Delete an event
-    async deleteEvent(eventId) {
+    async deleteEvent(eventId, recurringEditScope) {
         try {
-            await this.calendar.events.delete({
-                calendarId: 'primary',
-                eventId: eventId,
-            });
+            console.log(`Deleting event ${eventId} with scope: ${recurringEditScope}`);
+
+            if (recurringEditScope === 'all') {
+                // Delete all events in series - delete the master event
+                console.log('Deleting entire recurring series');
+                
+                // For recurring events, we need to find and delete the master event
+                // If this is an instance, we need to get the recurring event ID
+                const eventDetails = await this.calendar.events.get({
+                    calendarId: 'primary',
+                    eventId: eventId
+                });
+
+                let masterEventId = eventId;
+                if (eventDetails.data.recurringEventId) {
+                    // This is an instance, get the master event ID
+                    masterEventId = eventDetails.data.recurringEventId;
+                    console.log(`Found master event ID: ${masterEventId}`);
+                }
+
+                await this.calendar.events.delete({
+                    calendarId: 'primary',
+                    eventId: masterEventId,
+                    sendUpdates: 'all'
+                });
+                
+            } else if (recurringEditScope === 'future') {
+                // Delete this and future events - modify the recurrence rule
+                console.log('Deleting this and future events (modifying recurrence)');
+                
+                // Get the event details
+                const eventDetails = await this.calendar.events.get({
+                    calendarId: 'primary',
+                    eventId: eventId
+                });
+
+                if (eventDetails.data.recurringEventId) {
+                    // This is an instance of a recurring event
+                    const masterEventId = eventDetails.data.recurringEventId;
+                    const instanceDate = eventDetails.data.start.dateTime || eventDetails.data.start.date;
+                    
+                    // Get the master event
+                    const masterEvent = await this.calendar.events.get({
+                        calendarId: 'primary',
+                        eventId: masterEventId
+                    });
+
+                    // Calculate the date before this instance
+                    const endDate = new Date(instanceDate);
+                    endDate.setDate(endDate.getDate() - 1);
+                    const until = endDate.toISOString().split('T')[0].replace(/-/g, '') + 'T235959Z';
+
+                    // Update the master event to end before this instance
+                    if (masterEvent.data.recurrence && masterEvent.data.recurrence.length > 0) {
+                        let updatedRecurrence = masterEvent.data.recurrence[0];
+                        // Remove existing UNTIL if present
+                        updatedRecurrence = updatedRecurrence.replace(/;UNTIL=[^;]*/, '');
+                        // Add new UNTIL
+                        updatedRecurrence += `;UNTIL=${until}`;
+
+                        await this.calendar.events.update({
+                            calendarId: 'primary',
+                            eventId: masterEventId,
+                            resource: {
+                                ...masterEvent.data,
+                                recurrence: [updatedRecurrence]
+                            },
+                            sendUpdates: 'all'
+                        });
+                    }
+                } else {
+                    // This is the master event itself
+                    console.log('Cannot delete future events from master event - deleting entire series instead');
+                    await this.calendar.events.delete({
+                        calendarId: 'primary',
+                        eventId: eventId,
+                        sendUpdates: 'all'
+                    });
+                }
+                
+            } else {
+                // Delete only this instance
+                console.log('Deleting single instance');
+                await this.calendar.events.delete({
+                    calendarId: 'primary',
+                    eventId: eventId,
+                    sendUpdates: 'none'
+                });
+            }
+
             return { success: true };
         } catch (error) {
             console.error('Error deleting Google Calendar event:', error);

@@ -489,7 +489,7 @@ app.post('/calendar/create-event', requireAuth, async (req, res) => {
 app.put('/calendar/update-event/:eventId', requireAuth, async (req, res) => {
     try {
         const { eventId } = req.params;
-        const { title, description, start, end, location, allDay } = req.body;
+        const { title, description, start, end, location, allDay, recurringEditScope } = req.body;
         
         // Get user's Google Calendar tokens
         const tokenResult = await db.query(
@@ -541,7 +541,8 @@ app.put('/calendar/update-event/:eventId', requireAuth, async (req, res) => {
             start: startDate,
             end: endDate,
             location,
-            allDay
+            allDay,
+            recurringEditScope
         };
         
         const updatedEvent = await googleCalendarService.updateEvent(eventId, eventData);
@@ -557,6 +558,7 @@ app.put('/calendar/update-event/:eventId', requireAuth, async (req, res) => {
 app.delete('/calendar/delete-event/:eventId', requireAuth, async (req, res) => {
     try {
         const { eventId } = req.params;
+        const { recurringEditScope } = req.body;
         
         // Get user's Google Calendar tokens
         const tokenResult = await db.query(
@@ -591,7 +593,7 @@ app.delete('/calendar/delete-event/:eventId', requireAuth, async (req, res) => {
         // Set credentials and delete event
         googleCalendarService.setCredentials({ access_token, refresh_token });
         
-        await googleCalendarService.deleteEvent(eventId);
+        await googleCalendarService.deleteEvent(eventId, recurringEditScope);
         res.json({ success: true, message: 'Event deleted successfully' });
         
     } catch (error) {
