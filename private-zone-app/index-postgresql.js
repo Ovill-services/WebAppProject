@@ -3,8 +3,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import session from 'express-session';
 import bodyParser from 'body-parser';
-import { MongoClient, ObjectId } from 'mongodb';
-import MongoStore from 'connect-mongo';
+import pg from 'pg';
+import pgSession from 'connect-pg-simple';
 import multer from 'multer';
 import fs from 'fs';
 import dotenv from 'dotenv';
@@ -26,22 +26,36 @@ const googleCalendarService = new GoogleCalendarService();
 // Initialize Gmail Service
 const gmailService = new GmailService();
 
-// MongoDB connection
-const mongoUri = process.env.MONGODB_URI || 'mongodb://admin:secretpassword@mongodb:27017/private_zone?authSource=admin';
-const client = new MongoClient(mongoUri);
-let db;
+// PostgreSQL session store
+const PgSession = pgSession(session);
+
+// Database connection
+const db = new pg.Client({
+  user: process.env.DB_USER || "postgres",
+  host: process.env.DB_HOST || "localhost",
+  database: process.env.DB_NAME || "Ovill",
+  password: process.env.DB_PASSWORD || "mysecretpassword",
+  port: process.env.DB_PORT || 5433,
+});
+
+// Create a pool for session store
+const sessionPool = new pg.Pool({
+  user: process.env.DB_USER || "postgres",
+  host: process.env.DB_HOST || "localhost",
+  database: process.env.DB_NAME || "Ovill",
+  password: process.env.DB_PASSWORD || "mysecretpassword",
+  port: process.env.DB_PORT || 5433,
+});
 
 const app = express();
 const port = 3001;
 
 app.use(express.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-
-// MongoDB session store
 app.use(session({
-  store: MongoStore.create({
-    mongoUrl: mongoUri,
-    collectionName: 'sessions'
+  store: new PgSession({
+    pool: sessionPool,
+    tableName: 'session'
   }),
   name: 'private-zone-session',
   secret: process.env.SESSION_SECRET || 'your-secret-key-change-this-in-production',
@@ -110,36 +124,31 @@ async function requireAuth(req, res, next) {
         console.log('Attempting token verification...');
         try {
             // Verify token and get user info
-            const tempToken = await db.collection('temp_auth_tokens').findOne({
-                token: token,
-                expires_at: { $gt: new Date() }
-            });
+            const result = await db.query(
+                'SELECT u.email, u.name, u.username FROM temp_auth_tokens t JOIN users u ON t.user_username = u.username WHERE t.token = $1 AND t.expires_at > NOW()',
+                [token]
+            );
             
-            console.log('Token query result:', tempToken ? 'found' : 'not found');
+            console.log('Token query result:', result.rows.length, 'rows');
             
-            if (tempToken) {
-                const user = await db.collection('users').findOne({
-                    username: tempToken.user_username
-                });
+            if (result.rows.length > 0) {
+                const user = result.rows[0];
+                console.log('Token verified for user:', user.username);
                 
-                if (user) {
-                    console.log('Token verified for user:', user.username);
-                    
-                    // Set session
-                    req.session.user = {
-                        email: user.username, // Use username as email for consistency
-                        name: user.name
-                    };
-                    
-                    // Delete the used token
-                    await db.collection('temp_auth_tokens').deleteOne({ token: token });
-                    
-                    console.log('User authenticated via token:', req.session.user);
-                    
-                    // Redirect to clean URL without token
-                    const cleanUrl = req.originalUrl.split('?')[0];
-                    return res.redirect(cleanUrl);
-                }
+                // Set session
+                req.session.user = {
+                    email: user.username, // Use username as email for consistency
+                    name: user.name
+                };
+                
+                // Delete the used token
+                await db.query('DELETE FROM temp_auth_tokens WHERE token = $1', [token]);
+                
+                console.log('User authenticated via token:', req.session.user);
+                
+                // Redirect to clean URL without token
+                const cleanUrl = req.originalUrl.split('?')[0];
+                return res.redirect(cleanUrl);
             } else {
                 console.log('Token not found or expired');
             }
@@ -158,16 +167,16 @@ async function requireAuth(req, res, next) {
 // Get Google Calendar integration status
 app.get('/api/google/calendar/status', requireAuth, async (req, res) => {
     try {
-        const integration = await db.collection('google_calendar_integration').findOne({
-            user_email: req.session.user.email,
-            is_active: true
-        });
+        const result = await db.query(
+            'SELECT is_active, created_at, calendar_info FROM google_calendar_integration WHERE user_email = $1 AND is_active = true',
+            [req.session.user.email]
+        );
         
-        const isConnected = !!integration;
+        const isConnected = result.rows.length > 0;
         res.json({ 
             connected: isConnected,
-            connectedSince: isConnected ? integration.created_at : null,
-            calendarInfo: isConnected ? integration.calendar_info : null
+            connectedSince: isConnected ? result.rows[0].created_at : null,
+            calendarInfo: isConnected ? result.rows[0].calendar_info : null
         });
     } catch (error) {
         console.error('Error checking Google Calendar status:', error);
@@ -184,16 +193,16 @@ app.get('/api/google/calendar/events', requireAuth, async (req, res) => {
         const { start, end } = req.query;
         
         // Get user's Google Calendar tokens
-        const integration = await db.collection('google_calendar_integration').findOne({
-            user_email: req.session.user.email,
-            is_active: true
-        });
+        const tokenResult = await db.query(
+            'SELECT access_token, refresh_token, expires_at FROM google_calendar_integration WHERE user_email = $1 AND is_active = true',
+            [req.session.user.email]
+        );
         
-        if (!integration) {
+        if (tokenResult.rows.length === 0) {
             return res.status(401).json({ error: 'Google Calendar integration not found' });
         }
         
-        let { access_token, refresh_token, expires_at } = integration;
+        let { access_token, refresh_token, expires_at } = tokenResult.rows[0];
         
         // Check if token needs refresh
         if (expires_at && new Date() >= new Date(expires_at)) {
@@ -203,14 +212,9 @@ app.get('/api/google/calendar/events', requireAuth, async (req, res) => {
                 
                 // Update tokens in database
                 const newExpiresAt = refreshedTokens.expiry_date ? new Date(refreshedTokens.expiry_date) : moment().add(1, 'hour').toDate();
-                await db.collection('google_calendar_integration').updateOne(
-                    { user_email: req.session.user.email },
-                    { 
-                        $set: { 
-                            access_token: refreshedTokens.access_token, 
-                            expires_at: newExpiresAt 
-                        } 
-                    }
+                await db.query(
+                    'UPDATE google_calendar_integration SET access_token = $1, expires_at = $2 WHERE user_email = $3',
+                    [refreshedTokens.access_token, newExpiresAt, req.session.user.email]
                 );
             } catch (refreshError) {
                 console.error('Error refreshing token:', refreshError);
@@ -255,37 +259,54 @@ async function syncGoogleCalendarEvents(userEmail, googleEvents) {
                 const isAllDay = googleEvent.allDay || false;
                 
                 // Check if event already exists in local database
-                const existingEvent = await db.collection('calendar_events').findOne({
-                    user_email: userEmail,
-                    google_event_id: googleEvent.id
-                });
+                const existingEventQuery = `
+                    SELECT id FROM calendar_events 
+                    WHERE user_email = $1 AND google_event_id = $2
+                `;
+                const existingEventResult = await db.query(existingEventQuery, [userEmail, googleEvent.id]);
                 
-                const eventData = {
-                    title: googleEvent.title || 'Untitled Event',
-                    description: googleEvent.description || null,
-                    start_time: new Date(startTime),
-                    end_time: new Date(endTime),
-                    location: googleEvent.location || null,
-                    is_all_day: isAllDay,
-                    updated_at: new Date()
-                };
-                
-                if (existingEvent) {
+                if (existingEventResult.rows.length > 0) {
                     // Update existing event
-                    await db.collection('calendar_events').updateOne(
-                        { user_email: userEmail, google_event_id: googleEvent.id },
-                        { $set: eventData }
-                    );
+                    const updateQuery = `
+                        UPDATE calendar_events 
+                        SET title = $1, description = $2, start_time = $3, end_time = $4, 
+                            location = $5, is_all_day = $6, updated_at = CURRENT_TIMESTAMP
+                        WHERE user_email = $7 AND google_event_id = $8
+                    `;
+                    const updateValues = [
+                        googleEvent.title || 'Untitled Event',
+                        googleEvent.description || null,
+                        new Date(startTime),
+                        new Date(endTime),
+                        googleEvent.location || null,
+                        isAllDay,
+                        userEmail,
+                        googleEvent.id
+                    ];
+                    
+                    await db.query(updateQuery, updateValues);
                     console.log(`Updated Google Calendar event: ${googleEvent.title || googleEvent.id}`);
                 } else {
                     // Insert new event
-                    await db.collection('calendar_events').insertOne({
-                        ...eventData,
-                        user_email: userEmail,
-                        event_type: 'google_calendar',
-                        google_event_id: googleEvent.id,
-                        created_at: new Date()
-                    });
+                    const insertQuery = `
+                        INSERT INTO calendar_events (
+                            user_email, title, description, start_time, end_time, 
+                            location, is_all_day, event_type, google_event_id
+                        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                    `;
+                    const insertValues = [
+                        userEmail,
+                        googleEvent.title || 'Untitled Event',
+                        googleEvent.description || null,
+                        new Date(startTime),
+                        new Date(endTime),
+                        googleEvent.location || null,
+                        isAllDay,
+                        'google_calendar',
+                        googleEvent.id
+                    ];
+                    
+                    await db.query(insertQuery, insertValues);
                     console.log(`Inserted Google Calendar event: ${googleEvent.title || googleEvent.id}`);
                 }
                 
@@ -306,16 +327,16 @@ async function syncGoogleCalendarEvents(userEmail, googleEvents) {
 app.post('/api/google/calendar/sync', requireAuth, async (req, res) => {
     try {
         // Get user's Google Calendar tokens
-        const integration = await db.collection('google_calendar_integration').findOne({
-            user_email: req.session.user.email,
-            is_active: true
-        });
+        const tokenResult = await db.query(
+            'SELECT access_token, refresh_token, expires_at FROM google_calendar_integration WHERE user_email = $1 AND is_active = true',
+            [req.session.user.email]
+        );
         
-        if (!integration) {
+        if (tokenResult.rows.length === 0) {
             return res.status(401).json({ error: 'Google Calendar integration not found' });
         }
         
-        let { access_token, refresh_token, expires_at } = integration;
+        let { access_token, refresh_token, expires_at } = tokenResult.rows[0];
         
         // Check if token needs refresh
         if (expires_at && new Date() >= new Date(expires_at)) {
@@ -325,14 +346,9 @@ app.post('/api/google/calendar/sync', requireAuth, async (req, res) => {
                 
                 // Update tokens in database
                 const newExpiresAt = refreshedTokens.expiry_date ? new Date(refreshedTokens.expiry_date) : moment().add(1, 'hour').toDate();
-                await db.collection('google_calendar_integration').updateOne(
-                    { user_email: req.session.user.email },
-                    { 
-                        $set: { 
-                            access_token: refreshedTokens.access_token, 
-                            expires_at: newExpiresAt 
-                        } 
-                    }
+                await db.query(
+                    'UPDATE google_calendar_integration SET access_token = $1, expires_at = $2 WHERE user_email = $3',
+                    [refreshedTokens.access_token, newExpiresAt, req.session.user.email]
                 );
             } catch (refreshError) {
                 console.error('Error refreshing token:', refreshError);
@@ -368,16 +384,16 @@ app.post('/api/google/calendar/events', requireAuth, async (req, res) => {
         const { title, description, start, end, location, attendees } = req.body;
         
         // Get user's Google Calendar tokens
-        const integration = await db.collection('google_calendar_integration').findOne({
-            user_email: req.session.user.email,
-            is_active: true
-        });
+        const tokenResult = await db.query(
+            'SELECT access_token, refresh_token FROM google_calendar_integration WHERE user_email = $1 AND is_active = true',
+            [req.session.user.email]
+        );
         
-        if (!integration) {
+        if (tokenResult.rows.length === 0) {
             return res.status(401).json({ error: 'Google Calendar integration not found' });
         }
         
-        const { access_token, refresh_token } = integration;
+        const { access_token, refresh_token } = tokenResult.rows[0];
         
         // Create event
         googleCalendarService.setCredentials({ access_token, refresh_token });
@@ -402,19 +418,19 @@ app.post('/api/google/calendar/events', requireAuth, async (req, res) => {
 // Calendar page route for creating events (alternative endpoint)
 app.post('/calendar/create-event', requireAuth, async (req, res) => {
     try {
-        const { title, description, start, end, location, allDay, recurring, recurringType, recurringEnd } = req.body;
+    const { title, description, start, end, location, allDay, recurring, recurringType, recurringEnd } = req.body;
         
         // Get user's Google Calendar tokens
-        const integration = await db.collection('google_calendar_integration').findOne({
-            user_email: req.session.user.email,
-            is_active: true
-        });
+        const tokenResult = await db.query(
+            'SELECT access_token, refresh_token, expires_at FROM google_calendar_integration WHERE user_email = $1 AND is_active = true',
+            [req.session.user.email]
+        );
         
-        if (!integration) {
+        if (tokenResult.rows.length === 0) {
             return res.status(401).json({ error: 'Google Calendar integration not found' });
         }
         
-        let { access_token, refresh_token, expires_at } = integration;
+        let { access_token, refresh_token, expires_at } = tokenResult.rows[0];
         
         // Check if token needs refresh
         if (expires_at && new Date() >= new Date(expires_at)) {
@@ -424,14 +440,9 @@ app.post('/calendar/create-event', requireAuth, async (req, res) => {
                 
                 // Update tokens in database
                 const newExpiresAt = refreshedTokens.expiry_date ? new Date(refreshedTokens.expiry_date) : moment().add(1, 'hour').toDate();
-                await db.collection('google_calendar_integration').updateOne(
-                    { user_email: req.session.user.email },
-                    { 
-                        $set: { 
-                            access_token: refreshedTokens.access_token, 
-                            expires_at: newExpiresAt 
-                        } 
-                    }
+                await db.query(
+                    'UPDATE google_calendar_integration SET access_token = $1, expires_at = $2 WHERE user_email = $3',
+                    [refreshedTokens.access_token, newExpiresAt, req.session.user.email]
                 );
             } catch (refreshError) {
                 console.error('Error refreshing token:', refreshError);
@@ -481,16 +492,16 @@ app.put('/calendar/update-event/:eventId', requireAuth, async (req, res) => {
         const { title, description, start, end, location, allDay, recurringEditScope } = req.body;
         
         // Get user's Google Calendar tokens
-        const integration = await db.collection('google_calendar_integration').findOne({
-            user_email: req.session.user.email,
-            is_active: true
-        });
+        const tokenResult = await db.query(
+            'SELECT access_token, refresh_token, expires_at FROM google_calendar_integration WHERE user_email = $1 AND is_active = true',
+            [req.session.user.email]
+        );
         
-        if (!integration) {
+        if (tokenResult.rows.length === 0) {
             return res.status(401).json({ error: 'Google Calendar integration not found' });
         }
         
-        let { access_token, refresh_token, expires_at } = integration;
+        let { access_token, refresh_token, expires_at } = tokenResult.rows[0];
         
         // Check if token needs refresh
         if (expires_at && new Date() >= new Date(expires_at)) {
@@ -500,14 +511,9 @@ app.put('/calendar/update-event/:eventId', requireAuth, async (req, res) => {
                 
                 // Update tokens in database
                 const newExpiresAt = refreshedTokens.expiry_date ? new Date(refreshedTokens.expiry_date) : moment().add(1, 'hour').toDate();
-                await db.collection('google_calendar_integration').updateOne(
-                    { user_email: req.session.user.email },
-                    { 
-                        $set: { 
-                            access_token: refreshedTokens.access_token, 
-                            expires_at: newExpiresAt 
-                        } 
-                    }
+                await db.query(
+                    'UPDATE google_calendar_integration SET access_token = $1, expires_at = $2 WHERE user_email = $3',
+                    [refreshedTokens.access_token, newExpiresAt, req.session.user.email]
                 );
             } catch (refreshError) {
                 console.error('Error refreshing token:', refreshError);
@@ -555,16 +561,16 @@ app.delete('/calendar/delete-event/:eventId', requireAuth, async (req, res) => {
         const { recurringEditScope } = req.body;
         
         // Get user's Google Calendar tokens
-        const integration = await db.collection('google_calendar_integration').findOne({
-            user_email: req.session.user.email,
-            is_active: true
-        });
+        const tokenResult = await db.query(
+            'SELECT access_token, refresh_token, expires_at FROM google_calendar_integration WHERE user_email = $1 AND is_active = true',
+            [req.session.user.email]
+        );
         
-        if (!integration) {
+        if (tokenResult.rows.length === 0) {
             return res.status(401).json({ error: 'Google Calendar integration not found' });
         }
         
-        let { access_token, refresh_token, expires_at } = integration;
+        let { access_token, refresh_token, expires_at } = tokenResult.rows[0];
         
         // Check if token needs refresh
         if (expires_at && new Date() >= new Date(expires_at)) {
@@ -574,14 +580,9 @@ app.delete('/calendar/delete-event/:eventId', requireAuth, async (req, res) => {
                 
                 // Update tokens in database
                 const newExpiresAt = refreshedTokens.expiry_date ? new Date(refreshedTokens.expiry_date) : moment().add(1, 'hour').toDate();
-                await db.collection('google_calendar_integration').updateOne(
-                    { user_email: req.session.user.email },
-                    { 
-                        $set: { 
-                            access_token: refreshedTokens.access_token, 
-                            expires_at: newExpiresAt 
-                        } 
-                    }
+                await db.query(
+                    'UPDATE google_calendar_integration SET access_token = $1, expires_at = $2 WHERE user_email = $3',
+                    [refreshedTokens.access_token, newExpiresAt, req.session.user.email]
                 );
             } catch (refreshError) {
                 console.error('Error refreshing token:', refreshError);
@@ -605,21 +606,21 @@ app.delete('/calendar/delete-event/:eventId', requireAuth, async (req, res) => {
 app.get('/dashboard', requireAuth, async (req, res) => {
     try {
         // Get complete user data from database
-        const user = await db.collection('users').findOne({
-            username: req.session.user.email
-        });
+        const query = 'SELECT * FROM users WHERE username = $1';
+        const result = await db.query(query, [req.session.user.email]);
         
         let userData = req.session.user;
-        if (user) {
+        if (result.rows.length > 0) {
+            const dbUser = result.rows[0];
             userData = {
-                name: user.name,
-                email: user.username,
-                phone: user.phone || '',
-                bio: user.bio || '',
-                jobTitle: user.job_title || '',
-                company: user.company || '',
-                skills: user.skills || '',
-                avatar_url: user.avatar_url || null
+                name: dbUser.name,
+                email: dbUser.username,
+                phone: dbUser.phone || '',
+                bio: dbUser.bio || '',
+                jobTitle: dbUser.job_title || '',
+                company: dbUser.company || '',
+                skills: dbUser.skills || '',
+                avatar_url: dbUser.avatar_url || null
             };
         }
         
@@ -641,22 +642,22 @@ app.get('/dashboard', requireAuth, async (req, res) => {
 app.get('/profile', requireAuth, async (req, res) => {
     try {
         // Get complete user data from database
-        const user = await db.collection('users').findOne({
-            username: req.session.user.email
-        });
+        const query = 'SELECT * FROM users WHERE username = $1';
+        const result = await db.query(query, [req.session.user.email]);
         
-        if (user) {
+        if (result.rows.length > 0) {
+            const userData = result.rows[0];
             res.render('index.ejs', {
                 page: 'profile',
                 user: {
-                    name: user.name,
-                    email: user.username,
-                    phone: user.phone || '',
-                    bio: user.bio || '',
-                    jobTitle: user.job_title || '',
-                    company: user.company || '',
-                    skills: user.skills || '',
-                    avatar_url: user.avatar_url || null
+                    name: userData.name,
+                    email: userData.username,
+                    phone: userData.phone || '',
+                    bio: userData.bio || '',
+                    jobTitle: userData.job_title || '',
+                    company: userData.company || '',
+                    skills: userData.skills || '',
+                    avatar_url: userData.avatar_url || null
                 }
             });
         } else {
@@ -693,35 +694,27 @@ app.get('/profile', requireAuth, async (req, res) => {
     console.log('Profile accessed by:', req.session.user);
 });
 
-// Helper function for getting user data
-async function getUserData(userEmail) {
-    try {
-        const user = await db.collection('users').findOne({
-            username: userEmail
-        });
-        
-        if (user) {
-            return {
-                name: user.name,
-                email: user.username,
-                phone: user.phone || '',
-                bio: user.bio || '',
-                jobTitle: user.job_title || '',
-                company: user.company || '',
-                skills: user.skills || '',
-                avatar_url: user.avatar_url || null
-            };
-        }
-        return null;
-    } catch (error) {
-        console.error('Error fetching user data:', error);
-        return null;
-    }
-}
-
 app.get('/calendar', requireAuth, async (req, res) => {
     try {
-        const userData = await getUserData(req.session.user.email) || req.session.user;
+        // Get complete user data from database
+        const query = 'SELECT * FROM users WHERE username = $1';
+        const result = await db.query(query, [req.session.user.email]);
+        
+        let userData = req.session.user;
+        if (result.rows.length > 0) {
+            const dbUser = result.rows[0];
+            userData = {
+                name: dbUser.name,
+                email: dbUser.username,
+                phone: dbUser.phone || '',
+                bio: dbUser.bio || '',
+                jobTitle: dbUser.job_title || '',
+                company: dbUser.company || '',
+                skills: dbUser.skills || '',
+                avatar_url: dbUser.avatar_url || null
+            };
+        }
+        
         res.render('index.ejs', {
             page: 'calendar',
             user: userData
@@ -737,7 +730,25 @@ app.get('/calendar', requireAuth, async (req, res) => {
 
 app.get('/tasks', requireAuth, async (req, res) => {
     try {
-        const userData = await getUserData(req.session.user.email) || req.session.user;
+        // Get complete user data from database
+        const query = 'SELECT * FROM users WHERE username = $1';
+        const result = await db.query(query, [req.session.user.email]);
+        
+        let userData = req.session.user;
+        if (result.rows.length > 0) {
+            const dbUser = result.rows[0];
+            userData = {
+                name: dbUser.name,
+                email: dbUser.username,
+                phone: dbUser.phone || '',
+                bio: dbUser.bio || '',
+                jobTitle: dbUser.job_title || '',
+                company: dbUser.company || '',
+                skills: dbUser.skills || '',
+                avatar_url: dbUser.avatar_url || null
+            };
+        }
+        
         res.render('index.ejs', {
             page: 'tasks',
             user: userData
@@ -753,7 +764,25 @@ app.get('/tasks', requireAuth, async (req, res) => {
 
 app.get('/email', requireAuth, async (req, res) => {
     try {
-        const userData = await getUserData(req.session.user.email) || req.session.user;
+        // Get complete user data from database
+        const query = 'SELECT * FROM users WHERE username = $1';
+        const result = await db.query(query, [req.session.user.email]);
+        
+        let userData = req.session.user;
+        if (result.rows.length > 0) {
+            const dbUser = result.rows[0];
+            userData = {
+                name: dbUser.name,
+                email: dbUser.username,
+                phone: dbUser.phone || '',
+                bio: dbUser.bio || '',
+                jobTitle: dbUser.job_title || '',
+                company: dbUser.company || '',
+                skills: dbUser.skills || '',
+                avatar_url: dbUser.avatar_url || null
+            };
+        }
+        
         res.render('index.ejs', {
             page: 'email',
             user: userData
@@ -766,6 +795,41 @@ app.get('/email', requireAuth, async (req, res) => {
         });
     }
 });
+
+app.get('/email', requireAuth, async (req, res) => {
+    try {
+        // Get complete user data from database
+        const query = 'SELECT * FROM users WHERE username = $1';
+        const result = await db.query(query, [req.session.user.email]);
+        
+        let userData = req.session.user;
+        if (result.rows.length > 0) {
+            const dbUser = result.rows[0];
+            userData = {
+                name: dbUser.name,
+                email: dbUser.username,
+                phone: dbUser.phone || '',
+                bio: dbUser.bio || '',
+                jobTitle: dbUser.job_title || '',
+                company: dbUser.company || '',
+                skills: dbUser.skills || '',
+                avatar_url: dbUser.avatar_url || null
+            };
+        }
+        
+        res.render('index.ejs', {
+            page: 'email',
+            user: userData
+        });
+    } catch (error) {
+        console.error('Error fetching user data for email:', error);
+        res.render('index.ejs', {
+            page: 'email',
+            user: req.session.user
+        });
+    }
+});
+
 
 // Gmail OAuth Routes
 // OAuth authorization route for Gmail
@@ -825,24 +889,34 @@ app.get('/auth/google/callback', async (req, res) => {
         const gmailEmail = userInfo.data.email;
         
         // Store tokens in database
+        const query = `
+            INSERT INTO gmail_integration (user_email, access_token, refresh_token, expires_at, gmail_email, is_active)
+            VALUES ($1, $2, $3, $4, $5, $6)
+            ON CONFLICT (user_email) DO UPDATE SET
+                access_token = $2, 
+                refresh_token = $3, 
+                expires_at = $4, 
+                gmail_email = $5, 
+                is_active = $6,
+                updated_at = CURRENT_TIMESTAMP
+        `;
+        
+        // Google OAuth tokens typically expire in 1 hour
+        // Use expiry_date from tokens if available, otherwise set to 1 hour from now
         const expiresAt = tokens.expiry_date ? 
             new Date(tokens.expiry_date) : 
             moment().add(1, 'hour').toDate();
         
-        await db.collection('gmail_integration').replaceOne(
-            { user_email: req.session.user.email },
-            {
-                user_email: req.session.user.email,
-                access_token: tokens.access_token,
-                refresh_token: tokens.refresh_token,
-                expires_at: expiresAt,
-                gmail_email: gmailEmail,
-                is_active: true,
-                created_at: new Date(),
-                updated_at: new Date()
-            },
-            { upsert: true }
-        );
+        const values = [
+            req.session.user.email,
+            tokens.access_token,
+            tokens.refresh_token,
+            expiresAt,
+            gmailEmail,
+            true
+        ];
+        
+        await db.query(query, values);
 
         console.log(`Gmail integration successful for user: ${req.session.user.email}`);
         res.redirect('/email?connected=true');
@@ -856,9 +930,9 @@ app.get('/auth/google/callback', async (req, res) => {
 // Disconnect Gmail integration
 app.post('/api/gmail/disconnect', requireAuth, async (req, res) => {
     try {
-        await db.collection('gmail_integration').updateOne(
-            { user_email: req.session.user.email },
-            { $set: { is_active: false } }
+        await db.query(
+            'UPDATE gmail_integration SET is_active = false WHERE user_email = $1',
+            [req.session.user.email]
         );
         
         res.json({
@@ -874,20 +948,21 @@ app.post('/api/gmail/disconnect', requireAuth, async (req, res) => {
     }
 });
 
+
 // Gmail API Routes
 // Get Gmail integration status
 app.get('/api/gmail/status', requireAuth, async (req, res) => {
     try {
-        const integration = await db.collection('gmail_integration').findOne({
-            user_email: req.session.user.email,
-            is_active: true
-        });
+        const result = await db.query(
+            'SELECT is_active, created_at, gmail_email FROM gmail_integration WHERE user_email = $1 AND is_active = true',
+            [req.session.user.email]
+        );
         
-        const isConnected = !!integration;
+        const isConnected = result.rows.length > 0;
         res.json({ 
             connected: isConnected,
-            connectedSince: isConnected ? integration.created_at : null,
-            gmailEmail: isConnected ? integration.gmail_email : null
+            connectedSince: isConnected ? result.rows[0].created_at : null,
+            gmailEmail: isConnected ? result.rows[0].gmail_email : null
         });
     } catch (error) {
         console.error('Error checking Gmail status:', error);
@@ -898,6 +973,7 @@ app.get('/api/gmail/status', requireAuth, async (req, res) => {
     }
 });
 
+// Sync emails from Gmail
 // Helper function to process email attachments
 async function processEmailAttachments(attachments, emailId, gmailMessageId, gmailService) {
     console.log(`Processing ${attachments.length} attachments for email ${emailId}`);
@@ -915,6 +991,7 @@ async function processEmailAttachments(attachments, emailId, gmailMessageId, gma
             
             // For small images (under 1MB), download and store directly
             let attachmentData = null;
+            let filePath = null;
             
             if (isImage && attachment.size < 1024 * 1024) { // 1MB limit
                 try {
@@ -927,29 +1004,40 @@ async function processEmailAttachments(attachments, emailId, gmailMessageId, gma
             }
             
             // Check if attachment already exists to prevent duplicates
-            const existingAttachment = await db.collection('email_attachments').findOne({
-                email_id: emailId,
-                gmail_attachment_id: attachment.attachmentId
-            });
+            const existingAttachmentQuery = `
+                SELECT id FROM email_attachments 
+                WHERE email_id = $1 AND gmail_attachment_id = $2
+            `;
             
-            if (existingAttachment) {
+            const existingAttachment = await db.query(existingAttachmentQuery, [emailId, attachment.attachmentId]);
+            
+            if (existingAttachment.rows.length > 0) {
                 console.log(`Attachment ${attachment.filename} already exists for email ${emailId}, skipping`);
                 continue;
             }
             
             // Insert attachment record
-            await db.collection('email_attachments').insertOne({
-                email_id: emailId,
-                filename: attachment.filename,
-                original_filename: attachment.filename,
-                mime_type: attachment.mimeType,
-                size_bytes: attachment.size,
-                attachment_data: attachmentData,
-                gmail_attachment_id: attachment.attachmentId,
-                is_inline: attachment.isInline || false,
-                content_id: attachment.contentId || null,
-                created_at: new Date()
-            });
+            const insertAttachmentQuery = `
+                INSERT INTO email_attachments (
+                    email_id, filename, original_filename, mime_type, size_bytes, attachment_data, 
+                    gmail_attachment_id, is_inline, content_id
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                RETURNING id
+            `;
+            
+            const attachmentValues = [
+                emailId,
+                attachment.filename,
+                attachment.filename, // original_filename same as filename
+                attachment.mimeType,
+                attachment.size,
+                attachmentData,
+                attachment.attachmentId,
+                attachment.isInline || false,
+                attachment.contentId || null
+            ];
+            
+            const result = await db.query(insertAttachmentQuery, attachmentValues);
             
         } catch (attachmentError) {
             console.error(`Error processing attachment ${attachment.filename}:`, attachmentError);
@@ -958,22 +1046,21 @@ async function processEmailAttachments(attachments, emailId, gmailMessageId, gma
     }
 }
 
-// Sync emails from Gmail
 app.post('/api/gmail/sync', requireAuth, async (req, res) => {
     try {
         const { maxResults = 50, query = '' } = req.body;
         
         // Get user's Gmail tokens
-        const integration = await db.collection('gmail_integration').findOne({
-            user_email: req.session.user.email,
-            is_active: true
-        });
+        const tokenResult = await db.query(
+            'SELECT access_token, refresh_token, expires_at FROM gmail_integration WHERE user_email = $1 AND is_active = true',
+            [req.session.user.email]
+        );
         
-        if (!integration) {
+        if (tokenResult.rows.length === 0) {
             return res.status(401).json({ error: 'Gmail integration not found' });
         }
         
-        let { access_token, refresh_token, expires_at } = integration;
+        let { access_token, refresh_token, expires_at } = tokenResult.rows[0];
         
         // Check if token needs refresh
         if (expires_at && new Date() >= new Date(expires_at)) {
@@ -983,14 +1070,9 @@ app.post('/api/gmail/sync', requireAuth, async (req, res) => {
                 
                 // Update tokens in database
                 const newExpiresAt = refreshedTokens.expiry_date ? new Date(refreshedTokens.expiry_date) : moment().add(1, 'hour').toDate();
-                await db.collection('gmail_integration').updateOne(
-                    { user_email: req.session.user.email },
-                    { 
-                        $set: { 
-                            access_token: refreshedTokens.access_token, 
-                            expires_at: newExpiresAt 
-                        } 
-                    }
+                await db.query(
+                    'UPDATE gmail_integration SET access_token = $1, expires_at = $2 WHERE user_email = $3',
+                    [refreshedTokens.access_token, newExpiresAt, req.session.user.email]
                 );
             } catch (refreshError) {
                 console.error('Error refreshing Gmail token:', refreshError);
@@ -1007,71 +1089,84 @@ app.post('/api/gmail/sync', requireAuth, async (req, res) => {
         for (const message of messages) {
             try {
                 // Check if email already exists
-                const existingEmail = await db.collection('emails').findOne({
-                    gmail_message_id: message.id,
-                    user_email: req.session.user.email
-                });
+                const existingEmail = await db.query(
+                    'SELECT id FROM emails WHERE gmail_message_id = $1 AND user_email = $2',
+                    [message.id, req.session.user.email]
+                );
                 
-                if (!existingEmail) {
+                if (existingEmail.rows.length === 0) {
                     // Insert new email
-                    const emailDoc = {
-                        user_email: req.session.user.email,
-                        sender_email: message.from,
-                        recipient_email: message.to,
-                        cc_emails: message.cc || null,
-                        bcc_emails: message.bcc || null,
-                        subject: message.subject,
-                        body: message.body,
-                        is_read: message.isRead,
-                        is_important: message.isImportant,
-                        email_type: 'received',
-                        gmail_message_id: message.id,
-                        gmail_thread_id: message.threadId,
-                        gmail_labels: message.labels,
-                        snippet: message.snippet,
-                        synced_from_gmail: true,
-                        received_at: message.date,
-                        created_at: new Date(),
-                        updated_at: new Date()
-                    };
+                    const insertQuery = `
+                        INSERT INTO emails (
+                            user_email, sender_email, recipient_email, cc_emails, bcc_emails,
+                            subject, body, is_read, is_important, email_type, 
+                            gmail_message_id, gmail_thread_id, gmail_labels, snippet, synced_from_gmail, received_at
+                        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+                        RETURNING *
+                    `;
                     
-                    const result = await db.collection('emails').insertOne(emailDoc);
-                    const newEmail = { ...emailDoc, _id: result.insertedId };
+                    const values = [
+                        req.session.user.email,
+                        message.from,
+                        message.to,
+                        message.cc || null,
+                        message.bcc || null,
+                        message.subject,
+                        message.body,
+                        message.isRead,
+                        message.isImportant,
+                        'received',
+                        message.id,
+                        message.threadId,
+                        message.labels,
+                        message.snippet,
+                        true,
+                        message.date
+                    ];
+                    
+                    const result = await db.query(insertQuery, values);
+                    const newEmail = result.rows[0];
                     syncedEmails.push(newEmail);
                     
                     // Process attachments if they exist
                     if (message.attachments && message.attachments.length > 0) {
-                        await processEmailAttachments(message.attachments, result.insertedId, message.id, gmailService);
+                        await processEmailAttachments(message.attachments, newEmail.id, message.id, gmailService);
                     }
                 } else {
                     // Update existing email
-                    const updatedEmail = await db.collection('emails').findOneAndUpdate(
-                        { gmail_message_id: message.id, user_email: req.session.user.email },
-                        {
-                            $set: {
-                                is_read: message.isRead,
-                                is_important: message.isImportant,
-                                gmail_labels: message.labels,
-                                snippet: message.snippet,
-                                updated_at: new Date()
-                            }
-                        },
-                        { returnDocument: 'after' }
-                    );
+                    const updateQuery = `
+                        UPDATE emails SET 
+                            is_read = $1, is_important = $2, gmail_labels = $3, 
+                            snippet = $4, updated_at = CURRENT_TIMESTAMP
+                        WHERE gmail_message_id = $5 AND user_email = $6
+                        RETURNING *
+                    `;
                     
-                    if (updatedEmail.value) {
-                        syncedEmails.push(updatedEmail.value);
+                    const values = [
+                        message.isRead,
+                        message.isImportant,
+                        message.labels,
+                        message.snippet,
+                        message.id,
+                        req.session.user.email
+                    ];
+                    
+                    const result = await db.query(updateQuery, values);
+                    if (result.rows.length > 0) {
+                        const updatedEmail = result.rows[0];
+                        syncedEmails.push(updatedEmail);
                         
                         // Check if we need to process attachments for this existing email
                         if (message.attachments && message.attachments.length > 0) {
-                            const existingAttachments = await db.collection('email_attachments').find({
-                                email_id: updatedEmail.value._id
-                            }).toArray();
-                            const existingAttachmentIds = existingAttachments.map(a => a.gmail_attachment_id);
+                            const existingAttachments = await db.query(
+                                'SELECT gmail_attachment_id FROM email_attachments WHERE email_id = $1',
+                                [updatedEmail.id]
+                            );
+                            const existingAttachmentIds = existingAttachments.rows.map(a => a.gmail_attachment_id);
                             const newAttachments = message.attachments.filter(a => !existingAttachmentIds.includes(a.attachmentId));
                             
                             if (newAttachments.length > 0) {
-                                await processEmailAttachments(newAttachments, updatedEmail.value._id, message.id, gmailService);
+                                await processEmailAttachments(newAttachments, updatedEmail.id, message.id, gmailService);
                             }
                         }
                     }
@@ -1095,31 +1190,32 @@ app.post('/api/gmail/sync', requireAuth, async (req, res) => {
     }
 });
 
-// ... [Continue with more routes in the next part due to size limits]
 // Get email attachment
 app.get('/api/emails/:emailId/attachments/:attachmentId', requireAuth, async (req, res) => {
     try {
         const { emailId, attachmentId } = req.params;
         
         // Verify the email belongs to the user
-        const email = await db.collection('emails').findOne({
-            _id: new ObjectId(emailId),
-            user_email: req.session.user.email
-        });
+        const emailCheck = await db.query(
+            'SELECT id FROM emails WHERE id = $1 AND user_email = $2',
+            [emailId, req.session.user.email]
+        );
         
-        if (!email) {
+        if (emailCheck.rows.length === 0) {
             return res.status(404).json({ error: 'Email not found' });
         }
         
         // Get attachment
-        const attachment = await db.collection('email_attachments').findOne({
-            _id: new ObjectId(attachmentId),
-            email_id: new ObjectId(emailId)
-        });
+        const attachmentResult = await db.query(
+            'SELECT * FROM email_attachments WHERE id = $1 AND email_id = $2',
+            [attachmentId, emailId]
+        );
         
-        if (!attachment) {
+        if (attachmentResult.rows.length === 0) {
             return res.status(404).json({ error: 'Attachment not found' });
         }
+        
+        const attachment = attachmentResult.rows[0];
         
         // If we have the attachment data stored, serve it directly
         if (attachment.attachment_data) {
@@ -1128,36 +1224,42 @@ app.get('/api/emails/:emailId/attachments/:attachmentId', requireAuth, async (re
                 'Content-Length': attachment.attachment_data.length,
                 'Content-Disposition': `inline; filename="${attachment.filename}"`
             });
-            res.send(attachment.attachment_data.buffer);
+            res.send(attachment.attachment_data);
         } else {
             // If we don't have the data stored, try to fetch it from Gmail
             try {
                 // Get Gmail credentials for this user
-                const integration = await db.collection('gmail_integration').findOne({
-                    user_email: req.session.user.email,
-                    is_active: true
-                });
+                const tokenResult = await db.query(
+                    'SELECT access_token, refresh_token FROM gmail_integration WHERE user_email = $1 AND is_active = true',
+                    [req.session.user.email]
+                );
                 
-                if (!integration) {
+                if (tokenResult.rows.length === 0) {
                     return res.status(401).json({ error: 'Gmail integration not found' });
                 }
                 
-                const { access_token, refresh_token } = integration;
+                const { access_token, refresh_token } = tokenResult.rows[0];
                 gmailService.setCredentials({ access_token, refresh_token });
                 
                 // Get the Gmail message ID for this email
-                if (!email.gmail_message_id) {
+                const emailResult = await db.query(
+                    'SELECT gmail_message_id FROM emails WHERE id = $1',
+                    [emailId]
+                );
+                
+                if (emailResult.rows.length === 0 || !emailResult.rows[0].gmail_message_id) {
                     return res.status(404).json({ error: 'Gmail message not found' });
                 }
                 
-                const downloadedAttachment = await gmailService.getAttachment(email.gmail_message_id, attachment.gmail_attachment_id);
+                const gmailMessageId = emailResult.rows[0].gmail_message_id;
+                const downloadedAttachment = await gmailService.getAttachment(gmailMessageId, attachment.gmail_attachment_id);
                 const attachmentBuffer = Buffer.from(downloadedAttachment.data, 'base64');
                 
                 // Store the attachment data for future requests (if it's small enough)
                 if (attachmentBuffer.length < 1024 * 1024) { // 1MB limit
-                    await db.collection('email_attachments').updateOne(
-                        { _id: new ObjectId(attachmentId) },
-                        { $set: { attachment_data: attachmentBuffer } }
+                    await db.query(
+                        'UPDATE email_attachments SET attachment_data = $1 WHERE id = $2',
+                        [attachmentBuffer, attachmentId]
                     );
                 }
                 
@@ -1186,32 +1288,24 @@ app.get('/api/emails/:emailId/attachments', requireAuth, async (req, res) => {
         const { emailId } = req.params;
         
         // Verify the email belongs to the user
-        const email = await db.collection('emails').findOne({
-            _id: new ObjectId(emailId),
-            user_email: req.session.user.email
-        });
+        const emailCheck = await db.query(
+            'SELECT id FROM emails WHERE id = $1 AND user_email = $2',
+            [emailId, req.session.user.email]
+        );
         
-        if (!email) {
+        if (emailCheck.rows.length === 0) {
             return res.status(404).json({ error: 'Email not found' });
         }
         
         // Get attachments
-        const attachments = await db.collection('email_attachments').find({
-            email_id: new ObjectId(emailId)
-        }, {
-            projection: {
-                _id: 1,
-                filename: 1,
-                mime_type: 1,
-                size_bytes: 1,
-                is_inline: 1,
-                content_id: 1
-            }
-        }).sort({ filename: 1 }).toArray();
+        const attachmentsResult = await db.query(
+            'SELECT id, filename, mime_type, size_bytes, is_inline, content_id FROM email_attachments WHERE email_id = $1 ORDER BY filename',
+            [emailId]
+        );
         
         res.json({
             success: true,
-            attachments: attachments
+            attachments: attachmentsResult.rows
         });
         
     } catch (error) {
@@ -1224,16 +1318,16 @@ app.get('/api/emails/:emailId/attachments', requireAuth, async (req, res) => {
 app.get('/api/gmail/profile', requireAuth, async (req, res) => {
     try {
         // Get user's Gmail tokens
-        const integration = await db.collection('gmail_integration').findOne({
-            user_email: req.session.user.email,
-            is_active: true
-        });
+        const tokenResult = await db.query(
+            'SELECT access_token, refresh_token, expires_at FROM gmail_integration WHERE user_email = $1 AND is_active = true',
+            [req.session.user.email]
+        );
         
-        if (!integration) {
+        if (tokenResult.rows.length === 0) {
             return res.status(401).json({ error: 'Gmail integration not found' });
         }
         
-        let { access_token, refresh_token, expires_at } = integration;
+        let { access_token, refresh_token, expires_at } = tokenResult.rows[0];
         
         // Check if token needs refresh
         if (expires_at && new Date() >= new Date(expires_at)) {
@@ -1243,14 +1337,9 @@ app.get('/api/gmail/profile', requireAuth, async (req, res) => {
                 
                 // Update tokens in database
                 const newExpiresAt = refreshedTokens.expiry_date ? new Date(refreshedTokens.expiry_date) : moment().add(1, 'hour').toDate();
-                await db.collection('gmail_integration').updateOne(
-                    { user_email: req.session.user.email },
-                    { 
-                        $set: { 
-                            access_token: refreshedTokens.access_token, 
-                            expires_at: newExpiresAt 
-                        } 
-                    }
+                await db.query(
+                    'UPDATE gmail_integration SET access_token = $1, expires_at = $2 WHERE user_email = $3',
+                    [refreshedTokens.access_token, newExpiresAt, req.session.user.email]
                 );
             } catch (refreshError) {
                 console.error('Error refreshing Gmail token:', refreshError);
@@ -1286,16 +1375,16 @@ app.post('/api/gmail/send', requireAuth, async (req, res) => {
         }
         
         // Get user's Gmail tokens
-        const integration = await db.collection('gmail_integration').findOne({
-            user_email: req.session.user.email,
-            is_active: true
-        });
+        const tokenResult = await db.query(
+            'SELECT access_token, refresh_token, expires_at FROM gmail_integration WHERE user_email = $1 AND is_active = true',
+            [req.session.user.email]
+        );
         
-        if (!integration) {
+        if (tokenResult.rows.length === 0) {
             return res.status(401).json({ error: 'Gmail integration not found' });
         }
         
-        let { access_token, refresh_token, expires_at } = integration;
+        let { access_token, refresh_token, expires_at } = tokenResult.rows[0];
         
         // Check if token needs refresh
         if (expires_at && new Date() >= new Date(expires_at)) {
@@ -1305,14 +1394,9 @@ app.post('/api/gmail/send', requireAuth, async (req, res) => {
                 
                 // Update tokens in database
                 const newExpiresAt = refreshedTokens.expiry_date ? new Date(refreshedTokens.expiry_date) : moment().add(1, 'hour').toDate();
-                await db.collection('gmail_integration').updateOne(
-                    { user_email: req.session.user.email },
-                    { 
-                        $set: { 
-                            access_token: refreshedTokens.access_token, 
-                            expires_at: newExpiresAt 
-                        } 
-                    }
+                await db.query(
+                    'UPDATE gmail_integration SET access_token = $1, expires_at = $2 WHERE user_email = $3',
+                    [refreshedTokens.access_token, newExpiresAt, req.session.user.email]
                 );
             } catch (refreshError) {
                 console.error('Error refreshing Gmail token:', refreshError);
@@ -1325,30 +1409,37 @@ app.post('/api/gmail/send', requireAuth, async (req, res) => {
         const sentMessage = await gmailService.sendMessage({ to, cc, bcc, subject, body });
         
         // Store sent email in database
-        const emailDoc = {
-            user_email: req.session.user.email,
-            sender_email: req.session.user.email,
-            recipient_email: to,
-            cc_emails: cc || null,
-            bcc_emails: bcc || null,
-            subject: subject,
-            body: body,
-            is_read: true, // Sent emails are marked as read
-            is_important: false,
-            email_type: 'sent',
-            gmail_message_id: sentMessage.id,
-            synced_from_gmail: true,
-            received_at: new Date(), // Use current time for sent emails
-            created_at: new Date(),
-            updated_at: new Date()
-        };
+        const insertQuery = `
+            INSERT INTO emails (
+                user_email, sender_email, recipient_email, cc_emails, bcc_emails,
+                subject, body, is_read, is_important, email_type, 
+                gmail_message_id, synced_from_gmail, received_at
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+            RETURNING *
+        `;
         
-        const result = await db.collection('emails').insertOne(emailDoc);
+        const values = [
+            req.session.user.email,
+            req.session.user.email,
+            to,
+            cc || null,
+            bcc || null,
+            subject,
+            body,
+            true, // Sent emails are marked as read
+            false,
+            'sent',
+            sentMessage.id,
+            true,
+            new Date() // Use current time for sent emails
+        ];
+        
+        const result = await db.query(insertQuery, values);
         
         res.json({
             success: true,
             message: 'Email sent successfully via Gmail',
-            email: { ...emailDoc, _id: result.insertedId },
+            email: result.rows[0],
             gmailMessageId: sentMessage.id
         });
         
@@ -1365,16 +1456,16 @@ app.put('/api/gmail/messages/:messageId/read', requireAuth, async (req, res) => 
         const { isRead } = req.body;
         
         // Get user's Gmail tokens
-        const integration = await db.collection('gmail_integration').findOne({
-            user_email: req.session.user.email,
-            is_active: true
-        });
+        const tokenResult = await db.query(
+            'SELECT access_token, refresh_token FROM gmail_integration WHERE user_email = $1 AND is_active = true',
+            [req.session.user.email]
+        );
         
-        if (!integration) {
+        if (tokenResult.rows.length === 0) {
             return res.status(401).json({ error: 'Gmail integration not found' });
         }
         
-        const { access_token, refresh_token } = integration;
+        const { access_token, refresh_token } = tokenResult.rows[0];
         
         // Set credentials and mark as read/unread
         gmailService.setCredentials({ access_token, refresh_token });
@@ -1386,9 +1477,9 @@ app.put('/api/gmail/messages/:messageId/read', requireAuth, async (req, res) => 
         }
         
         // Update local database
-        await db.collection('emails').updateOne(
-            { gmail_message_id: messageId, user_email: req.session.user.email },
-            { $set: { is_read: isRead, updated_at: new Date() } }
+        await db.query(
+            'UPDATE emails SET is_read = $1, updated_at = CURRENT_TIMESTAMP WHERE gmail_message_id = $2 AND user_email = $3',
+            [isRead, messageId, req.session.user.email]
         );
         
         res.json({
@@ -1408,26 +1499,26 @@ app.delete('/api/gmail/messages/:messageId', requireAuth, async (req, res) => {
         const { messageId } = req.params;
         
         // Get user's Gmail tokens
-        const integration = await db.collection('gmail_integration').findOne({
-            user_email: req.session.user.email,
-            is_active: true
-        });
+        const tokenResult = await db.query(
+            'SELECT access_token, refresh_token FROM gmail_integration WHERE user_email = $1 AND is_active = true',
+            [req.session.user.email]
+        );
         
-        if (!integration) {
+        if (tokenResult.rows.length === 0) {
             return res.status(401).json({ error: 'Gmail integration not found' });
         }
         
-        const { access_token, refresh_token } = integration;
+        const { access_token, refresh_token } = tokenResult.rows[0];
         
         // Set credentials and delete message
         gmailService.setCredentials({ access_token, refresh_token });
         await gmailService.deleteMessage(messageId);
         
         // Update local database
-        await db.collection('emails').deleteOne({
-            gmail_message_id: messageId,
-            user_email: req.session.user.email
-        });
+        await db.query(
+            'DELETE FROM emails WHERE gmail_message_id = $1 AND user_email = $2',
+            [messageId, req.session.user.email]
+        );
         
         res.json({
             success: true,
@@ -1440,38 +1531,36 @@ app.delete('/api/gmail/messages/:messageId', requireAuth, async (req, res) => {
     }
 });
 
+
 // Email API Routes
 // Get all emails for the authenticated user
 app.get('/api/emails', requireAuth, async (req, res) => {
     try {
         const { filter, search } = req.query;
-        let query = { user_email: req.session.user.email };
+        let query = 'SELECT * FROM emails WHERE user_email = $1';
+        let params = [req.session.user.email];
         
         // Apply filters
         if (filter === 'unread') {
-            query.is_read = false;
+            query += ' AND is_read = FALSE';
         } else if (filter === 'read') {
-            query.is_read = true;
+            query += ' AND is_read = TRUE';
         } else if (filter === 'important') {
-            query.is_important = true;
+            query += ' AND is_important = TRUE';
         }
         
         // Apply search
         if (search) {
-            query.$or = [
-                { subject: { $regex: search, $options: 'i' } },
-                { sender_email: { $regex: search, $options: 'i' } },
-                { body: { $regex: search, $options: 'i' } }
-            ];
+            query += ' AND (subject ILIKE $' + (params.length + 1) + ' OR sender_email ILIKE $' + (params.length + 1) + ' OR body ILIKE $' + (params.length + 1) + ')';
+            params.push(`%${search}%`);
         }
         
-        const emails = await db.collection('emails').find(query)
-            .sort({ received_at: -1, created_at: -1 })
-            .toArray();
+        query += ' ORDER BY COALESCE(received_at, created_at) DESC';
         
+        const result = await db.query(query, params);
         res.json({
             success: true,
-            emails: emails
+            emails: result.rows
         });
     } catch (error) {
         console.error('Error fetching emails:', error);
@@ -1481,6 +1570,45 @@ app.get('/api/emails', requireAuth, async (req, res) => {
         });
     }
 });
+
+
+
+app.get('/api/google/emails', requireAuth, async (req, res) => {
+   try {
+        const { title, description, start, end, location, attendees } = req.body;
+        
+        // Get user's Google Calendar tokens
+        const tokenResult = await db.query(
+            'SELECT access_token, refresh_token FROM google_calendar_integration WHERE user_email = $1 AND is_active = true',
+            [req.session.user.email]
+        );
+        
+        if (tokenResult.rows.length === 0) {
+            return res.status(401).json({ error: 'Google Calendar integration not found' });
+        }
+        
+        const { access_token, refresh_token } = tokenResult.rows[0];
+        
+        // Create event
+        googleCalendarService.setCredentials({ access_token, refresh_token });
+        const eventData = {
+            title,
+            description,
+            start: new Date(start).toISOString(),
+            end: new Date(end).toISOString(),
+            location,
+            attendees: attendees || []
+        };
+        
+        const createdEvent = await googleCalendarService.createEvent(eventData);
+        res.json({ success: true, event: createdEvent });
+        
+    } catch (error) {
+        console.error('Error creating Google Calendar event:', error);
+        res.status(500).json({ error: 'Failed to create calendar event' });
+    }
+});
+
 
 // Send/Save email
 app.post('/api/emails', requireAuth, async (req, res) => {
@@ -1494,27 +1622,31 @@ app.post('/api/emails', requireAuth, async (req, res) => {
             });
         }
         
-        const emailDoc = {
-            user_email: req.session.user.email, // user_email (owner)
-            sender_email: req.session.user.email, // sender_email
-            recipient_email: to, // recipient_email
-            cc_emails: cc || null, // cc_emails
-            bcc_emails: bcc || null, // bcc_emails
-            subject: subject,
-            body: body,
-            is_important: isImportant || false,
-            is_draft: isDraft || false,
-            email_type: isDraft ? 'draft' : 'sent',
-            created_at: new Date(),
-            updated_at: new Date()
-        };
+        const query = `
+            INSERT INTO emails (user_email, sender_email, recipient_email, cc_emails, bcc_emails, subject, body, is_important, is_draft, email_type)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            RETURNING *
+        `;
         
-        const result = await db.collection('emails').insertOne(emailDoc);
+        const values = [
+            req.session.user.email, // user_email (owner)
+            req.session.user.email, // sender_email
+            to, // recipient_email
+            cc || null, // cc_emails
+            bcc || null, // bcc_emails
+            subject,
+            body,
+            isImportant || false,
+            isDraft || false,
+            isDraft ? 'draft' : 'sent'
+        ];
+        
+        const result = await db.query(query, values);
         
         res.json({
             success: true,
             message: isDraft ? 'Draft saved successfully' : 'Email sent successfully',
-            email: { ...emailDoc, _id: result.insertedId }
+            email: result.rows[0]
         });
     } catch (error) {
         console.error('Error sending/saving email:', error);
@@ -1528,16 +1660,13 @@ app.post('/api/emails', requireAuth, async (req, res) => {
 // Mark email as read/unread
 app.put('/api/emails/:id/read', requireAuth, async (req, res) => {
     try {
-        const emailId = req.params.id;
+        const emailId = parseInt(req.params.id);
         const { isRead } = req.body;
         
-        const result = await db.collection('emails').findOneAndUpdate(
-            { _id: new ObjectId(emailId), user_email: req.session.user.email },
-            { $set: { is_read: isRead, updated_at: new Date() } },
-            { returnDocument: 'after' }
-        );
+        const query = 'UPDATE emails SET is_read = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 AND user_email = $3 RETURNING *';
+        const result = await db.query(query, [isRead, emailId, req.session.user.email]);
         
-        if (!result.value) {
+        if (result.rows.length === 0) {
             return res.status(404).json({
                 success: false,
                 message: 'Email not found'
@@ -1546,7 +1675,7 @@ app.put('/api/emails/:id/read', requireAuth, async (req, res) => {
         
         res.json({
             success: true,
-            email: result.value
+            email: result.rows[0]
         });
     } catch (error) {
         console.error('Error updating email read status:', error);
@@ -1560,16 +1689,13 @@ app.put('/api/emails/:id/read', requireAuth, async (req, res) => {
 // Mark email as important/unimportant
 app.put('/api/emails/:id/important', requireAuth, async (req, res) => {
     try {
-        const emailId = req.params.id;
+        const emailId = parseInt(req.params.id);
         const { isImportant } = req.body;
         
-        const result = await db.collection('emails').findOneAndUpdate(
-            { _id: new ObjectId(emailId), user_email: req.session.user.email },
-            { $set: { is_important: isImportant, updated_at: new Date() } },
-            { returnDocument: 'after' }
-        );
+        const query = 'UPDATE emails SET is_important = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 AND user_email = $3 RETURNING *';
+        const result = await db.query(query, [isImportant, emailId, req.session.user.email]);
         
-        if (!result.value) {
+        if (result.rows.length === 0) {
             return res.status(404).json({
                 success: false,
                 message: 'Email not found'
@@ -1578,7 +1704,7 @@ app.put('/api/emails/:id/important', requireAuth, async (req, res) => {
         
         res.json({
             success: true,
-            email: result.value
+            email: result.rows[0]
         });
     } catch (error) {
         console.error('Error updating email importance:', error);
@@ -1592,14 +1718,12 @@ app.put('/api/emails/:id/important', requireAuth, async (req, res) => {
 // Delete email
 app.delete('/api/emails/:id', requireAuth, async (req, res) => {
     try {
-        const emailId = req.params.id;
+        const emailId = parseInt(req.params.id);
         
-        const result = await db.collection('emails').findOneAndDelete({
-            _id: new ObjectId(emailId),
-            user_email: req.session.user.email
-        });
+        const query = 'DELETE FROM emails WHERE id = $1 AND user_email = $2 RETURNING *';
+        const result = await db.query(query, [emailId, req.session.user.email]);
         
-        if (!result.value) {
+        if (result.rows.length === 0) {
             return res.status(404).json({
                 success: false,
                 message: 'Email not found'
@@ -1622,14 +1746,12 @@ app.delete('/api/emails/:id', requireAuth, async (req, res) => {
 // Get single email
 app.get('/api/emails/:id', requireAuth, async (req, res) => {
     try {
-        const emailId = req.params.id;
+        const emailId = parseInt(req.params.id);
         
-        const email = await db.collection('emails').findOne({
-            _id: new ObjectId(emailId),
-            user_email: req.session.user.email
-        });
+        const query = 'SELECT * FROM emails WHERE id = $1 AND user_email = $2';
+        const result = await db.query(query, [emailId, req.session.user.email]);
         
-        if (!email) {
+        if (result.rows.length === 0) {
             return res.status(404).json({
                 success: false,
                 message: 'Email not found'
@@ -1638,7 +1760,7 @@ app.get('/api/emails/:id', requireAuth, async (req, res) => {
         
         res.json({
             success: true,
-            email: email
+            email: result.rows[0]
         });
     } catch (error) {
         console.error('Error fetching email:', error);
@@ -1655,22 +1777,15 @@ app.put('/api/profile', requireAuth, async (req, res) => {
         const { name, email, phone, bio, jobTitle, company, skills } = req.body;
         
         // Update user in database
-        const result = await db.collection('users').findOneAndUpdate(
-            { username: req.session.user.email },
-            { 
-                $set: { 
-                    name: name, 
-                    username: email, 
-                    phone: phone, 
-                    bio: bio, 
-                    job_title: jobTitle, 
-                    company: company, 
-                    skills: skills,
-                    updated_at: new Date()
-                } 
-            },
-            { returnDocument: 'after' }
-        );
+        const query = `
+            UPDATE users 
+            SET name = $1, username = $2, phone = $3, bio = $4, job_title = $5, company = $6, skills = $7
+            WHERE username = $8
+            RETURNING avatar_url
+        `;
+        const values = [name, email, phone, bio, jobTitle, company, skills, req.session.user.email];
+        
+        const result = await db.query(query, values);
         
         // Update session data
         req.session.user = {
@@ -1681,7 +1796,7 @@ app.put('/api/profile', requireAuth, async (req, res) => {
         res.json({ 
             success: true, 
             message: 'Profile updated successfully',
-            avatar_url: result.value?.avatar_url
+            avatar_url: result.rows[0]?.avatar_url
         });
     } catch (error) {
         console.error('Error updating profile:', error);
@@ -1691,6 +1806,7 @@ app.put('/api/profile', requireAuth, async (req, res) => {
         });
     }
 });
+
 
 // Avatar upload route
 app.post('/api/upload-avatar', requireAuth, upload.single('avatar'), async (req, res) => {
@@ -1706,16 +1822,20 @@ app.post('/api/upload-avatar', requireAuth, upload.single('avatar'), async (req,
         const avatarUrl = `/uploads/avatars/${req.file.filename}`;
         
         // Update user's avatar_url in database
-        const result = await db.collection('users').findOneAndUpdate(
-            { username: req.session.user.email },
-            { $set: { avatar_url: avatarUrl, updated_at: new Date() } },
-            { returnDocument: 'after' }
-        );
+        const query = `
+            UPDATE users 
+            SET avatar_url = $1 
+            WHERE username = $2
+            RETURNING avatar_url
+        `;
+        const values = [avatarUrl, req.session.user.email];
+        
+        const result = await db.query(query, values);
         
         res.json({ 
             success: true, 
             message: 'Avatar uploaded successfully',
-            avatar_url: result.value?.avatar_url
+            avatar_url: result.rows[0]?.avatar_url
         });
     } catch (error) {
         console.error('Error uploading avatar:', error);
@@ -1805,135 +1925,119 @@ app.get('/api/dashboard/stats', requireAuth, async (req, res) => {
         const userEmail = req.session.user.email;
         
         // Get email count
-        const emailCount = await db.collection('emails').countDocuments({
-            user_email: userEmail
-        });
+        const emailCountQuery = 'SELECT COUNT(*) as count FROM emails WHERE user_email = $1';
+        const emailCountResult = await db.query(emailCountQuery, [userEmail]);
+        const emailCount = parseInt(emailCountResult.rows[0].count);
         
         // Get task statistics
-        const taskStats = await db.collection('tasks').aggregate([
-            { $match: { user_email: userEmail } },
-            {
-                $group: {
-                    _id: null,
-                    total: { $sum: 1 },
-                    completed: { $sum: { $cond: ["$completed", 1, 0] } },
-                    pending: { $sum: { $cond: ["$completed", 0, 1] } }
-                }
-            }
-        ]).toArray();
-        
-        const taskStatistics = taskStats.length > 0 ? taskStats[0] : { total: 0, completed: 0, pending: 0 };
+        const taskStatsQuery = `
+            SELECT 
+                COUNT(*) as total,
+                COUNT(CASE WHEN completed = true THEN 1 END) as completed,
+                COUNT(CASE WHEN completed = false THEN 1 END) as pending
+            FROM tasks WHERE user_email = $1
+        `;
+        const taskStatsResult = await db.query(taskStatsQuery, [userEmail]);
+        const taskStats = taskStatsResult.rows[0];
         
         // Get recent emails (last 7 days)
-        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-        const recentEmailCount = await db.collection('emails').countDocuments({
-            user_email: userEmail,
-            received_at: { $gte: sevenDaysAgo }
-        });
+        const recentEmailsQuery = `
+            SELECT COUNT(*) as count 
+            FROM emails 
+            WHERE user_email = $1 
+            AND received_at >= NOW() - INTERVAL '7 days'
+        `;
+        const recentEmailsResult = await db.query(recentEmailsQuery, [userEmail]);
+        const recentEmailCount = parseInt(recentEmailsResult.rows[0].count);
         
         // Get tasks created today
-        const startOfToday = new Date();
-        startOfToday.setHours(0, 0, 0, 0);
-        const endOfToday = new Date();
-        endOfToday.setHours(23, 59, 59, 999);
-        
-        const todayTaskCount = await db.collection('tasks').countDocuments({
-            user_email: userEmail,
-            created_at: { $gte: startOfToday, $lte: endOfToday }
-        });
+        const todayTasksQuery = `
+            SELECT COUNT(*) as count 
+            FROM tasks 
+            WHERE user_email = $1 
+            AND DATE(created_at) = CURRENT_DATE
+        `;
+        const todayTasksResult = await db.query(todayTasksQuery, [userEmail]);
+        const todayTaskCount = parseInt(todayTasksResult.rows[0].count);
         
         // Get tasks completed today
-        const completedTodayCount = await db.collection('tasks').countDocuments({
-            user_email: userEmail,
-            completed: true,
-            updated_at: { $gte: startOfToday, $lte: endOfToday }
-        });
+        const completedTodayQuery = `
+            SELECT COUNT(*) as count 
+            FROM tasks 
+            WHERE user_email = $1 
+            AND completed = true 
+            AND DATE(updated_at) = CURRENT_DATE
+        `;
+        const completedTodayResult = await db.query(completedTodayQuery, [userEmail]);
+        const completedTodayCount = parseInt(completedTodayResult.rows[0].count);
         
         // Get nearest upcoming event
-        const upcomingEvent = await db.collection('calendar_events').findOne(
-            {
-                user_email: userEmail,
-                start_time: { $gte: new Date() }
-            },
-            { sort: { start_time: 1 } }
-        );
-        
-        console.log('Upcoming event query result:', upcomingEvent);
+        const upcomingEventQuery = `
+            SELECT title, description, start_time, end_time, location
+            FROM calendar_events 
+            WHERE user_email = $1 
+            AND start_time >= NOW()
+            ORDER BY start_time ASC
+            LIMIT 1
+        `;
+        console.log('Executing upcoming event query for user:', userEmail);
+        const upcomingEventResult = await db.query(upcomingEventQuery, [userEmail]);
+        console.log('Upcoming event query result:', upcomingEventResult.rows);
+        const nearestEvent = upcomingEventResult.rows.length > 0 ? upcomingEventResult.rows[0] : null;
+        console.log('Nearest event:', nearestEvent);
         
         // Get recent activity for the chart (last 7 days)
-        const activityData = await db.collection('emails').aggregate([
-            {
-                $match: {
-                    user_email: userEmail,
-                    created_at: { $gte: sevenDaysAgo }
-                }
-            },
-            {
-                $addFields: {
-                    date: {
-                        $dateToString: {
-                            format: "%Y-%m-%d",
-                            date: "$created_at"
-                        }
-                    }
-                }
-            },
-            {
-                $group: {
-                    _id: "$date",
-                    count: { $sum: 1 }
-                }
-            },
-            { $sort: { _id: -1 } },
-            { $limit: 7 }
-        ]).toArray();
+        const activityQuery = `
+            SELECT 
+                DATE(created_at) as date,
+                COUNT(*) as count
+            FROM (
+                SELECT created_at FROM emails WHERE user_email = $1 AND created_at >= NOW() - INTERVAL '7 days'
+                UNION ALL
+                SELECT created_at FROM tasks WHERE user_email = $1 AND created_at >= NOW() - INTERVAL '7 days'
+            ) as combined_activity
+            GROUP BY DATE(created_at)
+            ORDER BY date DESC
+            LIMIT 7
+        `;
+        const activityResult = await db.query(activityQuery, [userEmail]);
         
         // Format activity data for chart
-        const formattedActivityData = activityData.map(item => ({
-            date: item._id,
-            count: item.count
+        const activityData = activityResult.rows.map(row => ({
+            date: row.date,
+            count: parseInt(row.count)
         }));
         
         // Get recent activity log entries
-        const recentActivities = await db.collection('emails').aggregate([
-            {
-                $match: { user_email: userEmail }
-            },
-            {
-                $addFields: {
-                    type: "email",
-                    action: "Email Received",
-                    details: "$subject",
-                    timestamp: "$received_at"
-                }
-            },
-            {
-                $unionWith: {
-                    coll: "tasks",
-                    pipeline: [
-                        { $match: { user_email: userEmail } },
-                        {
-                            $addFields: {
-                                type: "task",
-                                action: { $cond: ["$completed", "Task Completed", "Task Created"] },
-                                details: "$text",
-                                timestamp: { $ifNull: ["$updated_at", "$created_at"] }
-                            }
-                        }
-                    ]
-                }
-            },
-            { $sort: { timestamp: -1 } },
-            { $limit: 5 },
-            {
-                $project: {
-                    type: 1,
-                    action: 1,
-                    details: 1,
-                    timestamp: 1
-                }
-            }
-        ]).toArray();
+        const recentActivityQuery = `
+            SELECT 
+                type,
+                action,
+                details,
+                timestamp
+            FROM (
+                SELECT 
+                    'email' as type,
+                    'Email Received' as action,
+                    subject as details,
+                    received_at as timestamp
+                FROM emails 
+                WHERE user_email = $1 
+                
+                UNION ALL
+                
+                SELECT 
+                    'task' as type,
+                    CASE WHEN completed THEN 'Task Completed' ELSE 'Task Created' END as action,
+                    text as details,
+                    COALESCE(updated_at, created_at) as timestamp
+                FROM tasks 
+                WHERE user_email = $1 
+            ) as combined_activities
+            ORDER BY timestamp DESC
+            LIMIT 5
+        `;
+        const recentActivityResult = await db.query(recentActivityQuery, [userEmail]);
         
         res.json({
             success: true,
@@ -1944,17 +2048,17 @@ app.get('/api/dashboard/stats', requireAuth, async (req, res) => {
                     trend: recentEmailCount > 0 ? '+' + Math.round((recentEmailCount / 7) * 30) + '% this month' : 'No recent activity'
                 },
                 tasks: {
-                    total: taskStatistics.total,
-                    completed: taskStatistics.completed,
-                    pending: taskStatistics.pending,
+                    total: parseInt(taskStats.total),
+                    completed: parseInt(taskStats.completed),
+                    pending: parseInt(taskStats.pending),
                     todayCreated: todayTaskCount,
                     completedToday: completedTodayCount,
                     trend: todayTaskCount > 0 ? `+${todayTaskCount} today` : 'No tasks today'
                 },
-                upcomingEvent: upcomingEvent,
+                upcomingEvent: nearestEvent,
                 activity: {
-                    chartData: formattedActivityData,
-                    recentActivities: recentActivities
+                    chartData: activityData,
+                    recentActivities: recentActivityResult.rows
                 }
             }
         });
@@ -1972,13 +2076,12 @@ app.get('/api/dashboard/stats', requireAuth, async (req, res) => {
 // Get all tasks for the authenticated user
 app.get('/api/tasks', requireAuth, async (req, res) => {
     try {
-        const tasks = await db.collection('tasks').find({
-            user_email: req.session.user.email
-        }).sort({ created_at: -1 }).toArray();
+        const query = 'SELECT * FROM tasks WHERE user_email = $1 ORDER BY created_at DESC';
+        const result = await db.query(query, [req.session.user.email]);
         
         res.json({
             success: true,
-            tasks: tasks
+            tasks: result.rows
         });
     } catch (error) {
         console.error('Error fetching tasks:', error);
@@ -2005,21 +2108,17 @@ app.post('/api/tasks', requireAuth, async (req, res) => {
         const validSources = ['user', 'google_tasks', 'microsoft_todo', 'calendar_integration'];
         const taskSource = validSources.includes(source) ? source : 'user';
         
-        const taskDoc = {
-            user_email: req.session.user.email,
-            title: text.trim(),
-            text: text.trim(),
-            completed: false,
-            source: taskSource,
-            created_at: new Date(),
-            updated_at: new Date()
-        };
-        
-        const result = await db.collection('tasks').insertOne(taskDoc);
+        const query = `
+            INSERT INTO tasks (user_email, title, text, completed, source)
+            VALUES ($1, $2, $3, false, $4)
+            RETURNING *
+        `;
+        const values = [req.session.user.email, text.trim(), text.trim(), taskSource];
+        const result = await db.query(query, values);
         
         res.json({
             success: true,
-            task: { ...taskDoc, _id: result.insertedId },
+            task: result.rows[0],
             message: 'Task created successfully'
         });
     } catch (error) {
@@ -2034,16 +2133,14 @@ app.post('/api/tasks', requireAuth, async (req, res) => {
 // Update a task (text or completion status)
 app.put('/api/tasks/:id', requireAuth, async (req, res) => {
     try {
-        const taskId = req.params.id;
+        const taskId = parseInt(req.params.id);
         const { text, completed, source } = req.body;
         
         // First check if the task belongs to the user
-        const existingTask = await db.collection('tasks').findOne({
-            _id: new ObjectId(taskId),
-            user_email: req.session.user.email
-        });
+        const checkQuery = 'SELECT * FROM tasks WHERE id = $1 AND user_email = $2';
+        const checkResult = await db.query(checkQuery, [taskId, req.session.user.email]);
         
-        if (!existingTask) {
+        if (checkResult.rows.length === 0) {
             return res.status(404).json({
                 success: false,
                 message: 'Task not found'
@@ -2052,32 +2149,50 @@ app.put('/api/tasks/:id', requireAuth, async (req, res) => {
 
         // Validate source if provided
         const validSources = ['user', 'google_tasks', 'microsoft_todo', 'calendar_integration'];
+        const validatedSource = source && validSources.includes(source) ? source : undefined;
         
-        // Build update object
-        const updateFields = { updated_at: new Date() };
+        // Build dynamic update query based on provided fields
+        const updateFields = [];
+        const values = [];
+        let valueIndex = 1;
         
         if (text !== undefined) {
-            updateFields.text = text.trim();
-            updateFields.title = text.trim();
+            updateFields.push(`text = $${valueIndex++}`);
+            values.push(text.trim());
         }
         
         if (completed !== undefined) {
-            updateFields.completed = completed;
+            updateFields.push(`completed = $${valueIndex++}`);
+            values.push(completed);
         }
         
-        if (source !== undefined && validSources.includes(source)) {
-            updateFields.source = source;
+        if (validatedSource !== undefined) {
+            updateFields.push(`source = $${valueIndex++}`);
+            values.push(validatedSource);
         }
         
-        const result = await db.collection('tasks').findOneAndUpdate(
-            { _id: new ObjectId(taskId), user_email: req.session.user.email },
-            { $set: updateFields },
-            { returnDocument: 'after' }
-        );
+        if (updateFields.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'No valid update data provided'
+            });
+        }
+        
+        // Add WHERE clause parameters
+        values.push(taskId, req.session.user.email);
+        
+        const updateQuery = `
+            UPDATE tasks 
+            SET ${updateFields.join(', ')} 
+            WHERE id = $${valueIndex++} AND user_email = $${valueIndex++} 
+            RETURNING *
+        `;
+        
+        const result = await db.query(updateQuery, values);
         
         res.json({
             success: true,
-            task: result.value,
+            task: result.rows[0],
             message: 'Task updated successfully'
         });
     } catch (error) {
@@ -2092,15 +2207,13 @@ app.put('/api/tasks/:id', requireAuth, async (req, res) => {
 // Delete a task
 app.delete('/api/tasks/:id', requireAuth, async (req, res) => {
     try {
-        const taskId = req.params.id;
+        const taskId = parseInt(req.params.id);
         
         // First check if the task belongs to the user, then delete
-        const result = await db.collection('tasks').findOneAndDelete({
-            _id: new ObjectId(taskId),
-            user_email: req.session.user.email
-        });
+        const query = 'DELETE FROM tasks WHERE id = $1 AND user_email = $2 RETURNING *';
+        const result = await db.query(query, [taskId, req.session.user.email]);
         
-        if (!result.value) {
+        if (result.rows.length === 0) {
             return res.status(404).json({
                 success: false,
                 message: 'Task not found'
@@ -2110,7 +2223,7 @@ app.delete('/api/tasks/:id', requireAuth, async (req, res) => {
         res.json({
             success: true,
             message: 'Task deleted successfully',
-            deletedTask: result.value
+            deletedTask: result.rows[0]
         });
     } catch (error) {
         console.error('Error deleting task:', error);
@@ -2133,27 +2246,21 @@ app.post('/api/tasks/bulk', requireAuth, async (req, res) => {
             });
         }
         
-        const objectIds = taskIds.map(id => new ObjectId(id));
-        let result;
+        let query;
+        let values;
         
         switch (action) {
             case 'complete':
-                result = await db.collection('tasks').updateMany(
-                    { _id: { $in: objectIds }, user_email: req.session.user.email },
-                    { $set: { completed: true, updated_at: new Date() } }
-                );
+                query = 'UPDATE tasks SET completed = true WHERE id = ANY($1) AND user_email = $2 RETURNING *';
+                values = [taskIds, req.session.user.email];
                 break;
             case 'uncomplete':
-                result = await db.collection('tasks').updateMany(
-                    { _id: { $in: objectIds }, user_email: req.session.user.email },
-                    { $set: { completed: false, updated_at: new Date() } }
-                );
+                query = 'UPDATE tasks SET completed = false WHERE id = ANY($1) AND user_email = $2 RETURNING *';
+                values = [taskIds, req.session.user.email];
                 break;
             case 'delete':
-                result = await db.collection('tasks').deleteMany({
-                    _id: { $in: objectIds },
-                    user_email: req.session.user.email
-                });
+                query = 'DELETE FROM tasks WHERE id = ANY($1) AND user_email = $2 RETURNING *';
+                values = [taskIds, req.session.user.email];
                 break;
             default:
                 return res.status(400).json({
@@ -2162,9 +2269,11 @@ app.post('/api/tasks/bulk', requireAuth, async (req, res) => {
                 });
         }
         
+        const result = await db.query(query, values);
+        
         res.json({
             success: true,
-            affectedCount: result.modifiedCount || result.deletedCount,
+            affectedTasks: result.rows,
             message: `Bulk ${action} operation completed successfully`
         });
     } catch (error) {
@@ -2176,21 +2285,21 @@ app.post('/api/tasks/bulk', requireAuth, async (req, res) => {
     }
 });
 
-// Google Tasks integration
+// Google Tasks integration (placeholder for future implementation)
 
 // Get Google Tasks integration status
 app.get('/api/google/tasks/status', requireAuth, async (req, res) => {
     try {
-        const integration = await db.collection('google_tasks_integration').findOne({
-            user_email: req.session.user.email,
-            is_active: true
-        });
+        const result = await db.query(
+            'SELECT is_active, created_at, task_info FROM google_tasks_integration WHERE user_email = $1 AND is_active = true',
+            [req.session.user.email]
+        );
         
-        const isConnected = !!integration;
+        const isConnected = result.rows.length > 0;
         res.json({ 
             connected: isConnected,
-            connectedSince: isConnected ? integration.created_at : null,
-            taskInfo: isConnected ? integration.task_info : null
+            connectedSince: isConnected ? result.rows[0].created_at : null,
+            taskInfo: isConnected ? result.rows[0].task_info : null
         });
     } catch (error) {
         console.error('Error checking Google Tasks status:', error);
@@ -2205,16 +2314,16 @@ app.get('/api/google/tasks/status', requireAuth, async (req, res) => {
 app.post('/api/google/tasks/sync', requireAuth, async (req, res) => {
     try {
         // Get user's Google Tasks tokens
-        const integration = await db.collection('google_tasks_integration').findOne({
-            user_email: req.session.user.email,
-            is_active: true
-        });
+        const tokenResult = await db.query(
+            'SELECT access_token, refresh_token, expires_at FROM google_tasks_integration WHERE user_email = $1 AND is_active = true',
+            [req.session.user.email]
+        );
         
-        if (!integration) {
+        if (tokenResult.rows.length === 0) {
             return res.status(401).json({ error: 'Google Tasks integration not found' });
         }
         
-        let { access_token, refresh_token, expires_at } = integration;
+        let { access_token, refresh_token, expires_at } = tokenResult.rows[0];
         
         // Check if token needs refresh
         if (expires_at && new Date() >= new Date(expires_at)) {
@@ -2240,36 +2349,40 @@ app.post('/api/google/tasks/sync', requireAuth, async (req, res) => {
         const syncedTasks = [];
         for (const googleTask of googleTasks.items || []) {
             // Check if task already exists
-            const existingTask = await db.collection('tasks').findOne({
-                google_task_id: googleTask.id,
-                user_email: req.session.user.email
-            });
+            const existingTask = await db.query(
+                'SELECT id FROM tasks WHERE google_task_id = $1 AND user_email = $2',
+                [googleTask.id, req.session.user.email]
+            );
             
-            const taskData = {
-                title: googleTask.title,
-                text: googleTask.title,
-                completed: googleTask.status === 'completed',
-                source: 'google_tasks',
-                updated_at: new Date()
-            };
-            
-            if (!existingTask) {
+            if (existingTask.rows.length === 0) {
                 // Insert new task
-                const result = await db.collection('tasks').insertOne({
-                    ...taskData,
-                    user_email: req.session.user.email,
-                    google_task_id: googleTask.id,
-                    created_at: new Date()
-                });
-                syncedTasks.push({ ...taskData, _id: result.insertedId });
+                const insertResult = await db.query(
+                    'INSERT INTO tasks (user_email, title, text, completed, source, google_task_id, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+                    [
+                        req.session.user.email,
+                        googleTask.title,
+                        googleTask.title,
+                        googleTask.status === 'completed',
+                        'google_tasks',
+                        googleTask.id,
+                        new Date()
+                    ]
+                );
+                syncedTasks.push(insertResult.rows[0]);
             } else {
                 // Update existing task
-                const result = await db.collection('tasks').findOneAndUpdate(
-                    { google_task_id: googleTask.id, user_email: req.session.user.email },
-                    { $set: taskData },
-                    { returnDocument: 'after' }
+                const updateResult = await db.query(
+                    'UPDATE tasks SET title = $1, text = $2, completed = $3, updated_at = $4 WHERE google_task_id = $5 AND user_email = $6 RETURNING *',
+                    [
+                        googleTask.title,
+                        googleTask.title,
+                        googleTask.status === 'completed',
+                        new Date(),
+                        googleTask.id,
+                        req.session.user.email
+                    ]
                 );
-                syncedTasks.push(result.value);
+                syncedTasks.push(updateResult.rows[0]);
             }
         }
         
@@ -2291,26 +2404,28 @@ app.post('/api/google/tasks/push', requireAuth, async (req, res) => {
         const { taskId } = req.body;
         
         // Get the task
-        const task = await db.collection('tasks').findOne({
-            _id: new ObjectId(taskId),
-            user_email: req.session.user.email
-        });
+        const taskResult = await db.query(
+            'SELECT * FROM tasks WHERE id = $1 AND user_email = $2',
+            [taskId, req.session.user.email]
+        );
         
-        if (!task) {
+        if (taskResult.rows.length === 0) {
             return res.status(404).json({ error: 'Task not found' });
         }
         
-        // Get user's Google Tasks tokens
-        const integration = await db.collection('google_tasks_integration').findOne({
-            user_email: req.session.user.email,
-            is_active: true
-        });
+        const task = taskResult.rows[0];
         
-        if (!integration) {
+        // Get user's Google Tasks tokens
+        const tokenResult = await db.query(
+            'SELECT access_token, refresh_token FROM google_tasks_integration WHERE user_email = $1 AND is_active = true',
+            [req.session.user.email]
+        );
+        
+        if (tokenResult.rows.length === 0) {
             return res.status(401).json({ error: 'Google Tasks integration not found' });
         }
         
-        const { access_token } = integration;
+        const { access_token } = tokenResult.rows[0];
         
         // Create task in Google Tasks
         const googleTaskData = {
@@ -2334,15 +2449,9 @@ app.post('/api/google/tasks/push', requireAuth, async (req, res) => {
         const createdGoogleTask = await response.json();
         
         // Update local task with Google Task ID
-        await db.collection('tasks').updateOne(
-            { _id: new ObjectId(taskId) },
-            { 
-                $set: { 
-                    google_task_id: createdGoogleTask.id, 
-                    source: 'google_tasks',
-                    updated_at: new Date()
-                } 
-            }
+        await db.query(
+            'UPDATE tasks SET google_task_id = $1, source = $2 WHERE id = $3',
+            [createdGoogleTask.id, 'google_tasks', taskId]
         );
         
         res.json({ 
@@ -2384,17 +2493,17 @@ app.get('/health', (req, res) => {
 // Database connection and server startup
 async function startServer() {
     try {
-        await client.connect();
-        db = client.db('private_zone');
-        console.log('Connected to MongoDB successfully');
+        await db.connect();
+        console.log('Connected to the database successfully');
         
         app.listen(port, () => {
             console.log(`Private Zone App is running at http://localhost:${port}`);
         });
     } catch (error) {
-        console.error('Error connecting to MongoDB:', error);
+        console.error('Error connecting to the database:', error);
         process.exit(1);
     }
 }
 
 startServer();
+//
