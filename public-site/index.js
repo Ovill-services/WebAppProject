@@ -87,11 +87,17 @@ passport.use(new LocalStrategy({
 }));
 
 // Passport Google Strategy
-passport.use(new GoogleStrategy({
-  clientID: process.env.GOOGLE_CLIENT_ID,
-  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  callbackURL: process.env.GOOGLE_CALLBACK_URL
-}, async (accessToken, refreshToken, profile, done) => {
+const googleOAuthEnabled = process.env.GOOGLE_CLIENT_ID && 
+                          process.env.GOOGLE_CLIENT_SECRET && 
+                          process.env.GOOGLE_CLIENT_ID !== 'disabled' && 
+                          process.env.GOOGLE_CLIENT_SECRET !== 'disabled';
+
+if (googleOAuthEnabled) {
+  passport.use(new GoogleStrategy({
+    clientID: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    callbackURL: process.env.GOOGLE_REDIRECT_URI || process.env.GOOGLE_CALLBACK_URL || 'http://localhost:3000/auth/google/callback'
+  }, async (accessToken, refreshToken, profile, done) => {
   try {
     // Check if user exists with Google email
     const checkQuery = 'SELECT * FROM users WHERE username = $1';
@@ -127,13 +133,10 @@ passport.use(new GoogleStrategy({
     // Store Google Calendar tokens if available
     if (accessToken && profile.emails && profile.emails[0]) {
       try {
-        // Set expiresAt if available, otherwise null
-        let expiresAt = null;
-        if (typeof accessToken.expires_in === 'number') {
-          expiresAt = moment().add(accessToken.expires_in, 'seconds').toISOString();
-        } else if (typeof accessToken.expiry_date === 'number') {
-          expiresAt = moment(accessToken.expiry_date).toISOString();
-        }
+        // Google OAuth tokens typically expire in 1 hour
+        // Since passport-google-oauth20 doesn't provide expires_in directly,
+        // we set expiry to 1 hour from now as per Google's standard
+        const expiresAt = moment().add(1, 'hour').toISOString();
 
 
         let calendarInfo = {};
@@ -157,7 +160,7 @@ passport.use(new GoogleStrategy({
           accessToken,
           refreshToken || null,
           expiresAt,
-          'https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/tasks',
+          'https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/tasks https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.modify',
           JSON.stringify(calendarInfo)
         ]);
         
@@ -184,6 +187,27 @@ passport.use(new GoogleStrategy({
         
         console.log('✅ Google Tasks integration stored for user:', profile.emails[0].value);
         
+        // Store Gmail integration tokens
+        const gmailIntegrationQuery = `
+          INSERT INTO gmail_integration (user_email, access_token, refresh_token, expires_at, scope, gmail_info)
+          VALUES ($1, $2, $3, $4, $5, $6)
+        `;
+        
+        // Delete existing record first, then insert new one
+        const deleteGmailQuery = 'DELETE FROM gmail_integration WHERE user_email = $1';
+        await db.query(deleteGmailQuery, [profile.emails[0].value]);
+        
+        await db.query(gmailIntegrationQuery, [
+          profile.emails[0].value,
+          accessToken,
+          refreshToken || null,
+          expiresAt,
+          'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.modify',
+          JSON.stringify({})
+        ]);
+        
+        console.log('✅ Gmail integration stored for user:', profile.emails[0].value);
+        
       } catch (integrationError) {
         console.error('⚠️ Error storing Google integrations:', integrationError);
         // Don't fail the login if integration storage fails
@@ -195,6 +219,11 @@ passport.use(new GoogleStrategy({
     return done(error);
   }
 }));
+
+  console.log('Google OAuth enabled');
+} else {
+  console.log('Google OAuth disabled - no valid credentials provided');
+}
 
 // Passport serialization
 passport.serializeUser((user, done) => {
@@ -225,28 +254,31 @@ app.use(express.static('public'));
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-// Google OAuth routes
-app.get('/auth/google',
-  passport.authenticate('google', { 
-    scope: [
-      'profile', 
-      'email', 
-      'https://www.googleapis.com/auth/calendar',
-      'https://www.googleapis.com/auth/tasks'
-    ] 
-  })
-);
+// Google OAuth routes (only if enabled)
+if (googleOAuthEnabled) {
+  app.get('/auth/google',
+    passport.authenticate('google', { 
+      scope: [
+        'profile', 
+        'email', 
+        'https://www.googleapis.com/auth/calendar',
+        'https://www.googleapis.com/auth/tasks',
+        'https://www.googleapis.com/auth/gmail.readonly',
+        'https://www.googleapis.com/auth/gmail.modify'
+      ] 
+    })
+  );
 
-app.get('/auth/google/callback',
-  passport.authenticate('google', { failureRedirect: '/login' }),
-  async (req, res) => {
-    // Update lastlogin for Google OAuth users
-    try {
-      const updateQuery = 'UPDATE users SET lastlogin = $1 WHERE username = $2';
-      await db.query(updateQuery, [moment().format('YYYY-MM-DD HH:mm:ss'), req.user.email]);
-    } catch (error) {
-      console.error('Error updating lastlogin for Google user:', error);
-    }
+  app.get('/auth/google/callback',
+    passport.authenticate('google', { failureRedirect: '/login' }),
+    async (req, res) => {
+      // Update lastlogin for Google OAuth users
+      try {
+        const updateQuery = 'UPDATE users SET lastlogin = $1 WHERE username = $2';
+        await db.query(updateQuery, [moment().format('YYYY-MM-DD HH:mm:ss'), req.user.email]);
+      } catch (error) {
+        console.error('Error updating lastlogin for Google user:', error);
+      }
     
     // Set session user
     req.session.user = {
@@ -254,11 +286,35 @@ app.get('/auth/google/callback',
       name: req.user.name
     };
     
-    // Redirect to private zone
-    const privateZoneUrl = process.env.PRIVATE_ZONE_URL || 'http://localhost:3001/dashboard';
-    res.redirect(privateZoneUrl);
+    // Generate a temporary auth token for cross-app authentication
+    const authToken = crypto.randomBytes(32).toString('hex');
+    const expires = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+    
+    try {
+      // Store the token in database temporarily
+      await db.query('DELETE FROM temp_auth_tokens WHERE user_username = $1', [req.user.email]);
+      await db.query(
+        'INSERT INTO temp_auth_tokens (token, user_username, expires_at) VALUES ($1, $2, $3)',
+        [authToken, req.user.email, expires]
+      );
+      
+      // Redirect to private zone with token
+      const privateZoneUrl = process.env.PRIVATE_ZONE_URL || 'http://localhost:3001';
+      return res.redirect(`${privateZoneUrl}?token=${authToken}`);
+    } catch (error) {
+      console.error('Error creating Google OAuth token:', error);
+      // Fallback
+      const privateZoneUrl = process.env.PRIVATE_ZONE_URL || 'http://localhost:3001';
+      res.redirect(privateZoneUrl);
+    }
   }
-);
+  );
+} else {
+  // Provide disabled routes if Google OAuth is not configured
+  app.get('/auth/google', (req, res) => {
+    res.redirect('/login?error=google_oauth_disabled');
+  });
+}
 
 // Logout route
 app.get('/logout', (req, res) => {
@@ -304,10 +360,19 @@ app.get('/contact', (req, res) => {
 });
 
 app.get("/login", (req, res) => {
+    let sweetalertScript = undefined;
+    
+    // Check for Google OAuth disabled error
+    if (req.query.error === 'google_oauth_disabled') {
+        sweetalertScript = `<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script><script>Swal.fire({icon: 'info', title: 'Google Sign-In Unavailable', text: 'Google Sign-In is currently not configured. Please use your email and password to login.', confirmButtonColor: '#3085d6', theme: 'auto'});</script>`;
+    }
+    
     res.render("index.ejs", {
         page: "login",
         message: undefined,
-        method: 'GET'
+        method: 'GET',
+        sweetalertScript,
+        googleOAuthEnabled
     });
 });
 
@@ -416,9 +481,33 @@ app.post('/login', (req, res, next) => {
       
       console.log('User logged in:', req.session.user);
       
-      // Redirect to private zone app
-      const privateZoneUrl = process.env.PRIVATE_ZONE_URL || 'http://localhost:3001/dashboard';
-      return res.redirect(privateZoneUrl);
+      // Generate a temporary auth token for cross-app authentication
+      const authToken = crypto.randomBytes(32).toString('hex');
+      const expires = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+      
+      console.log('Creating auth token for user:', user.email);
+      
+      try {
+        // First, delete any existing tokens for this user
+        await db.query('DELETE FROM temp_auth_tokens WHERE user_username = $1', [user.email]);
+        
+        // Insert new token
+        await db.query(
+          'INSERT INTO temp_auth_tokens (token, user_username, expires_at) VALUES ($1, $2, $3)',
+          [authToken, user.email, expires]
+        );
+        
+        console.log('Auth token created successfully for user:', user.email);
+        
+        // Redirect to private zone app with token
+        const privateZoneUrl = process.env.PRIVATE_ZONE_URL || 'http://localhost:3001';
+        return res.redirect(`${privateZoneUrl}?token=${authToken}`);
+      } catch (error) {
+        console.error('Error creating auth token:', error);
+        // Fallback to simple redirect
+        const privateZoneUrl = process.env.PRIVATE_ZONE_URL || 'http://localhost:3001';
+        return res.redirect(privateZoneUrl);
+      }
     });
   })(req, res, next);
 });
