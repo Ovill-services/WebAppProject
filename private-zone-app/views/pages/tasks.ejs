@@ -558,7 +558,7 @@
                 showNotification('Pushing task to Google Tasks...', 'info');
                 await apiRequest('/api/google/tasks/push', {
                     method: 'POST',
-                    body: JSON.stringify({ taskId: parseInt(taskId) })
+                    body: JSON.stringify({ taskId: taskId })
                 });
 
                 showNotification('Task successfully pushed to Google Tasks!', 'success');
@@ -570,19 +570,26 @@
 
         function renderTasks() {
             const tasksList = document.getElementById('tasksList');
+            if (!tasksList) return;
 
             // Update stats
             const totalTasks = tasks.length;
             const completedTasks = tasks.filter(t => t.completed).length;
 
-            document.getElementById('totalTasksCount').textContent = totalTasks;
-            document.getElementById('completedTasksCount').textContent = completedTasks;
+            const totalTasksCountEl = document.getElementById('totalTasksCount');
+            const completedTasksCountEl = document.getElementById('completedTasksCount');
+            const taskCountBadgeEl = document.getElementById('taskCountBadge');
+
+            if (totalTasksCountEl) totalTasksCountEl.textContent = totalTasks;
+            if (completedTasksCountEl) completedTasksCountEl.textContent = completedTasks;
 
             // Update task count badge with translation
-            const tasksText = (typeof LanguageManager !== 'undefined' && LanguageManager.isLoaded)
-                ? LanguageManager.t('tasks.tasks')
-                : 'tasks';
-            document.getElementById('taskCountBadge').innerHTML = `${totalTasks} <span data-translate="tasks.tasks">${tasksText}</span>`;
+            if (taskCountBadgeEl) {
+                const tasksText = (typeof LanguageManager !== 'undefined' && LanguageManager.isLoaded)
+                    ? LanguageManager.t('tasks.tasks')
+                    : 'tasks';
+                taskCountBadgeEl.innerHTML = `${totalTasks} <span data-translate="tasks.tasks">${tasksText}</span>`;
+            }
 
             if (tasks.length === 0) {
                 const noTasksText = (typeof LanguageManager !== 'undefined' && LanguageManager.isLoaded)
@@ -633,10 +640,10 @@
                 : 'Delete Task';
 
             tasksList.innerHTML = sortedTasks.map(task => `
-                <div class="task-item border-bottom py-3 ${task.completed ? 'task-completed' : ''}" data-task-id="${task.id}">
+                <div class="task-item border-bottom py-3 ${task.completed ? 'task-completed' : ''}" data-task-id="${task._id}">
                     <div class="d-flex align-items-center">
                         <div class="form-check me-3">
-                            <input class="form-check-input task-checkbox" type="checkbox" ${task.completed ? 'checked' : ''} data-task-id="${task.id}">
+                            <input class="form-check-input task-checkbox" type="checkbox" ${task.completed ? 'checked' : ''} data-task-id="${task._id}">
                         </div>
                         <div class="flex-grow-1">
                             <span class="task-text ${task.completed ? 'text-decoration-line-through text-muted' : ''}">${escapeHtml(task.text)}</span>
@@ -646,10 +653,10 @@
                             </div>
                         </div>
                         <div class="ms-auto d-flex gap-1">
-                            <button class="btn btn-sm btn-outline-warning task-edit" data-task-id="${task.id}" title="${editTaskText}">
+                            <button class="btn btn-sm btn-outline-warning task-edit" data-task-id="${task._id}" title="${editTaskText}">
                                 <i class="bi bi-pen"></i>
                             </button>
-                            <button class="btn btn-sm btn-outline-danger delete-task" data-task-id="${task.id}" title="${deleteTaskText}">
+                            <button class="btn btn-sm btn-outline-danger delete-task" data-task-id="${task._id}" title="${deleteTaskText}">
                                 <i class="bi bi-trash"></i>
                             </button>
                         </div>
@@ -737,7 +744,7 @@
         // Toggle task completion
         async function toggleTask(taskId) {
             try {
-                const task = tasks.find(t => t.id === parseInt(taskId));
+                const task = tasks.find(t => t._id === taskId);
                 if (!task) return;
 
                 const data = await apiRequest(`/api/tasks/${taskId}`, {
@@ -746,7 +753,7 @@
                 });
 
                 // Update local task
-                const taskIndex = tasks.findIndex(t => t.id === parseInt(taskId));
+                const taskIndex = tasks.findIndex(t => t._id === taskId);
                 if (taskIndex !== -1) {
                     tasks[taskIndex] = data.task;
                 }
@@ -779,12 +786,17 @@
 
         // Delete task
         async function deleteTask(taskId) {
+            if (!taskId) {
+                console.error('Error: taskId is undefined');
+                return;
+            }
+            
             try {
                 await apiRequest(`/api/tasks/${taskId}`, {
                     method: 'DELETE'
                 });
 
-                tasks = tasks.filter(t => t.id !== parseInt(taskId));
+                tasks = tasks.filter(t => t._id !== taskId);
                 renderTasks();
                 // Note: Success message is shown by SweetAlert2 in the event listener
             } catch (error) {
@@ -808,7 +820,7 @@
                 });
 
                 // Update local task
-                const taskIndex = tasks.findIndex(t => t.id === parseInt(taskId));
+                const taskIndex = tasks.findIndex(t => t._id === taskId);
                 if (taskIndex !== -1) {
                     tasks[taskIndex] = data.task;
                 }
@@ -840,7 +852,7 @@
         }
 
         function startEditTask(taskId) {
-            const task = tasks.find(t => t.id === parseInt(taskId));
+            const task = tasks.find(t => t._id === taskId);
             if (!task) return;
 
             const taskItem = document.querySelector(`[data-task-id="${taskId}"]`);
@@ -926,28 +938,35 @@
         }
 
         // Event listeners
-        document.getElementById('addTaskForm').addEventListener('submit', function (e) {
-            e.preventDefault();
-            const taskInput = document.getElementById('taskInput');
-            const taskSource = document.getElementById('taskSource');
-            const taskText = taskInput.value.trim();
-            const source = taskSource ? taskSource.value : 'user';
+        const addTaskForm = document.getElementById('addTaskForm');
+        if (addTaskForm) {
+            addTaskForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+                const taskInput = document.getElementById('taskInput');
+                const taskSource = document.getElementById('taskSource');
+                const taskText = taskInput.value.trim();
+                const source = taskSource ? taskSource.value : 'user';
 
-            if (taskText) {
-                addTask(taskText, source);
-                taskInput.value = '';
-                if (taskSource) taskSource.value = 'user'; // Reset to default
-            }
-        });
+                if (taskText) {
+                    addTask(taskText, source);
+                    taskInput.value = '';
+                    if (taskSource) taskSource.value = 'user'; // Reset to default
+                }
+            });
+        }
 
-        document.getElementById('tasksList').addEventListener('click', function (e) {
-            const taskId = e.target.dataset.taskId;
+        const tasksList = document.getElementById('tasksList');
+        if (tasksList) {
+            tasksList.addEventListener('click', function (e) {
+            // Find the closest element with data-task-id attribute
+            const taskElement = e.target.closest('[data-task-id]');
+            const taskId = taskElement ? taskElement.dataset.taskId : null;
 
             if (e.target.classList.contains('task-checkbox')) {
                 toggleTask(taskId);
             } else if (e.target.classList.contains('delete-task') || e.target.parentElement.classList.contains('delete-task')) {
                 // Use SweetAlert2 for delete confirmation
-                const task = tasks.find(t => t.id === parseInt(taskId));
+                const task = tasks.find(t => t._id === taskId);
                 const taskText = task ? task.text : 'this task';
 
                 const themeConfig = getThemeAwareSwalConfig('warning');
@@ -962,6 +981,7 @@
                     ...themeConfig
                 }).then((result) => {
                     if (result.isConfirmed) {
+                        console.log('Confirmed deletion for task ID:', taskId);
                         deleteTask(taskId);
 
                         const successConfig = getThemeAwareSwalConfig('success');
@@ -981,6 +1001,7 @@
                 startEditTask(taskId);
             }
         });
+        }
 
         // Function to apply translations to all elements
         function applyTranslations() {
@@ -1148,13 +1169,13 @@
                         });
 
                         for (const task of incompleteTasks) {
-                            await apiRequest(`/api/tasks/${task.id}`, {
+                            await apiRequest(`/api/tasks/${task._id}`, {
                                 method: 'PUT',
                                 body: JSON.stringify({ completed: true })
                             });
 
                             // Update local task
-                            const taskIndex = tasks.findIndex(t => t.id === task.id);
+                            const taskIndex = tasks.findIndex(t => t._id === task._id);
                             if (taskIndex !== -1) {
                                 tasks[taskIndex].completed = true;
                             }

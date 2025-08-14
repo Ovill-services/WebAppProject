@@ -2069,17 +2069,30 @@ app.put('/api/tasks/:id', requireAuth, async (req, res) => {
             updateFields.source = source;
         }
         
-        const result = await db.collection('tasks').findOneAndUpdate(
+        // Update the task
+        const updateResult = await db.collection('tasks').updateOne(
             { _id: new ObjectId(taskId), user_email: req.session.user.email },
-            { $set: updateFields },
-            { returnDocument: 'after' }
+            { $set: updateFields }
         );
         
-        res.json({
-            success: true,
-            task: result.value,
-            message: 'Task updated successfully'
-        });
+        if (updateResult.modifiedCount === 1) {
+            // Fetch the updated task
+            const updatedTask = await db.collection('tasks').findOne({
+                _id: new ObjectId(taskId),
+                user_email: req.session.user.email
+            });
+            
+            res.json({
+                success: true,
+                task: updatedTask,
+                message: 'Task updated successfully'
+            });
+        } else {
+            res.status(500).json({
+                success: false,
+                message: 'Failed to update task'
+            });
+        }
     } catch (error) {
         console.error('Error updating task:', error);
         res.status(500).json({
@@ -2093,30 +2106,52 @@ app.put('/api/tasks/:id', requireAuth, async (req, res) => {
 app.delete('/api/tasks/:id', requireAuth, async (req, res) => {
     try {
         const taskId = req.params.id;
+        const userEmail = req.session.user && req.session.user.email;
         
-        // First check if the task belongs to the user, then delete
-        const result = await db.collection('tasks').findOneAndDelete({
+        if (!userEmail) {
+            return res.status(401).json({ success: false, message: 'Not authenticated' });
+        }
+        if (!taskId || !/^[a-fA-F0-9]{24}$/.test(taskId)) {
+            return res.status(400).json({ success: false, message: 'Invalid task ID' });
+        }
+        
+        // First verify the task exists and belongs to the user
+        const taskToDelete = await db.collection('tasks').findOne({
             _id: new ObjectId(taskId),
-            user_email: req.session.user.email
+            user_email: userEmail
         });
         
-        if (!result.value) {
+        if (!taskToDelete) {
             return res.status(404).json({
                 success: false,
-                message: 'Task not found'
+                message: 'Task not found or not owned by user'
             });
         }
         
-        res.json({
-            success: true,
-            message: 'Task deleted successfully',
-            deletedTask: result.value
+        // Now delete the task
+        const deleteResult = await db.collection('tasks').deleteOne({
+            _id: new ObjectId(taskId),
+            user_email: userEmail
         });
+        
+        if (deleteResult.deletedCount === 1) {
+            res.json({
+                success: true,
+                message: 'Task deleted successfully',
+                deletedTask: taskToDelete
+            });
+        } else {
+            return res.status(500).json({
+                success: false,
+                message: 'Failed to delete task'
+            });
+        }
     } catch (error) {
-        console.error('Error deleting task:', error);
+        console.error('Error deleting task:', error, { taskId: req.params.id, user: req.session.user });
         res.status(500).json({
             success: false,
-            message: 'Error deleting task'
+            message: 'Error deleting task',
+            error: error.message
         });
     }
 });
