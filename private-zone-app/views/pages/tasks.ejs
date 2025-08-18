@@ -105,28 +105,31 @@
 
             <!-- Tasks List -->
             <div class="col-lg-8 mb-4">
-                <div class="card shadow-sm border-0 h-100">
-                    <div class="card-header bg-info text-white py-3 d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0 d-flex align-items-center fw-bold">
+                <div class="enhanced-tasks-card h-100">
+                    <div class="enhanced-tasks-header">
+                        <h6 class="mb-0 d-flex align-items-center position-relative">
                             <i class="bi bi-list-task me-2"></i><span data-translate="tasks.myTasks">My Tasks</span>
-                        </h5>
-                        <span class="badge bg-light text-info fw-bold" id="taskCountBadge">0 <span
-                                data-translate="tasks.tasks">tasks</span></span>
+                        </h6>
+                        <span class="badge" id="taskCountBadge">0 <span data-translate="tasks.tasks">tasks</span></span>
                     </div>
-                    <div class="card-body">
-                        <div id="tasksList">
-                            <!-- Tasks will be dynamically added here -->
-                            <div class="text-center text-muted py-4">
-                                <i class="bi bi-clipboard-check display-1 mb-3"></i>
-                                <p class="mb-0" data-translate="tasks.noTasksYet">No tasks yet. Add your first task
-                                    above!
-                                </p>
+                    <div class="card-body" id="tasksList">
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-clipboard-check display-1 mb-3"></i>
+                            <p class="mb-0" data-translate="tasks.noTasksYet">No tasks yet. Add your first task above!</p>
+                        </div>
+                        <!-- Example Task Item -->
+                        <div class="task-item">
+                            <span class="task-text">Example Task</span>
+                            <div class="task-actions">
+                                <button class="btn btn-outline-primary">Edit</button>
+                                <button class="btn btn-outline-danger">Delete</button>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+
 
         <!-- Enhanced Google Tasks Integration -->
         <div class="row">
@@ -568,13 +571,13 @@
             }
         }
 
-        function renderTasks() {
+        function renderTasks(taskList = tasks) {
             const tasksList = document.getElementById('tasksList');
             if (!tasksList) return;
 
             // Update stats
-            const totalTasks = tasks.length;
-            const completedTasks = tasks.filter(t => t.completed).length;
+            const totalTasks = taskList.length;
+            const completedTasks = taskList.filter(t => t.completed).length;
 
             const totalTasksCountEl = document.getElementById('totalTasksCount');
             const completedTasksCountEl = document.getElementById('completedTasksCount');
@@ -591,7 +594,7 @@
                 taskCountBadgeEl.innerHTML = `${totalTasks} <span data-translate="tasks.tasks">${tasksText}</span>`;
             }
 
-            if (tasks.length === 0) {
+            if (taskList.length === 0) {
                 const noTasksText = (typeof LanguageManager !== 'undefined' && LanguageManager.isLoaded)
                     ? LanguageManager.t('tasks.noTasks')
                     : 'No tasks yet';
@@ -619,7 +622,7 @@
 
             // Sort tasks: incomplete tasks first, then completed tasks
             // Within each group, maintain original order (most recent first)
-            const sortedTasks = [...tasks].sort((a, b) => {
+            const sortedTasks = [...taskList].sort((a, b) => {
                 // If completion status is different, put incomplete first
                 if (a.completed !== b.completed) {
                     return a.completed ? 1 : -1;
@@ -641,24 +644,30 @@
 
             tasksList.innerHTML = sortedTasks.map(task => `
                 <div class="task-item border-bottom py-3 ${task.completed ? 'task-completed' : ''}" data-task-id="${task._id}">
-                    <div class="d-flex align-items-center">
-                        <div class="form-check me-3">
-                            <input class="form-check-input task-checkbox" type="checkbox" ${task.completed ? 'checked' : ''} data-task-id="${task._id}">
-                        </div>
-                        <div class="flex-grow-1">
-                            <span class="task-text ${task.completed ? 'text-decoration-line-through text-muted' : ''}">${escapeHtml(task.text)}</span>
-                            <div class="d-flex align-items-center gap-2 mt-1 flex-wrap">
-                                <small class="text-muted">${createdText}: ${new Date(task.created_at).toLocaleDateString()}</small>
-                                <span class="source-badge badge ${getSourceBadgeClass(task.source)}">${getSourceDisplayName(task.source)}</span>
+                    <div class="d-flex row align-items-center">
+                        <div class="col-1">
+                            <div class="form-check me-3">
+                                <input class="form-check-input task-checkbox" type="checkbox" ${task.completed ? 'checked' : ''} data-task-id="${task._id}">
                             </div>
                         </div>
-                        <div class="ms-auto d-flex gap-1">
-                            <button class="btn btn-sm btn-outline-warning task-edit" data-task-id="${task._id}" title="${editTaskText}">
-                                <i class="bi bi-pen"></i>
-                            </button>
-                            <button class="btn btn-sm btn-outline-danger delete-task" data-task-id="${task._id}" title="${deleteTaskText}">
-                                <i class="bi bi-trash"></i>
-                            </button>
+                        <div class="col-9">
+                            <div class="flex-grow-1">
+                                <span class="task-text ${task.completed ? 'text-decoration-line-through text-muted' : ''}">${escapeHtml(task.text)}</span>
+                                <div class="d-flex align-items-center gap-2 mt-1 flex-wrap">
+                                    <small class="text-muted">${createdText}: ${new Date(task.created_at).toLocaleDateString()}</small>
+                                    <span class="source-badge badge ${getSourceBadgeClass(task.source)}">${getSourceDisplayName(task.source)}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-2">
+                            <div class="ms-auto d-flex gap-1">
+                                <button class="btn btn-sm btn-outline-warning task-edit" data-task-id="${task._id}" title="${editTaskText}">
+                                    <i class="bi bi-pen"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger delete-task" data-task-id="${task._id}" title="${deleteTaskText}">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1290,47 +1299,94 @@
     });
 </script>
 
+<!-- Enhanced Styling for Tasks List -->
 <style>
-    /* Added hover effects for buttons */
-    .page-action-btn:hover {
-        background-color: #0056b3;
-        color: #fff;
-        transition: background-color 0.3s ease;
-    }
-
-    /* Enhanced card shadow for better visibility */
-    .card {
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        transition: box-shadow 0.3s ease;
-    }
-
-    .card:hover {
-        box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15);
-    }
-
-    /* Improved spacing for mobile responsiveness */
-    @media (max-width: 768px) {
-        .container {
-            padding: 15px;
-        }
-
-        .page-header {
-            flex-direction: column;
-            align-items: flex-start;
-        }
-
-        .current-time-card {
-            margin-top: 10px;
-        }
-    }
-
-    /* Subtle animations for task items */
     .task-item {
-        transition: transform 0.2s ease, background-color 0.2s ease;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 12px;
+        background: linear-gradient(135deg, #2d3748, #4a5568);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        transition: background 0.3s ease, transform 0.3s ease;
     }
 
     .task-item:hover {
-        transform: scale(1.02);
-        background-color: #f8f9fa;
+        background: linear-gradient(135deg, #4a5568, #2d3748);
+        transform: translateY(-3px);
+    }
+
+    .task-text {
+        flex-grow: 1;
+        font-size: 1.3rem;
+        line-height: 1.6;
+        color: #f7fafc;
+        font-weight: 500;
+    }
+
+    .task-actions {
+        display: flex;
+        gap: 12px;
+    }
+
+    .task-actions .btn {
+        padding: 12px 18px;
+        font-size: 1rem;
+        border-radius: 6px;
+        transition: background-color 0.3s ease, transform 0.3s ease;
+    }
+
+    .task-actions .btn:hover {
+        transform: translateY(-3px);
+    }
+
+    .task-actions .btn-outline-warning {
+        color: #f6ad55;
+        border-color: #f6ad55;
+    }
+
+    .task-actions .btn-outline-warning:hover {
+        background-color: #f6ad55;
+        color: #1a202c;
+    }
+
+    .task-actions .btn-outline-danger {
+        color: #e53e3e;
+        border-color: #e53e3e;
+    }
+
+    .task-actions .btn-outline-danger:hover {
+        background-color: #e53e3e;
+        color: #fff;
+    }
+
+    .source-badge {
+        font-size: 0.9rem;
+        padding: 5px 10px;
+        border-radius: 12px;
+        text-transform: uppercase;
+        font-weight: 600;
+    }
+
+    .source-badge.bg-primary {
+        background-color: #3182ce;
+        color: #fff;
+    }
+
+    .source-badge.bg-success {
+        background-color: #48bb78;
+        color: #fff;
+    }
+
+    .source-badge.bg-info {
+        background-color: #63b3ed;
+        color: #fff;
+    }
+
+    .source-badge.bg-warning {
+        background-color: #f6e05e;
+        color: #1a202c;
     }
 </style>

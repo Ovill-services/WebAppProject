@@ -89,7 +89,7 @@ always:
 
 
 ## Style Guide
-- always add styles to the `public/styles.css` file
+- always add styles to the ` public-site | private-zone-app/public/style/index.css` file
 - use bootstrap when you can
 - ensure responsive design for mobile and desktop views
 - for coloring elements with bootstrap, use classes like 'bg-body', 'text-body' for theme selection
