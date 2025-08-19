@@ -66,6 +66,7 @@ app.get('/api/resource', requireAuth, async (req, res) => {
 - All user-specific tables filter by `user_email`
 - Email attachments stored in `email_attachments` table
 - Tasks have `source` field for integration tracking
+- the DB is a mongoDB
 
 
 - always when changing something write very in depth what you have done

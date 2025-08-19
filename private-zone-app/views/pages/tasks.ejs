@@ -40,6 +40,11 @@
                 <form id="addTaskForm" class="d-flex align-items-center">
                     <input type="text" id="taskInput" class="form-control me-3"
                         data-translate-placeholder="tasks.enterTask" placeholder="Enter your task..." required>
+                    <select id="taskPriority" class="form-select me-3 priority-select">
+                        <option value="High">High</option>
+                        <option value="Medium" selected>Medium</option>
+                        <option value="Low">Low</option>
+                    </select>
                     <button type="submit" class="btn btn-primary enhanced-action-btn">
                         <i class="bi bi-plus-circle me-1"></i>
                         <span data-translate="tasks.addTask">Add Task</span>
@@ -120,6 +125,8 @@
                         <!-- Example Task Item -->
                         <div class="task-item">
                             <span class="task-text">Example Task</span>
+                            <span class="badge priority-badge bg-warning text-dark">High Priority</span>
+                            <span class="badge bg-info">Google</span>
                             <div class="task-actions">
                                 <button class="btn btn-outline-primary">Edit</button>
                                 <button class="btn btn-outline-danger">Delete</button>
@@ -571,6 +578,19 @@
             }
         }
 
+        function getPriorityBadgeClass(priority) {
+            switch (priority) {
+                case 'High':
+                    return 'bg-danger';
+                case 'Medium':
+                    return 'bg-warning';
+                case 'Low':
+                    return 'bg-success';
+                default:
+                    return 'bg-secondary';
+            }
+        }
+
         function renderTasks(taskList = tasks) {
             const tasksList = document.getElementById('tasksList');
             if (!tasksList) return;
@@ -650,7 +670,7 @@
                                 <input class="form-check-input task-checkbox" type="checkbox" ${task.completed ? 'checked' : ''} data-task-id="${task._id}">
                             </div>
                         </div>
-                        <div class="col-9">
+                        <div class="col-8">
                             <div class="flex-grow-1">
                                 <span class="task-text ${task.completed ? 'text-decoration-line-through text-muted' : ''}">${escapeHtml(task.text)}</span>
                                 <div class="d-flex align-items-center gap-2 mt-1 flex-wrap">
@@ -659,14 +679,19 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-2">
-                            <div class="ms-auto d-flex gap-1">
-                                <button class="btn btn-sm btn-outline-warning task-edit" data-task-id="${task._id}" title="${editTaskText}">
-                                    <i class="bi bi-pen"></i>
-                                </button>
-                                <button class="btn btn-sm btn-outline-danger delete-task" data-task-id="${task._id}" title="${deleteTaskText}">
-                                    <i class="bi bi-trash"></i>
-                                </button>
+                        <div class="col-3">
+                            <div class="d-flex align-items-center gap-2">
+                                <div>
+                                    <span class="badge ${getPriorityBadgeClass(task.priority)}">${task.priority}</span>
+                                </div>
+                                <div class="ms-auto d-flex gap-1">
+                                    <button class="btn btn-sm btn-outline-warning task-edit" data-task-id="${task._id}" title="${editTaskText}">
+                                        <i class="bi bi-pen"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger delete-task" data-task-id="${task._id}" title="${deleteTaskText}">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -716,11 +741,11 @@
         }
 
         // Add new task
-        async function addTask(taskText, source = 'user') {
+        async function addTask(taskText, source = 'user', priority = 'Medium') {
             try {
                 const data = await apiRequest('/api/tasks', {
                     method: 'POST',
-                    body: JSON.stringify({ text: taskText, source: source })
+                    body: JSON.stringify({ text: taskText, source: source, priority: priority })
                 });
 
                 tasks.unshift(data.task); // Add to beginning of array
@@ -952,14 +977,14 @@
             addTaskForm.addEventListener('submit', function (e) {
                 e.preventDefault();
                 const taskInput = document.getElementById('taskInput');
-                const taskSource = document.getElementById('taskSource');
+                const taskPriority = document.getElementById('taskPriority');
                 const taskText = taskInput.value.trim();
-                const source = taskSource ? taskSource.value : 'user';
+                const priority = taskPriority ? taskPriority.value : 'Medium';
 
                 if (taskText) {
-                    addTask(taskText, source);
+                    addTask(taskText, 'user', priority);
                     taskInput.value = '';
-                    if (taskSource) taskSource.value = 'user'; // Reset to default
+                    if (taskPriority) taskPriority.value = 'Medium'; // Reset to default
                 }
             });
         }

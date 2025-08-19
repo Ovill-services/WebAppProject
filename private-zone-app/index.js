@@ -1095,7 +1095,6 @@ app.post('/api/gmail/sync', requireAuth, async (req, res) => {
     }
 });
 
-// ... [Continue with more routes in the next part due to size limits]
 // Get email attachment
 app.get('/api/emails/:emailId/attachments/:attachmentId', requireAuth, async (req, res) => {
     try {
@@ -1992,8 +1991,8 @@ app.get('/api/tasks', requireAuth, async (req, res) => {
 // Create a new task
 app.post('/api/tasks', requireAuth, async (req, res) => {
     try {
-        const { text, source = 'user' } = req.body;
-        
+        const { text, source = 'user', priority = 'Medium' } = req.body;
+
         if (!text || text.trim() === '') {
             return res.status(400).json({
                 success: false,
@@ -2001,26 +2000,21 @@ app.post('/api/tasks', requireAuth, async (req, res) => {
             });
         }
 
-        // Validate source
-        const validSources = ['user', 'google_tasks', 'microsoft_todo', 'calendar_integration'];
-        const taskSource = validSources.includes(source) ? source : 'user';
-        
-        const taskDoc = {
+        const newTask = {
             user_email: req.session.user.email,
-            title: text.trim(),
             text: text.trim(),
+            source,
+            priority,
             completed: false,
-            source: taskSource,
             created_at: new Date(),
             updated_at: new Date()
         };
-        
-        const result = await db.collection('tasks').insertOne(taskDoc);
-        
+
+        const result = await db.collection('tasks').insertOne(newTask);
+
         res.json({
             success: true,
-            task: { ...taskDoc, _id: result.insertedId },
-            message: 'Task created successfully'
+            task: { ...newTask, _id: result.insertedId }
         });
     } catch (error) {
         console.error('Error creating task:', error);
