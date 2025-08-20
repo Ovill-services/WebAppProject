@@ -1,4 +1,4 @@
-  <div class="d-flex flex-column flex-shrink-0 p-3 bg-body-tertiary border-end vh-100 sidebar-fixed" id="sidebar">
+<div class="d-flex flex-column flex-shrink-0 p-3 bg-body-tertiary border-end vh-100 sidebar-fixed" id="sidebar">
   <!-- Toggle button for mobile -->
   <div class="d-flex justify-content-between align-items-center mb-3 d-lg-none">
     <h5 class="mb-0">Menu</h5>
@@ -6,31 +6,82 @@
       <i class="bi bi-x-lg"></i>
     </button>
   </div>
-  
+
+  <!-- Logo and title -->
+  <div class="d-flex align-items-center mb-3">
+    <svg width="40" height="40" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="bg-gradient" cx="60%" cy="40%" r="70%" fx="50%" fy="45%">
+          <stop offset="0%" stop-color="#25304A" />
+          <stop offset="100%" stop-color="#181C23" />
+        </radialGradient>
+        <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#4a6cff" stop-opacity="0.5" />
+          <stop offset="100%" stop-color="#181C23" stop-opacity="0" />
+        </radialGradient>
+      </defs>
+      <!-- Background -->
+      <circle cx="60" cy="60" r="56" fill="url(#bg-gradient)" />
+      <!-- Outer ring for depth -->
+      <circle cx="60" cy="60" r="47" stroke="#31456A" stroke-width="3" fill="none" opacity="0.5" />
+      <!-- Soft inner glow -->
+      <circle cx="60" cy="60" r="36" fill="url(#glow)" opacity="0.7" />
+      <!-- Integration dots, balanced and smaller -->
+      <circle cx="84" cy="49" r="6" fill="#406AFF" filter="url(#shadow1)" />
+      <circle cx="60" cy="85" r="6" fill="#31456A" filter="url(#shadow2)" />
+      <circle cx="36" cy="49" r="6" fill="#8AA1D4" filter="url(#shadow3)" />
+      <!-- Subtle connection curves -->
+      <path d="M79 54 Q60 75 41 54" stroke="#233358" stroke-width="3" fill="none" opacity="0.8" />
+      <path d="M43 52 Q60 36 77 52" stroke="#31456A" stroke-width="2" fill="none" opacity="0.7" />
+      <!-- Glassy overlay highlight -->
+      <ellipse cx="60" cy="40" rx="25" ry="8" fill="white" opacity="0.10" />
+      <!-- Optional: add subtle shadow (in filters if desired) -->
+      <filter id="shadow1" x="0" y="0" width="120" height="120">
+        <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#406AFF" flood-opacity="0.25" />
+      </filter>
+      <filter id="shadow2" x="0" y="0" width="120" height="120">
+        <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#31456A" flood-opacity="0.18" />
+      </filter>
+      <filter id="shadow3" x="0" y="0" width="120" height="120">
+        <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#8AA1D4" flood-opacity="0.18" />
+      </filter>
+    </svg>
+    <a href="/dashboard" class="ms-2 text-decoration-none text-dark d-flex align-items-center">
+      <span class="fs-5 fw-bold ms-2"
+        style="font-family: 'Playfair Display', serif; background: linear-gradient(90deg, #000000, #808080); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: 1px; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5), 0 0 5px rgba(128, 128, 128, 0.3);">Ovill</span>
+    </a>
+  </div>
+
   <ul class="nav nav-pills flex-column mb-auto">
     <li class="nav-item">
-      <a href="/dashboard" class="nav-link <%= page === 'dashboard' ? 'active bg-primary text-white' : 'link-body-emphasis' %>" aria-current="<%= page === 'dashboard' ? 'page' : 'false' %>">
+      <a href="/dashboard"
+        class="nav-link <%= page === 'dashboard' ? 'active bg-primary text-white' : 'link-body-emphasis' %>"
+        aria-current="<%= page === 'dashboard' ? 'page' : 'false' %>">
         <i class="bi bi-house-door me-2"></i> <span data-translate="navigation.home">Home</span>
       </a>
     </li>
 
     <li class="nav-item">
-      <a href="/email" class="nav-link <%= page === 'email' ? 'active bg-primary text-white' : 'link-body-emphasis' %>" aria-current="<%= page === 'email' ? 'page' : 'false' %>">
+      <a href="/email" class="nav-link <%= page === 'email' ? 'active bg-primary text-white' : 'link-body-emphasis' %>"
+        aria-current="<%= page === 'email' ? 'page' : 'false' %>">
         <i class="bi bi-envelope me-2"></i> <span data-translate="navigation.email">Email</span>
       </a>
     </li>
     <li class="nav-item">
-      <a href="/calendar" class="nav-link <%= page === 'calendar' ? 'active bg-primary text-white' : 'link-body-emphasis' %>" aria-current="<%= page === 'calendar' ? 'page' : 'false' %>">
+      <a href="/calendar"
+        class="nav-link <%= page === 'calendar' ? 'active bg-primary text-white' : 'link-body-emphasis' %>"
+        aria-current="<%= page === 'calendar' ? 'page' : 'false' %>">
         <i class="bi bi-calendar me-2"></i> <span data-translate="navigation.calendar">Calendar</span>
       </a>
     </li>
     <li class="nav-item">
-      <a href="/tasks" class="nav-link <%= page === 'tasks' ? 'active bg-primary text-white' : 'link-body-emphasis' %>" aria-current="<%= page === 'tasks' ? 'page' : 'false' %>">
+      <a href="/tasks" class="nav-link <%= page === 'tasks' ? 'active bg-primary text-white' : 'link-body-emphasis' %>"
+        aria-current="<%= page === 'tasks' ? 'page' : 'false' %>">
         <i class="bi bi-check2-square me-2"></i> <span data-translate="navigation.tasks">Tasks</span>
       </a>
     </li>
   </ul>
-  
+
   <!-- Bottom section with logout and user dropdown -->
   <div class="mt-auto">
     <!-- Logout button just above the dropdown -->
@@ -39,26 +90,38 @@
         <i class="bi bi-box-arrow-right me-2"></i> <span data-translate="navigation.logout">Logout</span>
       </a>
     </div>
-    
+
     <hr>
     <div class="dropdown mb-1">
-      <a href="#" class="d-flex align-items-center gap-2 link-body-emphasis text-decoration-none dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+      <a href="#" class="d-flex align-items-center gap-2 link-body-emphasis text-decoration-none dropdown-toggle"
+        data-bs-toggle="dropdown" aria-expanded="false">
         <span class="avatar-container d-inline-flex align-items-center justify-content-center">
-          <% if (typeof user !== 'undefined' && user.avatar_url) { %>
-            <img src="<%= user.avatar_url %>" id="sidebarAvatar" class="rounded-circle" style="width: 32px; height: 32px; object-fit: cover; border: 2px solid var(--bs-border-color);">
-          <% } else { %>
-            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
-              <path d="M200-246q54-53 125.5-83.5T480-360q83 0 154.5 30.5T760-246v-514H200v514Zm280-194q58 0 99-41t41-99q0-58-41-99t-99-41q-58 0-99 41t-41 99q0 58 41 99t99 41ZM200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm69-80h422q-44-39-99.5-59.5T480-280q-56 0-112.5 20.5T269-200Zm211-320q-25 0-42.5-17.5T420-580q0-25 17.5-42.5T480-640q25 0 42.5 17.5T540-580q0 25-17.5 42.5T480-520Zm0 17Z"/>
-            </svg>
-          <% } %>
+          <% if (typeof user !=='undefined' && user.avatar_url) { %>
+            <img src="<%= user.avatar_url %>" id="sidebarAvatar" class="rounded-circle"
+              style="width: 32px; height: 32px; object-fit: cover; border: 2px solid var(--bs-border-color);">
+            <% } else { %>
+              <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"
+                fill="currentColor">
+                <path
+                  d="M200-246q54-53 125.5-83.5T480-360q83 0 154.5 30.5T760-246v-514H200v514Zm280-194q58 0 99-41t41-99q0-58-41-99t-99-41q-58 0-99 41t-41 99q0 58 41 99t99 41ZM200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm69-80h422q-44-39-99.5-59.5T480-280q-56 0-112.5 20.5T269-200Zm211-320q-25 0-42.5-17.5T420-580q0-25 17.5-42.5T480-640q25 0 42.5 17.5T540-580q0 25-17.5 42.5T480-520Zm0 17Z" />
+              </svg>
+              <% } %>
         </span>
-        <strong><%= typeof user !== 'undefined' ? user.name : 'User' %></strong>
+        <strong>
+          <%= typeof user !=='undefined' ? user.name : 'User' %>
+        </strong>
       </a>
       <ul class="dropdown-menu text-small shadow">
-        <li><a class="dropdown-item d-flex align-items-center" href="#"><i class="bi bi-gear me-2"></i><span data-translate="navigation.settings">Settings</span></a></li>
-        <li><a class="dropdown-item d-flex align-items-center <%= page === 'profile' ? 'active' : '' %>" href="/profile"><i class="bi bi-person me-2"></i><span data-translate="navigation.profile">Profile</span></a></li>
-        <li><hr class="dropdown-divider"></li>
-        <li><a class="dropdown-item d-flex align-items-center" href="/logout"><i class="bi bi-box-arrow-right me-2"></i><span data-translate="navigation.signOut">Sign out</span></a></li>
+        <li><a class="dropdown-item d-flex align-items-center" href="#"><i class="bi bi-gear me-2"></i><span
+              data-translate="navigation.settings">Settings</span></a></li>
+        <li><a class="dropdown-item d-flex align-items-center <%= page === 'profile' ? 'active' : '' %>"
+            href="/profile"><i class="bi bi-person me-2"></i><span
+              data-translate="navigation.profile">Profile</span></a></li>
+        <li>
+          <hr class="dropdown-divider">
+        </li>
+        <li><a class="dropdown-item d-flex align-items-center" href="/logout"><i
+              class="bi bi-box-arrow-right me-2"></i><span data-translate="navigation.signOut">Sign out</span></a></li>
       </ul>
     </div>
   </div>

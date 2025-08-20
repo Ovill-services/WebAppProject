@@ -66,8 +66,10 @@ app.get('/api/resource', requireAuth, async (req, res) => {
 - All user-specific tables filter by `user_email`
 - Email attachments stored in `email_attachments` table
 - Tasks have `source` field for integration tracking
+- the DB is a mongoDB
 
 
+- always when changing something write very in depth what you have done
 
 ## How To Run the Application
 - cd to the project directory
@@ -88,7 +90,7 @@ always:
 
 
 ## Style Guide
-- always add styles to the `public/styles.css` file
+- always add styles to the ` public-site | private-zone-app/public/style/index.css` file
 - use bootstrap when you can
 - ensure responsive design for mobile and desktop views
 - for coloring elements with bootstrap, use classes like 'bg-body', 'text-body' for theme selection

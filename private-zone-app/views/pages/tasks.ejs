@@ -1,12 +1,12 @@
 <div class="main-content">
     <div class="mt-5 container">
         <!-- Enhanced page header -->
-        <div class="page-header">
+        <div class="enhanced-page-header">
             <div class="d-flex justify-content-between align-items-center">
                 <div class="d-flex align-items-center">
                     <div class="me-3">
-                        <div class="bg-primary bg-opacity-10 rounded-circle p-3">
-                            <i class="bi bi-check2-square text-primary fs-4"></i>
+                        <div class="page-header-icon">
+                            <i class="bi bi-calendar-event"></i>
                         </div>
                     </div>
                     <div>
@@ -15,7 +15,7 @@
                     </div>
                 </div>
                 <div class="text-end">
-                    <div class="current-time-card card border-0 shadow-sm">
+                    <div class="enhanced-time-card card border-0">
                         <div class="card-body py-2 px-3">
                             <small class="text-muted d-block">Current Time</small>
                             <strong class="text-body">
@@ -29,25 +29,26 @@
         </div>
 
         <!-- Add New Task Card -->
-        <div class="card mb-4 shadow-sm border-0">
-            <div class="card-header bg-primary text-white py-3">
-                <h5 class="mb-0 d-flex align-items-center fw-bold">
-                    <i class="bi bi-plus-circle me-2"></i><span data-translate="tasks.addNewTask">Add New Task</span>
-                </h5>
+        <div class="card mb-4">
+            <div class="card-header text-body">
+                <h6 class="mb-0 d-flex align-items-center">
+                    <i class="bi bi-plus-circle me-2"></i>
+                    <span data-translate="tasks.addNewTask">Add New Task</span>
+                </h6>
             </div>
             <div class="card-body">
-                                <form id="addTaskForm">
-                    <div class="row">
-                        <div class="col-md-9">
-                            <input type="text" class="form-control" id="taskInput" data-translate-placeholder="tasks.enterTask" placeholder="Enter your task..." required>
-                        </div>
-
-                        <div class="col-md-3">
-                            <button type="submit" class="page-action-btn btn btn-primary btn-lg w-100 d-flex align-items-center justify-content-center">
-                                <i class="bi bi-plus-lg me-2"></i><span data-translate="tasks.addTask">Add Task</span>
-                            </button>
-                        </div>
-                    </div>
+                <form id="addTaskForm" class="d-flex align-items-center">
+                    <input type="text" id="taskInput" class="form-control me-3"
+                        data-translate-placeholder="tasks.enterTask" placeholder="Enter your task..." required>
+                    <select id="taskPriority" class="form-select me-3 priority-select">
+                        <option value="High">High</option>
+                        <option value="Medium" selected>Medium</option>
+                        <option value="Low">Low</option>
+                    </select>
+                    <button type="submit" class="btn btn-primary enhanced-action-btn">
+                        <i class="bi bi-plus-circle me-1"></i>
+                        <span data-translate="tasks.addTask">Add Task</span>
+                    </button>
                 </form>
             </div>
         </div>
@@ -56,40 +57,47 @@
         <div class="row">
             <!-- Enhanced Quick Actions -->
             <div class="col-lg-4 mb-4">
-                <div class="card shadow-sm border-0 h-100">
-                    <div class="card-header bg-success text-white py-3">
-                        <h6 class="mb-0 d-flex align-items-center fw-bold">
-                            <i class="bi bi-lightning-charge me-2"></i><span data-translate="tasks.quickActions">Quick Actions</span>
+                <div class="quick-actions-card h-100">
+                    <div class="quick-actions-header card-header text-white py-3 px-3">
+                        <h6 class="mb-0 d-flex align-items-center position-relative">
+                            <i class="bi bi-lightning-charge me-2"></i><span data-translate="tasks.quickActions">Quick
+                                Actions</span>
                         </h6>
                     </div>
                     <div class="card-body">
-                        <div class="d-grid gap-3">
-                            <button class="btn btn-outline-primary btn-lg d-flex align-items-center justify-content-center page-action-btn" onclick="window.refreshGoogleTasks()">
+                        <div class="d-grid gap-3 mx-2">
+                            <button
+                                class="enhanced-action-btn btn btn-primary btn-lg d-flex align-items-center justify-content-center mt-3"
+                                onclick="window.refreshGoogleTasks()">
                                 <i class="bi bi-arrow-clockwise me-2"></i>
                                 <span data-translate="tasks.sync">Sync</span>
                             </button>
-                            <button class="btn btn-outline-success btn-lg d-flex align-items-center justify-content-center page-action-btn" onclick="document.getElementById('taskInput').focus()">
+                            <button
+                                class="enhanced-action-btn btn btn-outline-primary btn-lg d-flex align-items-center justify-content-center"
+                                onclick="document.getElementById('taskInput').focus()">
                                 <i class="bi bi-plus-circle me-2"></i>
                                 <span data-translate="tasks.quickAddTask">Quick Add Task</span>
                             </button>
-                            <button class="btn btn-outline-info btn-lg d-flex align-items-center justify-content-center page-action-btn" onclick="markAllCompleted()">
+                            <button
+                                class="enhanced-action-btn btn btn-outline-info btn-lg d-flex align-items-center justify-content-center"
+                                onclick="markAllCompleted()">
                                 <i class="bi bi-check-all me-2"></i>
                                 <span data-translate="tasks.markAllDone">Mark All Done</span>
                             </button>
                         </div>
-                        
+
                         <!-- Enhanced Mini Stats -->
                         <hr class="my-4">
-                        <div class="row text-center">
+                        <div class="row text-center mx-2">
                             <div class="col-6">
-                                <div class="stats-card">
+                                <div class="enhanced-stats-card">
                                     <div class="stats-number text-primary" id="totalTasksCount">0</div>
                                     <div class="stats-label" data-translate="tasks.tasks">Tasks</div>
                                     <small class="text-muted" data-translate="tasks.total">Total</small>
                                 </div>
                             </div>
                             <div class="col-6">
-                                <div class="stats-card">
+                                <div class="enhanced-stats-card">
                                     <div class="stats-number text-success" id="completedTasksCount">0</div>
                                     <div class="stats-label" data-translate="tasks.done">Done</div>
                                     <small class="text-muted" data-translate="tasks.completed">Completed</small>
@@ -102,81 +110,96 @@
 
             <!-- Tasks List -->
             <div class="col-lg-8 mb-4">
-                <div class="card shadow-sm border-0 h-100">
-                    <div class="card-header bg-info text-white py-3 d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0 d-flex align-items-center fw-bold">
+                <div class="enhanced-tasks-card h-100">
+                    <div class="enhanced-tasks-header">
+                        <h6 class="mb-0 d-flex align-items-center position-relative">
                             <i class="bi bi-list-task me-2"></i><span data-translate="tasks.myTasks">My Tasks</span>
-                        </h5>
-                        <span class="badge bg-light text-info fw-bold" id="taskCountBadge">0 <span data-translate="tasks.tasks">tasks</span></span>
+                        </h6>
+                        <span class="badge" id="taskCountBadge">0 <span data-translate="tasks.tasks">tasks</span></span>
                     </div>
-            <div class="card-body">
-                <div id="tasksList">
-                    <!-- Tasks will be dynamically added here -->
-                                        <div class="text-center text-muted py-4">
-                        <i class="bi bi-clipboard-check display-1 mb-3"></i>
-                        <p class="mb-0" data-translate="tasks.noTasksYet">No tasks yet. Add your first task above!</p>
+                    <div class="card-body" id="tasksList">
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-clipboard-check display-1 mb-3"></i>
+                            <p class="mb-0" data-translate="tasks.noTasksYet">No tasks yet. Add your first task above!</p>
+                        </div>
+                        <!-- Example Task Item -->
+                        <div class="task-item">
+                            <span class="task-text">Example Task</span>
+                            <span class="badge priority-badge bg-warning text-dark">High Priority</span>
+                            <span class="badge bg-info">Google</span>
+                            <div class="task-actions">
+                                <button class="btn btn-outline-primary">Edit</button>
+                                <button class="btn btn-outline-danger">Delete</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        
-    </div>
-</div>
-                </div>
-            </div>
-        </div>
-
-        </div>
 
         <!-- Enhanced Google Tasks Integration -->
         <div class="row">
-            <div class="col-2">
-            </div>
-            <div class="col-10">
-                <div class="card shadow-sm border-0">
-                    <div class="card-header bg-info text-white py-3">
+            <div class="col-12">
+                <div class="enhanced-integration-card">
+                    <div class="enhanced-integration-header card-header py-3 px-3">
                         <h6 class="mb-0 d-flex align-items-center">
-                            <i class="bi bi-puzzle me-2"></i><span data-translate="tasks.googleTasksIntegration">Google Tasks Integration</span>
+                            <i class="bi bi-puzzle me-2"></i><span data-translate="tasks.googleTasksIntegration">Google
+                                Tasks
+                                Integration</span>
                         </h6>
                     </div>
                     <div class="card-body text-center py-5">
                         <div class="mb-4">
-                            <i class="bi bi-check-circle display-4 text-success"></i>
+                            <i class="bi bi-check-circle integration-status-icon"></i>
                         </div>
                         <h5 class="mb-3" data-translate="tasks.googleTasksIntegration">Google Tasks Integration</h5>
                         <p class="text-muted mb-4 col-md-8 mx-auto" data-translate="tasks.googleTasksDescription">
-                            Your Google Tasks can be automatically synced when you log in with Google! All your tasks are imported and managed in one place.
+                            Your Google Tasks can be automatically synced when you log in with Google! All your tasks
+                            are
+                            imported and managed in one place.
                         </p>
-                        
+
                         <div class="row justify-content-center">
                             <div class="col-md-8">
-                                <div class="alert alert-info d-flex align-items-center" role="alert" id="tasksIntegrationAlert">
+                                <div class="alert alert-info d-flex align-items-center" role="alert"
+                                    id="tasksIntegrationAlert">
                                     <i class="bi bi-info-circle me-2"></i>
                                     <div id="tasksStatusMessage" data-translate="tasks.checkingConnection">
                                         Checking Google Tasks connection...
                                     </div>
                                 </div>
-                                
+
                                 <div class="d-flex flex-wrap justify-content-center gap-3" id="tasksActions">
-                                    <button class="page-action-btn btn btn-success btn-lg" id="refreshTasksBtn" onclick="window.refreshGoogleTasks()">
+                                    <button class="page-action-btn btn btn-success btn-lg" id="refreshTasksBtn"
+                                        onclick="window.refreshGoogleTasks()">
                                         <i class="bi bi-arrow-clockwise me-2"></i>
                                         <span data-translate="tasks.refreshGoogleTasks">Refresh Google Tasks</span>
                                     </button>
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="mt-4">
                             <small class="text-muted">
                                 <i class="bi bi-shield-check me-1"></i>
-                                <span data-translate="tasks.secureIntegrations">All integrations are secure and encrypted</span>
+                                <span data-translate="tasks.secureIntegrations">All integrations are secure and
+                                    encrypted</span>
                             </small>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+
+
+    </div>
+</div>
+</div>
+
+</div>
+
+
 <!-- SweetAlert2 CSS and JS -->
 <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -225,7 +248,7 @@
                 'tasks.markedTasksCompleted': 'Marked {count} task(s) as completed! 🎉',
                 'tasks.errorMarkingTasks': 'There was an error marking tasks as completed. Please try again.'
             };
-            
+
             let translation = fallbackTranslations[key] || key;
             Object.keys(params).forEach(param => {
                 translation = translation.replace(`{${param}}`, params[param]);
@@ -242,7 +265,7 @@
 
         function getThemeColors() {
             const theme = getSweetAlertTheme();
-            
+
             if (theme === 'dark') {
                 return {
                     popup: '#2d3748',
@@ -273,7 +296,7 @@
         function getThemeAwareSwalConfig(type = 'default') {
             const colors = getThemeColors();
             const theme = getSweetAlertTheme();
-            
+
             const baseConfig = {
                 background: colors.popup,
                 color: colors.text,
@@ -372,11 +395,11 @@
                 });
 
                 const data = await response.json();
-                
+
                 if (!response.ok) {
                     throw new Error(data.message || `HTTP error! status: ${response.status}`);
                 }
-                
+
                 return data;
             } catch (error) {
                 console.error('API request failed:', error);
@@ -394,9 +417,9 @@
                 ${message}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             `;
-            
+
             document.body.appendChild(notification);
-            
+
             // Auto-remove after 5 seconds
             setTimeout(() => {
                 if (notification.parentNode) {
@@ -421,7 +444,7 @@
             try {
                 const data = await apiRequest('/api/google/tasks/status');
                 const statusMessage = document.getElementById('tasksStatusMessage');
-                
+
                 if (data && data.connected === true) {
                     const connectedText = t('tasks.googleTasksConnected');
                     const connectedMessage = t('tasks.googleTasksConnectedMessage');
@@ -446,7 +469,7 @@
             } catch (error) {
                 console.error('Error checking Google Tasks status:', error);
                 const statusMessage = document.getElementById('tasksStatusMessage');
-                
+
                 // If the API endpoint doesn't exist, assume not connected
                 if (error.message.includes('404') || error.message.includes('fetch is not defined')) {
                     console.log('Google Tasks API not available');
@@ -460,7 +483,7 @@
                     statusMessage.parentElement.classList.add('alert-info');
                     return false;
                 }
-                
+
                 const errorText = t('tasks.googleTasksError');
                 statusMessage.innerHTML = `
                     <i class="bi bi-x-circle-fill text-danger me-2"></i>
@@ -480,13 +503,13 @@
                     showNotification(t('syncNotConnected'), 'error');
                     return;
                 }
-                
+
                 showNotification(t('syncingFromGoogle'), 'info');
-                
+
                 const data = await apiRequest('/api/google/tasks/sync', {
                     method: 'POST'
                 });
-                
+
                 if (data && data.syncedCount !== undefined) {
                     showNotification(t('syncSuccessful', { count: data.syncedCount }), 'success');
                     loadTasks(); // Reload all tasks to show synced ones
@@ -496,7 +519,7 @@
                 }
             } catch (error) {
                 console.error('Error syncing from Google Tasks:', error);
-                
+
                 // Provide more specific error messages using translations
                 let errorMessage;
                 if (error.message.includes('fetch is not defined')) {
@@ -529,7 +552,7 @@
                 } else {
                     errorMessage = t('syncUnknownError');
                 }
-                
+
                 showNotification(errorMessage, 'error');
             }
         }
@@ -540,14 +563,14 @@
                 showNotification('Google Tasks integration not found. Please connect your Google account first.', 'error');
                 return;
             }
-            
+
             try {
                 showNotification('Pushing task to Google Tasks...', 'info');
                 await apiRequest('/api/google/tasks/push', {
                     method: 'POST',
-                    body: JSON.stringify({ taskId: parseInt(taskId) })
+                    body: JSON.stringify({ taskId: taskId })
                 });
-                
+
                 showNotification('Task successfully pushed to Google Tasks!', 'success');
                 loadTasks(); // Reload to update task source
             } catch (error) {
@@ -555,33 +578,53 @@
             }
         }
 
-        function renderTasks() {
+        function getPriorityBadgeClass(priority) {
+            switch (priority) {
+                case 'High':
+                    return 'bg-danger';
+                case 'Medium':
+                    return 'bg-warning';
+                case 'Low':
+                    return 'bg-success';
+                default:
+                    return 'bg-secondary';
+            }
+        }
+
+        function renderTasks(taskList = tasks) {
             const tasksList = document.getElementById('tasksList');
-            
+            if (!tasksList) return;
+
             // Update stats
-            const totalTasks = tasks.length;
-            const completedTasks = tasks.filter(t => t.completed).length;
-            
-            document.getElementById('totalTasksCount').textContent = totalTasks;
-            document.getElementById('completedTasksCount').textContent = completedTasks;
-            
+            const totalTasks = taskList.length;
+            const completedTasks = taskList.filter(t => t.completed).length;
+
+            const totalTasksCountEl = document.getElementById('totalTasksCount');
+            const completedTasksCountEl = document.getElementById('completedTasksCount');
+            const taskCountBadgeEl = document.getElementById('taskCountBadge');
+
+            if (totalTasksCountEl) totalTasksCountEl.textContent = totalTasks;
+            if (completedTasksCountEl) completedTasksCountEl.textContent = completedTasks;
+
             // Update task count badge with translation
-            const tasksText = (typeof LanguageManager !== 'undefined' && LanguageManager.isLoaded) 
-                ? LanguageManager.t('tasks.tasks') 
-                : 'tasks';
-            document.getElementById('taskCountBadge').innerHTML = `${totalTasks} <span data-translate="tasks.tasks">${tasksText}</span>`;
-            
-            if (tasks.length === 0) {
-                const noTasksText = (typeof LanguageManager !== 'undefined' && LanguageManager.isLoaded) 
-                    ? LanguageManager.t('tasks.noTasks') 
+            if (taskCountBadgeEl) {
+                const tasksText = (typeof LanguageManager !== 'undefined' && LanguageManager.isLoaded)
+                    ? LanguageManager.t('tasks.tasks')
+                    : 'tasks';
+                taskCountBadgeEl.innerHTML = `${totalTasks} <span data-translate="tasks.tasks">${tasksText}</span>`;
+            }
+
+            if (taskList.length === 0) {
+                const noTasksText = (typeof LanguageManager !== 'undefined' && LanguageManager.isLoaded)
+                    ? LanguageManager.t('tasks.noTasks')
                     : 'No tasks yet';
-                const tasksWillAppearText = (typeof LanguageManager !== 'undefined' && LanguageManager.isLoaded) 
-                    ? LanguageManager.t('tasks.tasksWillAppear') 
+                const tasksWillAppearText = (typeof LanguageManager !== 'undefined' && LanguageManager.isLoaded)
+                    ? LanguageManager.t('tasks.tasksWillAppear')
                     : 'Your tasks will appear here as you add them';
-                const syncFromGoogleText = (typeof LanguageManager !== 'undefined' && LanguageManager.isLoaded) 
-                    ? LanguageManager.t('tasks.syncFromGoogle') 
+                const syncFromGoogleText = (typeof LanguageManager !== 'undefined' && LanguageManager.isLoaded)
+                    ? LanguageManager.t('tasks.syncFromGoogle')
                     : 'Sync from Google Tasks';
-                    
+
                 tasksList.innerHTML = `
                     <div class="text-center text-muted py-5">
                         <div class="mb-4">
@@ -599,7 +642,7 @@
 
             // Sort tasks: incomplete tasks first, then completed tasks
             // Within each group, maintain original order (most recent first)
-            const sortedTasks = [...tasks].sort((a, b) => {
+            const sortedTasks = [...taskList].sort((a, b) => {
                 // If completion status is different, put incomplete first
                 if (a.completed !== b.completed) {
                     return a.completed ? 1 : -1;
@@ -609,36 +652,51 @@
                 return 0;
             });
 
-            const createdText = (typeof LanguageManager !== 'undefined' && LanguageManager.isLoaded) 
-                ? LanguageManager.t('tasks.created') 
+            const createdText = (typeof LanguageManager !== 'undefined' && LanguageManager.isLoaded)
+                ? LanguageManager.t('tasks.created')
                 : 'Created';
-            const editTaskText = (typeof LanguageManager !== 'undefined' && LanguageManager.isLoaded) 
-                ? LanguageManager.t('tasks.editTask') 
+            const editTaskText = (typeof LanguageManager !== 'undefined' && LanguageManager.isLoaded)
+                ? LanguageManager.t('tasks.editTask')
                 : 'Edit Task';
-            const deleteTaskText = (typeof LanguageManager !== 'undefined' && LanguageManager.isLoaded) 
-                ? LanguageManager.t('tasks.deleteTask') 
+            const deleteTaskText = (typeof LanguageManager !== 'undefined' && LanguageManager.isLoaded)
+                ? LanguageManager.t('tasks.deleteTask')
                 : 'Delete Task';
 
             tasksList.innerHTML = sortedTasks.map(task => `
-                <div class="task-item border-bottom py-3 ${task.completed ? 'task-completed' : ''}" data-task-id="${task.id}">
-                    <div class="d-flex align-items-center">
-                        <div class="form-check me-3">
-                            <input class="form-check-input task-checkbox" type="checkbox" ${task.completed ? 'checked' : ''} data-task-id="${task.id}">
-                        </div>
-                        <div class="flex-grow-1">
-                            <span class="task-text ${task.completed ? 'text-decoration-line-through text-muted' : ''}">${escapeHtml(task.text)}</span>
-                            <div class="d-flex align-items-center gap-2 mt-1 flex-wrap">
-                                <small class="text-muted">${createdText}: ${new Date(task.created_at).toLocaleDateString()}</small>
-                                <span class="source-badge badge ${getSourceBadgeClass(task.source)}">${getSourceDisplayName(task.source)}</span>
+                <div class="task-item border-bottom py-3 ${task.completed ? 'task-completed' : ''}" data-task-id="${task._id}">
+                    <div class="d-flex row align-items-center">
+                        <div class="col-1">
+                            <div class="form-check me-3">
+                                <input class="form-check-input task-checkbox" type="checkbox" ${task.completed ? 'checked' : ''} data-task-id="${task._id}">
                             </div>
                         </div>
-                        <div class="ms-auto d-flex gap-1">
-                            <button class="btn btn-sm btn-outline-warning task-edit" data-task-id="${task.id}" title="${editTaskText}">
-                                <i class="bi bi-pen"></i>
-                            </button>
-                            <button class="btn btn-sm btn-outline-danger delete-task" data-task-id="${task.id}" title="${deleteTaskText}">
-                                <i class="bi bi-trash"></i>
-                            </button>
+                        <div class="col-7">
+                            <div class="flex-grow-1">
+                                <span class="task-text ${task.completed ? 'text-decoration-line-through text-muted' : ''}">${escapeHtml(task.text)}</span>
+                                <div class="d-flex align-items-center gap-2 mt-1 flex-wrap">
+                                    <small class="text-muted">${createdText}: ${new Date(task.created_at).toLocaleDateString()}</small>
+                                    <span class="source-badge badge ${getSourceBadgeClass(task.source)}">${getSourceDisplayName(task.source)}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-2 ">
+                            <div class="d-flex align-items-center gap-2 ms-auto">
+                                <div>
+                                    <span class="badge ${getPriorityBadgeClass(task.priority)}">${task.priority}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-2">
+                            <div class="d-flex align-items-center gap-2 ms-auto">
+                                <div class="ms-auto d-flex gap-1">
+                                    <button class="btn btn-sm btn-outline-warning task-edit" data-task-id="${task._id}" title="${editTaskText}">
+                                        <i class="bi bi-pen"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger delete-task" data-task-id="${task._id}" title="${deleteTaskText}">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -687,16 +745,16 @@
         }
 
         // Add new task
-        async function addTask(taskText, source = 'user') {
+        async function addTask(taskText, source = 'user', priority = 'Medium') {
             try {
                 const data = await apiRequest('/api/tasks', {
                     method: 'POST',
-                    body: JSON.stringify({ text: taskText, source: source })
+                    body: JSON.stringify({ text: taskText, source: source, priority: priority })
                 });
-                
+
                 tasks.unshift(data.task); // Add to beginning of array
                 renderTasks();
-                
+
                 // Show success with SweetAlert2
                 const successConfig = getThemeAwareSwalConfig('success');
                 Swal.fire({
@@ -724,22 +782,22 @@
         // Toggle task completion
         async function toggleTask(taskId) {
             try {
-                const task = tasks.find(t => t.id === parseInt(taskId));
+                const task = tasks.find(t => t._id === taskId);
                 if (!task) return;
 
                 const data = await apiRequest(`/api/tasks/${taskId}`, {
                     method: 'PUT',
                     body: JSON.stringify({ completed: !task.completed })
                 });
-                
+
                 // Update local task
-                const taskIndex = tasks.findIndex(t => t.id === parseInt(taskId));
+                const taskIndex = tasks.findIndex(t => t._id === taskId);
                 if (taskIndex !== -1) {
                     tasks[taskIndex] = data.task;
                 }
-                
+
                 renderTasks();
-                
+
                 // Show toast notification
                 const successConfig = getThemeAwareSwalConfig('success');
                 Swal.fire({
@@ -766,13 +824,24 @@
 
         // Delete task
         async function deleteTask(taskId) {
+            if (!taskId) {
+                console.error('Error: taskId is undefined');
+                return;
+            }
+
             try {
+                const task = tasks.find(t => t._id === taskId);
                 await apiRequest(`/api/tasks/${taskId}`, {
                     method: 'DELETE'
                 });
-                
-                tasks = tasks.filter(t => t.id !== parseInt(taskId));
+
+                tasks = tasks.filter(t => t._id !== taskId);
                 renderTasks();
+
+                if (task.source === 'google_tasks') {
+                    showNotification('Task deleted from Google Tasks!', 'info');
+                }
+
                 // Note: Success message is shown by SweetAlert2 in the event listener
             } catch (error) {
                 console.error('Error deleting task:', error);
@@ -793,15 +862,15 @@
                     method: 'PUT',
                     body: JSON.stringify({ text: newText })
                 });
-                
+
                 // Update local task
-                const taskIndex = tasks.findIndex(t => t.id === parseInt(taskId));
+                const taskIndex = tasks.findIndex(t => t._id === taskId);
                 if (taskIndex !== -1) {
                     tasks[taskIndex] = data.task;
                 }
-                
+
                 renderTasks();
-                
+
                 // Show toast notification
                 const successConfig = getThemeAwareSwalConfig('success');
                 Swal.fire({
@@ -814,6 +883,10 @@
                     toast: true,
                     ...successConfig
                 });
+
+                if (data.task.source === 'google_tasks') {
+                    showNotification('Task updated in Google Tasks!', 'info');
+                }
             } catch (error) {
                 console.error('Error editing task:', error);
                 const errorConfig = getThemeAwareSwalConfig('error');
@@ -827,7 +900,7 @@
         }
 
         function startEditTask(taskId) {
-            const task = tasks.find(t => t.id === parseInt(taskId));
+            const task = tasks.find(t => t._id === taskId);
             if (!task) return;
 
             const taskItem = document.querySelector(`[data-task-id="${taskId}"]`);
@@ -844,12 +917,12 @@
             // Create save and cancel buttons
             const buttonContainer = document.createElement('div');
             buttonContainer.className = 'mt-2';
-            
+
             const saveBtn = document.createElement('button');
             saveBtn.className = 'btn btn-sm btn-success me-2';
             const saveText = t('tasks.save');
             saveBtn.innerHTML = `<i class="bi bi-check-lg"></i> ${saveText}`;
-            
+
             const cancelBtn = document.createElement('button');
             cancelBtn.className = 'btn btn-sm btn-secondary';
             const cancelText = t('tasks.cancel');
@@ -861,7 +934,7 @@
             // Replace task text with edit input
             const taskTextContainer = taskTextElement.parentElement;
             const originalContent = taskTextContainer.innerHTML;
-            
+
             taskTextContainer.innerHTML = '';
             taskTextContainer.appendChild(editInput);
             taskTextContainer.appendChild(buttonContainer);
@@ -889,9 +962,9 @@
             // Event listeners
             saveBtn.addEventListener('click', saveEdit);
             cancelBtn.addEventListener('click', cancelEdit);
-            
+
             // Save on Enter, cancel on Escape
-            editInput.addEventListener('keydown', function(e) {
+            editInput.addEventListener('keydown', function (e) {
                 if (e.key === 'Enter') {
                     e.preventDefault();
                     saveEdit();
@@ -902,7 +975,7 @@
             });
 
             // Cancel if clicking outside (optional)
-            editInput.addEventListener('blur', function() {
+            editInput.addEventListener('blur', function () {
                 // Small delay to allow button clicks to register
                 setTimeout(() => {
                     if (document.activeElement !== saveBtn && document.activeElement !== cancelBtn) {
@@ -913,32 +986,39 @@
         }
 
         // Event listeners
-        document.getElementById('addTaskForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const taskInput = document.getElementById('taskInput');
-            const taskSource = document.getElementById('taskSource');
-            const taskText = taskInput.value.trim();
-            const source = taskSource ? taskSource.value : 'user';
-            
-            if (taskText) {
-                addTask(taskText, source);
-                taskInput.value = '';
-                if (taskSource) taskSource.value = 'user'; // Reset to default
-            }
-        });
+        const addTaskForm = document.getElementById('addTaskForm');
+        if (addTaskForm) {
+            addTaskForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+                const taskInput = document.getElementById('taskInput');
+                const taskPriority = document.getElementById('taskPriority');
+                const taskText = taskInput.value.trim();
+                const priority = taskPriority ? taskPriority.value : 'Medium';
 
-        document.getElementById('tasksList').addEventListener('click', function(e) {
-            const taskId = e.target.dataset.taskId;
-            
+                if (taskText) {
+                    addTask(taskText, 'user', priority);
+                    taskInput.value = '';
+                    if (taskPriority) taskPriority.value = 'Medium'; // Reset to default
+                }
+            });
+        }
+
+        const tasksList = document.getElementById('tasksList');
+        if (tasksList) {
+            tasksList.addEventListener('click', function (e) {
+            // Find the closest element with data-task-id attribute
+            const taskElement = e.target.closest('[data-task-id]');
+            const taskId = taskElement ? taskElement.dataset.taskId : null;
+
             if (e.target.classList.contains('task-checkbox')) {
                 toggleTask(taskId);
             } else if (e.target.classList.contains('delete-task') || e.target.parentElement.classList.contains('delete-task')) {
                 // Use SweetAlert2 for delete confirmation
-                const task = tasks.find(t => t.id === parseInt(taskId));
+                const task = tasks.find(t => t._id === taskId);
                 const taskText = task ? task.text : 'this task';
-                
+
                 const themeConfig = getThemeAwareSwalConfig('warning');
-                
+
                 Swal.fire({
                     title: t('tasks.deleteTaskConfirm'),
                     text: t('tasks.deleteTaskMessage', { taskName: taskText }),
@@ -949,8 +1029,9 @@
                     ...themeConfig
                 }).then((result) => {
                     if (result.isConfirmed) {
+                        console.log('Confirmed deletion for task ID:', taskId);
                         deleteTask(taskId);
-                        
+
                         const successConfig = getThemeAwareSwalConfig('success');
                         Swal.fire({
                             title: t('tasks.deleted'),
@@ -968,6 +1049,7 @@
                 startEditTask(taskId);
             }
         });
+        }
 
         // Function to apply translations to all elements
         function applyTranslations() {
@@ -978,7 +1060,7 @@
                     element.textContent = LanguageManager.t(key);
                 }
             });
-            
+
             // Apply translations to placeholders
             document.querySelectorAll('[data-translate-placeholder]').forEach(element => {
                 const key = element.getAttribute('data-translate-placeholder');
@@ -986,7 +1068,7 @@
                     element.placeholder = LanguageManager.t(key);
                 }
             });
-            
+
             // Re-render tasks to apply translations to dynamic content
             if (tasks.length > 0) {
                 renderTasks();
@@ -995,7 +1077,7 @@
 
         // Initial load
         loadTasks();
-        
+
         // Apply translations when LanguageManager is ready
         if (typeof LanguageManager !== 'undefined') {
             if (LanguageManager.isLoaded) {
@@ -1012,38 +1094,39 @@
                 checkTranslations();
             }
         }
-        
+
         // Global functions (accessible from onclick handlers)
-        window.refreshGoogleTasks = async function() {
+        window.refreshGoogleTasks = async function () {
             const btn = document.getElementById('refreshTasksBtn');
             const originalText = btn ? btn.innerHTML : '';
-            
+
             if (btn) {
                 btn.disabled = true;
-                btn.innerHTML = '<i class="bi bi-arrow-clockwise me-2 spinner-border spinner-border-sm"></i>Syncing...';
+                btn.innerHTML = '<i =class"bi bi-arrow-clockwise me-2 spinner-border spinner-border-sm"></i>Syncing...';
             }
-            
+
             try {
                 showNotification('Refreshing Google Tasks...', 'info');
-                
+
                 // First check if Google Tasks integration is available
                 const isConnected = await checkGoogleTasksStatus();
-                
+
                 if (!isConnected) {
                     showNotification('Google Tasks not connected. Please set up Google integration first.', 'warning');
                     return;
                 }
-                
+
                 // Try to sync tasks
                 await syncFromGoogleTasks();
-                
+
                 // Update status display
                 await checkGoogleTasksIntegrationStatus();
-                
+
                 showNotification('Google Tasks synced successfully!', 'success');
+                window.location.reload();
             } catch (error) {
                 console.error('Error refreshing Google Tasks:', error);
-                
+
                 // Show appropriate error message
                 if (error.message.includes('404')) {
                     showNotification('Google Tasks API not yet implemented. This feature is coming soon!', 'info');
@@ -1059,7 +1142,7 @@
                 }
             }
         };
-        
+
         // Check Google Tasks integration status on page load
         checkGoogleTasksIntegrationStatus();
 
@@ -1070,7 +1153,7 @@
             } catch (error) {
                 console.error('Error checking Google Tasks integration status:', error);
                 const statusMessage = document.getElementById('tasksStatusMessage');
-                
+
                 statusMessage.innerHTML = `
                     <i class="bi bi-x-circle-fill text-danger me-2"></i>
                     <strong>Error</strong> - Unable to check Google Tasks connection status.
@@ -1092,7 +1175,7 @@
                 });
                 return;
             }
-            
+
             const incompleteTasks = tasks.filter(t => !t.completed);
             if (incompleteTasks.length === 0) {
                 const successConfig = getThemeAwareSwalConfig('success');
@@ -1104,7 +1187,7 @@
                 });
                 return;
             }
-            
+
             // Use SweetAlert2 for mark all confirmation
             const questionConfig = getThemeAwareSwalConfig('question');
             Swal.fire({
@@ -1132,22 +1215,22 @@
                             },
                             ...loadingConfig
                         });
-                        
+
                         for (const task of incompleteTasks) {
-                            await apiRequest(`/api/tasks/${task.id}`, {
+                            await apiRequest(`/api/tasks/${task._id}`, {
                                 method: 'PUT',
                                 body: JSON.stringify({ completed: true })
                             });
-                            
+
                             // Update local task
-                            const taskIndex = tasks.findIndex(t => t.id === task.id);
+                            const taskIndex = tasks.findIndex(t => t._id === task._id);
                             if (taskIndex !== -1) {
                                 tasks[taskIndex].completed = true;
                             }
                         }
-                        
+
                         renderTasks();
-                        
+
                         // Show success message
                         const successConfig = getThemeAwareSwalConfig('success');
                         Swal.fire({
@@ -1175,31 +1258,31 @@
         // Make functions globally available
         window.markAllCompleted = markAllCompleted;
         window.syncFromGoogleTasks = syncFromGoogleTasks;
-        
+
         // Debug function to test button
-        window.testButton = function() {
+        window.testButton = function () {
             console.log('Button test clicked!');
             showNotification('Button is working perfectly!', 'success');
         };
-        
+
         // Temporary function to simulate connected state (for testing)
-        window.simulateConnectedState = function() {
+        window.simulateConnectedState = function () {
             const statusMessage = document.getElementById('tasksStatusMessage');
-            
+
             statusMessage.innerHTML = `
                 <i class="bi bi-check-circle-fill text-success me-2"></i>
                 <strong>Google Tasks Connected!</strong> Your tasks are automatically synced.
             `;
             statusMessage.parentElement.classList.remove('alert-info', 'alert-warning', 'alert-danger');
             statusMessage.parentElement.classList.add('alert-success');
-            
+
             showNotification('Simulated connected state - this shows how it will look when the backend is ready!', 'info');
         };
-        
+
         // Fallback function for when API isn't ready
-        window.mockGoogleTasksSync = function() {
+        window.mockGoogleTasksSync = function () {
             showNotification('Google Tasks sync simulation - this will connect to real Google Tasks when the backend is ready!', 'info');
-            
+
             // Simulate adding a test task
             const testTask = {
                 id: Date.now(),
@@ -1208,14 +1291,14 @@
                 completed: false,
                 created_at: new Date().toISOString()
             };
-            
+
             tasks.unshift(testTask);
             renderTasks();
             showNotification('Test Google Task added! Real sync coming soon.', 'success');
         };
-        
+
         // Add click event listener as backup
-        document.addEventListener('click', function(e) {
+        document.addEventListener('click', function (e) {
             if (e.target && e.target.id === 'refreshTasksBtn') {
                 e.preventDefault();
                 console.log('Refresh button clicked via event listener');
@@ -1224,10 +1307,10 @@
         });
 
         // Test function to demonstrate theme-aware alerts (for development)
-        window.testThemeAwareAlerts = function() {
+        window.testThemeAwareAlerts = function () {
             const currentTheme = getSweetAlertTheme();
             console.log('Current theme:', currentTheme);
-            
+
             const testConfig = getThemeAwareSwalConfig('info');
             Swal.fire({
                 title: t('tasks.themeTest'),
@@ -1238,8 +1321,8 @@
         };
 
         // Theme observer to update SweetAlert2 when theme changes
-        const observer = new MutationObserver(function(mutations) {
-            mutations.forEach(function(mutation) {
+        const observer = new MutationObserver(function (mutations) {
+            mutations.forEach(function (mutation) {
                 if (mutation.type === 'attributes' && mutation.attributeName === 'data-bs-theme') {
                     // Theme changed - SweetAlert2 will automatically pick up the new theme on next use
                     console.log('Theme changed to:', document.documentElement.getAttribute('data-bs-theme'));
@@ -1255,3 +1338,4 @@
     });
 </script>
 
+<!-- Removed inline styles for tasks list. Styles are now consolidated in the external CSS file. -->
