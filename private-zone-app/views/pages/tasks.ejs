@@ -670,7 +670,7 @@
                                 <input class="form-check-input task-checkbox" type="checkbox" ${task.completed ? 'checked' : ''} data-task-id="${task._id}">
                             </div>
                         </div>
-                        <div class="col-8">
+                        <div class="col-7">
                             <div class="flex-grow-1">
                                 <span class="task-text ${task.completed ? 'text-decoration-line-through text-muted' : ''}">${escapeHtml(task.text)}</span>
                                 <div class="d-flex align-items-center gap-2 mt-1 flex-wrap">
@@ -679,11 +679,15 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-3">
-                            <div class="d-flex align-items-center gap-2">
+                        <div class="col-2 ">
+                            <div class="d-flex align-items-center gap-2 ms-auto">
                                 <div>
                                     <span class="badge ${getPriorityBadgeClass(task.priority)}">${task.priority}</span>
                                 </div>
+                            </div>
+                        </div>
+                        <div class="col-2">
+                            <div class="d-flex align-items-center gap-2 ms-auto">
                                 <div class="ms-auto d-flex gap-1">
                                     <button class="btn btn-sm btn-outline-warning task-edit" data-task-id="${task._id}" title="${editTaskText}">
                                         <i class="bi bi-pen"></i>
@@ -824,14 +828,20 @@
                 console.error('Error: taskId is undefined');
                 return;
             }
-            
+
             try {
+                const task = tasks.find(t => t._id === taskId);
                 await apiRequest(`/api/tasks/${taskId}`, {
                     method: 'DELETE'
                 });
 
                 tasks = tasks.filter(t => t._id !== taskId);
                 renderTasks();
+
+                if (task.source === 'google_tasks') {
+                    showNotification('Task deleted from Google Tasks!', 'info');
+                }
+
                 // Note: Success message is shown by SweetAlert2 in the event listener
             } catch (error) {
                 console.error('Error deleting task:', error);
@@ -873,6 +883,10 @@
                     toast: true,
                     ...successConfig
                 });
+
+                if (data.task.source === 'google_tasks') {
+                    showNotification('Task updated in Google Tasks!', 'info');
+                }
             } catch (error) {
                 console.error('Error editing task:', error);
                 const errorConfig = getThemeAwareSwalConfig('error');
