@@ -1,27 +1,22 @@
-<%- include('../components/header.ejs') %>
-
-    <!-- SweetAlert2 CSS and JS -->
-    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-    <div class="main-content">
+<div class="main-content">
         <div class="container mt-5">
+
             <!-- Enhanced header with better styling -->
-            <div class="page-header">
+            <div class="enhanced-page-header">
                 <div class="d-flex justify-content-between align-items-center">
                     <div class="d-flex align-items-center">
                         <div class="me-3">
-                            <div class="bg-primary bg-opacity-10 rounded-circle p-3">
-                                <i class="bi bi-envelope text-primary fs-4"></i>
+                            <div class="page-header-icon">
+                                <i class="bi bi-calendar-event"></i>
                             </div>
                         </div>
                         <div>
-                            <h1 class="mb-1" data-translate="email.title">Email Management</h1>
+                            <h1 class="mb-1" data-translate="email.title">Emails</h1>
                             <p class="text-muted mb-0">Manage your emails efficiently</p>
                         </div>
                     </div>
                     <div class="text-end">
-                        <div class="current-time-card card border-0 shadow-sm">
+                        <div class="enhanced-time-card card border-0">
                             <div class="card-body py-2 px-3">
                                 <small class="text-muted d-block">Current Time</small>
                                 <strong class="text-body">
@@ -122,7 +117,7 @@
                 <!-- Email List -->
                 <div class="card shadow-sm border-0">
                     <div class="card-body p-0">
-                        <div id="emailList" class="list-group list-group-flush">
+                        <div id="emailList">
                             <!-- Loading state -->
                             <div id="emailLoading" class="text-center py-5">
                                 <div class="spinner-border text-primary" role="status">
@@ -135,10 +130,7 @@
                             <div id="emailEmpty" class="text-center py-5" style="display: none;">
                                 <i class="bi bi-inbox display-1 text-muted"></i>
                                 <h5 class="mt-3 text-muted" data-translate="email.noEmails">No emails found</h5>
-                                <p class="text-muted" data-translate="email.noEmailsDescription">Your inbox is empty or
-                                    no
-                                    emails match
-                                    your search criteria.</p>
+                                <p class="text-muted" data-translate="email.noEmailsDescription">Your inbox is empty or no emails match your search criteria.</p>
                             </div>
                         </div>
                     </div>
@@ -368,6 +360,26 @@
         </div>
 
         <script>
+            // Helper function to safely use Swal
+            function safeSwal(config) {
+                if (typeof Swal !== 'undefined') {
+                    return Swal.fire(config);
+                } else {
+                    console.log('SweetAlert2 not available, using fallback');
+                    // Fallback for basic operations
+                    if (config.text) {
+                        if (config.icon === 'error') {
+                            alert('Error: ' + config.text);
+                        } else if (config.showCancelButton) {
+                            return Promise.resolve({ isConfirmed: confirm(config.text) });
+                        } else {
+                            alert(config.text);
+                        }
+                    }
+                    return Promise.resolve({ isConfirmed: true });
+                }
+            }
+
             // Theme-aware SweetAlert2 configuration
             function getSweetAlertTheme() {
                 const htmlElement = document.documentElement;
@@ -427,15 +439,16 @@
 
             // Initialize email page
             document.addEventListener('DOMContentLoaded', function () {
+                console.log('Email page initializing...');
                 updateCurrentTime();
                 setInterval(updateCurrentTime, 60000);
-                syncGmailEmails();
-                setupAutoSync(currentAutoSyncTime); // Setup auto sync with default interval
-                loadEmails();
-                setInterval(loadEmails, 300000); // Refresh emails every 5 minutes
+                loadEmails(); // Load emails first
                 checkGmailStatus();
+                setupAutoSync(currentAutoSyncTime); // Setup auto sync with default interval
+                setInterval(loadEmails, 300000); // Refresh emails every 5 minutes
                 setupAutoSyncDropdown(); // Setup dropdown functionality
                 loadAutoSyncPreference(); // Load saved auto sync preference
+                console.log('Email page initialized successfully');
             });
 
             function updateCurrentTime() {
@@ -451,6 +464,11 @@
             function setupAutoSyncDropdown() {
                 const dropdownItems = document.querySelectorAll('#emailActionsDropdown + .dropdown-menu .dropdown-item');
                 const dropdownButton = document.getElementById('emailActionsDropdown');
+                
+                if (!dropdownButton) {
+                    console.log('Auto sync dropdown not found, skipping setup');
+                    return;
+                }
                 
                 dropdownItems.forEach(item => {
                     item.addEventListener('click', function(e) {
@@ -673,13 +691,14 @@
             }
 
             async function loadEmails(filter = '', search = '') {
+                console.log('Loading emails with filter:', filter, 'search:', search);
                 const emailLoading = document.getElementById('emailLoading');
                 const emailEmpty = document.getElementById('emailEmpty');
                 const emailCount = document.getElementById('emailCount');
 
                 // Show loading
-                emailLoading.style.display = 'block';
-                emailEmpty.style.display = 'none';
+                if (emailLoading) emailLoading.style.display = 'block';
+                if (emailEmpty) emailEmpty.style.display = 'none';
 
                 try {
                     const params = new URLSearchParams();
@@ -688,11 +707,13 @@
 
                     const response = await fetch(`/api/emails?${params.toString()}`);
                     const data = await response.json();
+                    console.log('Loaded emails response:', data);
 
                     if (data.success) {
                         emails = data.emails;
+                        console.log('Emails loaded:', emails.length);
                         displayEmails(emails);
-                        emailCount.textContent = emails.length;
+                        if (emailCount) emailCount.textContent = emails.length;
                     } else {
                         throw new Error(data.message || 'Failed to load emails');
                     }
@@ -700,69 +721,128 @@
                     console.error('Error loading emails:', error);
                     showError('Failed to load emails. Please try again.');
                 } finally {
-                    emailLoading.style.display = 'none';
+                    if (emailLoading) emailLoading.style.display = 'none';
                 }
             }
 
             function displayEmails(emailsToShow) {
+                console.log('Displaying emails:', emailsToShow.length);
                 const emailList = document.getElementById('emailList');
                 const emailEmpty = document.getElementById('emailEmpty');
                 const emailLoading = document.getElementById('emailLoading');
+
+                if (!emailList) {
+                    console.error('Email list element not found!');
+                    return;
+                }
 
                 // Clear existing emails (except loading and empty states)
                 const existingEmails = emailList.querySelectorAll('.email-item');
                 existingEmails.forEach(email => email.remove());
 
                 if (emailsToShow.length === 0) {
-                    emailEmpty.style.display = 'block';
-                    emailLoading.style.display = 'none';
+                    if (emailEmpty) emailEmpty.style.display = 'block';
+                    if (emailLoading) emailLoading.style.display = 'none';
                     return;
                 }
 
-                emailEmpty.style.display = 'none';
-                emailLoading.style.display = 'none';
+                if (emailEmpty) emailEmpty.style.display = 'none';
+                if (emailLoading) emailLoading.style.display = 'none';
 
                 emailsToShow.forEach(email => {
-                    const emailItem = createEmailItem(email);
+                    const emailItem = document.createElement('div');
+                    emailItem.className = `email-item ${!email.is_read ? 'email-unread' : 'email-read'}`;
+                    emailItem.dataset.emailId = email._id || email.id; // Use MongoDB _id or fallback to id
+                    
+                    const emailDate = email.received_at ? new Date(email.received_at) : new Date(email.created_at);
+                    const timeAgo = getTimeAgo(emailDate);
+
+                    emailItem.innerHTML = `
+                        <div class="row align-items-center">
+                            <div class="col-1 text-center">
+                                <div class="email-avatar">
+                                    <div class="avatar-circle">
+                                        <span class="avatar-text">${email.sender_email.charAt(0).toUpperCase()}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-8">
+                                <div class="email-content">
+                                    <div class="d-flex align-items-center mb-1">
+                                        <strong class="email-sender me-2 ${!email.is_read ? 'text-primary' : 'text-body'}">${escapeHtml(email.sender_email)}</strong>
+                                        <div class="email-badges">
+                                            ${email.is_important ? '<span class="badge bg-warning text-dark me-1"><i class="bi bi-star-fill me-1"></i>Important</span>' : ''}
+                                            ${!email.is_read ? '<span class="badge bg-primary me-1"><i class="bi bi-envelope me-1"></i>New</span>' : ''}
+                                            ${email.gmail_message_id ? '<span class="badge bg-info me-1"><i class="bi bi-google me-1"></i>Gmail</span>' : '<span class="badge bg-secondary me-1"><i class="bi bi-house me-1"></i>Local</span>'}
+                                        </div>
+                                    </div>
+                                    <h6 class="email-subject mb-1 ${!email.is_read ? 'fw-bold' : ''}">${escapeHtml(email.subject)}</h6>
+                                    <p class="email-preview mb-0 text-muted">${getEmailPreview(email.body, 120)}</p>
+                                </div>
+                            </div>
+                            <div class="col-2 text-center">
+                                <div class="email-time">
+                                    <small class="text-muted d-block">${timeAgo}</small>
+                                    <small class="text-muted">${emailDate.toLocaleDateString()}</small>
+                                </div>
+                            </div>
+                            <div class="col-1">
+                                <div class="email-actions">
+                                    <div class="btn-group-vertical btn-group-sm">
+                                        <button class="btn btn-outline-warning btn-sm mb-1 star-btn" data-email-id="${email._id || email.id}" data-is-important="${email.is_important}" title="${email.is_important ? 'Remove from important' : 'Mark as important'}">
+                                            <i class="bi bi-star${email.is_important ? '-fill' : ''}"></i>
+                                        </button>
+                                        <button class="btn btn-outline-danger btn-sm delete-btn" data-email-id="${email._id || email.id}" title="Delete">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+
+                    // Add click event for the email item
+                    emailItem.addEventListener('click', function(e) {
+                        console.log('Email item clicked', e.target);
+                        // Don't trigger if clicking on buttons
+                        if (!e.target.closest('.email-actions')) {
+                            const emailId = this.dataset.emailId; // Get email ID from dataset (MongoDB uses strings)
+                            console.log('Opening email with ID:', emailId, typeof emailId);
+                            if (emailId && emailId !== 'undefined') {
+                                viewEmail(emailId); // Don't parse as int, keep as string for MongoDB
+                            } else {
+                                console.error('Email ID not found or undefined');
+                            }
+                        } else {
+                            console.log('Clicked on email actions, not opening email');
+                        }
+                    });
+
+                    // Add event listeners for action buttons
+                    const starBtn = emailItem.querySelector('.star-btn');
+                    const deleteBtn = emailItem.querySelector('.delete-btn');
+
+                    if (starBtn) {
+                        starBtn.addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            console.log('Star button clicked');
+                            const emailId = this.dataset.emailId; // Don't parse as int since MongoDB uses strings
+                            const isImportant = this.dataset.isImportant === 'true';
+                            toggleImportant(emailId, !isImportant);
+                        });
+                    }
+
+                    if (deleteBtn) {
+                        deleteBtn.addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            console.log('Delete button clicked');
+                            const emailId = this.dataset.emailId; // Don't parse as int since MongoDB uses strings
+                            deleteEmailById(emailId);
+                        });
+                    }
+
                     emailList.insertBefore(emailItem, emailLoading);
                 });
-            }
-
-            function createEmailItem(email) {
-                const emailItem = document.createElement('div');
-                emailItem.className = `list-group-item list-group-item-action email-item ${!email.is_read ? 'border-start border-primary border-3' : ''}`;
-                emailItem.onclick = () => viewEmail(email.id);
-
-                // Use received_at if available, otherwise fall back to created_at
-                const emailDate = email.received_at ? new Date(email.received_at) : new Date(email.created_at);
-                const timeAgo = getTimeAgo(emailDate);
-
-                emailItem.innerHTML = `
-            <div class="d-flex w-100 justify-content-between align-items-start">
-                <div class="flex-grow-1">
-                    <div class="d-flex align-items-center mb-1">
-                        <strong class="me-2 ${!email.is_read ? 'text-primary' : ''}">${email.sender_email}</strong>
-                        ${email.is_important ? '<i class="bi bi-star-fill text-warning me-1" title="Important"></i>' : ''}
-                        ${!email.is_read ? '<span class="badge bg-primary rounded-pill me-2">New</span>' : ''}
-                    </div>
-                    <h6 class="mb-1 ${!email.is_read ? 'fw-bold' : ''}">${email.subject}</h6>
-                    <p class="mb-1 text-muted small">${email.body.substring(0, 100)}${email.body.length > 100 ? '...' : ''}</p>
-                </div>
-                <div class="text-end">
-                    <small class="text-muted">${timeAgo}</small>
-                    <div class="mt-1">
-                        <button class="btn btn-sm btn-outline-warning me-1" onclick="event.stopPropagation(); toggleImportant(${email.id}, ${!email.is_important})" title="${email.is_important ? 'Remove from important' : 'Mark as important'}">
-                            <i class="bi bi-star${email.is_important ? '-fill' : ''}"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation(); deleteEmailById(${email.id})" title="Delete">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-
-                return emailItem;
             }
 
             function getTimeAgo(date) {
@@ -843,10 +923,10 @@
                     const syncData = await syncResponse.json();
 
                     // Show success message
-                    const successMsg = languageManager.t('email.gmailSyncSuccess') || `Successfully synced ${syncData.syncedCount} emails from Gmail`;
+                    const successMsg = (typeof LanguageManager !== 'undefined' && LanguageManager.t) ? LanguageManager.t('email.gmailSyncSuccess') : `Successfully synced ${syncData.syncedCount} emails from Gmail`;
 
                     Swal.fire({
-                        title: languageManager.t('email.syncComplete') || 'Sync Complete',
+                        title: (typeof LanguageManager !== 'undefined' && LanguageManager.t) ? LanguageManager.t('email.syncComplete') : 'Sync Complete',
                         text: successMsg,
                         icon: 'success',
                         background: getSweetAlertTheme().background,
@@ -862,13 +942,13 @@
                 } catch (error) {
                     console.error('Gmail sync error:', error);
 
-                    let errorMessage = languageManager.t('email.gmailSyncError') || 'Failed to sync Gmail emails';
+                    let errorMessage = (typeof LanguageManager !== 'undefined' && LanguageManager.t) ? LanguageManager.t('email.gmailSyncError') : 'Failed to sync Gmail emails';
                     if (error.message.includes('not connected')) {
-                        errorMessage = languageManager.t('email.gmailNotConnected') || 'Gmail integration not connected. Please set up Gmail integration in settings.';
+                        errorMessage = (typeof LanguageManager !== 'undefined' && LanguageManager.t) ? LanguageManager.t('email.gmailNotConnected') : 'Gmail integration not connected. Please set up Gmail integration in settings.';
                     }
 
                     Swal.fire({
-                        title: languageManager.t('email.syncFailed') || 'Sync Failed',
+                        title: (typeof LanguageManager !== 'undefined' && LanguageManager.t) ? LanguageManager.t('email.syncFailed') : 'Sync Failed',
                         text: errorMessage,
                         icon: 'error',
                         background: getSweetAlertTheme().background,
@@ -1123,9 +1203,23 @@
             }
 
             async function viewEmail(emailId) {
+                console.log('viewEmail called with ID:', emailId, typeof emailId);
+                if (!emailId || emailId === 'undefined' || emailId === 'null') {
+                    console.error('No valid email ID provided to viewEmail');
+                    showError('Invalid email ID');
+                    return;
+                }
+
                 try {
                     const response = await fetch(`/api/emails/${emailId}`);
+                    console.log('Email fetch response status:', response.status);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
                     const data = await response.json();
+                    console.log('Email data received:', data);
 
                     if (!data.success) {
                         throw new Error(data.message || 'Failed to load email');
@@ -1138,7 +1232,7 @@
                     if (!email.is_read) {
                         await markAsRead(emailId, true);
                         // Update local data
-                        const emailIndex = emails.findIndex(e => e.id === emailId);
+                        const emailIndex = emails.findIndex(e => (e._id || e.id) === emailId);
                         if (emailIndex !== -1) {
                             emails[emailIndex].is_read = true;
                             displayEmails(emails); // Refresh display
@@ -1490,7 +1584,7 @@
                     const data = await response.json();
                     if (data.success) {
                         // Update local data
-                        const emailIndex = emails.findIndex(e => e.id === emailId);
+                        const emailIndex = emails.findIndex(e => (e._id || e.id) === emailId);
                         if (emailIndex !== -1) {
                             emails[emailIndex].is_important = isImportant;
                             displayEmails(emails); // Refresh display
@@ -1509,7 +1603,7 @@
                 if (!currentEmail) return;
 
                 const newImportantState = !currentEmail.is_important;
-                await toggleImportant(currentEmail.id, newImportantState);
+                await toggleImportant(currentEmail._id || currentEmail.id, newImportantState);
 
                 // Update current email object and modal UI
                 currentEmail.is_important = newImportantState;
@@ -1551,7 +1645,7 @@
                     const data = await response.json();
                     if (data.success) {
                         // Remove from local data
-                        emails = emails.filter(email => email.id !== emailId);
+                        emails = emails.filter(email => (email._id || email.id) !== emailId);
                         displayEmails(emails);
                         document.getElementById('emailCount').textContent = emails.length;
                         showSuccess('Email deleted successfully');
@@ -1620,7 +1714,7 @@
 
             // Helper functions for notifications
             function showSuccess(message) {
-                Swal.fire({
+                safeSwal({
                     title: 'Success!',
                     text: message,
                     icon: 'success',
@@ -1635,7 +1729,7 @@
             }
 
             function showError(message) {
-                Swal.fire({
+                safeSwal({
                     title: 'Error!',
                     text: message,
                     icon: 'error',
@@ -1647,9 +1741,27 @@
 
             // Enhanced email formatting functions
             function escapeHtml(text) {
+                if (!text) return '';
                 const div = document.createElement('div');
                 div.textContent = text;
                 return div.innerHTML;
+            }
+
+            function stripHtmlTags(html) {
+                if (!html) return '';
+                // Create a temporary div to parse HTML
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = html;
+                // Get text content and clean up extra whitespace
+                return tempDiv.textContent || tempDiv.innerText || '';
+            }
+
+            function getEmailPreview(body, maxLength = 120) {
+                if (!body) return '';
+                // Strip HTML tags first, then escape for display, then truncate
+                const cleanText = stripHtmlTags(body);
+                const truncated = cleanText.substring(0, maxLength);
+                return escapeHtml(truncated) + (cleanText.length > maxLength ? '...' : '');
             }
 
             function formatEmailBody(body) {
@@ -1840,5 +1952,9 @@ ${currentEmail.body}
                 });
             }
         </script>
+
+<!-- SweetAlert2 CSS and JS -->
+<link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <%- include('../components/footer.ejs') %>
