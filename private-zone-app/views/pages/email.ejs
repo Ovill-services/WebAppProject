@@ -69,6 +69,8 @@
                                     <i class="bi bi-cloud-download me-1"></i><span data-translate="email.syncGmail">Sync
                                         Gmail</span>
                                 </button>
+                                <!-- Render toggle button (original / theme view) -->
+                                <button id="emailViewToggleRenderBtn" class="btn btn-outline-secondary btn-sm page-action-btn" title="Toggle original / theme view">Theme view</button>
                                 <button class="btn btn-outline-primary btn-sm page-action-btn" onclick="refreshEmails()">
                                     <i class="bi bi-arrow-clockwise me-1"></i><span
                                         data-translate="email.refresh">Refresh</span>
@@ -295,10 +297,10 @@
         <!-- Enhanced Email View Modal -->
         <div class="modal fade" id="emailViewModal" tabindex="-1" aria-labelledby="emailViewModalLabel"
             aria-hidden="true">
-            <div class="modal-dialog modal-xl">
-                <div class="modal-content email-view-card border-0 shadow-lg">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content email-view-card border-0 shadow-lg bg-body text-body">
                     <!-- Enhanced Modern Header -->
-                    <div class="modal-header border-0 py-4 email-view-header">
+                    <div class="modal-header border-0 py-4 email-view-header bg-body text-body">
                         <div class="d-flex align-items-center">
                             <div class="me-3">
                                 <div class="bg-primary bg-opacity-15 rounded-circle p-3">
@@ -322,13 +324,13 @@
 
                     <!-- Enhanced Email Content -->
                     <div class="modal-body p-0">
-                        <div id="emailViewContent" class="email-viewer">
+                        <div id="emailViewContent" class="email-viewer bg-transparent">
                             <!-- Enhanced email content will be loaded here -->
                         </div>
                     </div>
 
                     <!-- Enhanced Professional Action Bar -->
-                    <div class="modal-footer email-view-footer border-0 py-3">
+                    <div class="modal-footer email-view-footer border-0 py-3 bg-body text-body">
                         <div class="d-flex flex-wrap gap-2 w-100 justify-content-between">
                             <div class="d-flex gap-2 flex-wrap">
                                 <button type="button" class="page-action-btn btn btn-primary d-flex align-items-center"
@@ -440,6 +442,58 @@
             let currentEmail = null;
             let autoSyncInterval = null;
             let currentAutoSyncTime = 300000; // Default 5 minutes
+
+            // Rendering toggle: allow user to switch between theme-adapted view and original view
+            function setupEmailRenderToggle(bodyContainer, rawHtml) {
+                try {
+                    const toggleBtn = document.getElementById('emailViewToggleRenderBtn');
+                    if (!toggleBtn) return;
+
+                    // Keep state on the button dataset
+                    toggleBtn.dataset.mode = 'theme'; // 'theme' or 'original'
+                    toggleBtn.textContent = 'Theme view';
+
+                    // Ensure click handler is idempotent
+                    toggleBtn.onclick = function () {
+                        const currentMode = toggleBtn.dataset.mode;
+                        if (currentMode === 'theme') {
+                            // switch to original HTML rendering (preserve original HTML, no injected theme overrides)
+                            renderOriginalHtmlInIframe(bodyContainer, rawHtml);
+                            toggleBtn.dataset.mode = 'original';
+                            toggleBtn.textContent = 'Original view';
+                        } else {
+                            // switch back to theme-adapted rendering
+                            renderEmailThemeInIframe(bodyContainer, rawHtml);
+                            toggleBtn.dataset.mode = 'theme';
+                            toggleBtn.textContent = 'Theme view';
+                        }
+                    };
+                } catch (err) {
+                    console.error('Failed to setup render toggle', err);
+                }
+            }
+
+            // Render original HTML inside iframe without injecting theme overrides
+            function renderOriginalHtmlInIframe(container, html) {
+                try {
+                    container.innerHTML = '';
+                    const srcdoc = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>html,body{margin:0;padding:12px;background:transparent;color:inherit;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial} img{max-width:100% !important;height:auto !important;display:block;margin:0 auto} table{max-width:100% !important;width:100% !important;border-collapse:collapse} a{color:#1a73e8}</style></head><body><div>${html}</div></body></html>`;
+
+                    const iframe = document.createElement('iframe');
+                    iframe.className = 'email-iframe border-0 rounded-2';
+                    iframe.setAttribute('sandbox', '');
+                    iframe.setAttribute('scrolling', 'auto');
+                    iframe.style.width = '100%';
+                    iframe.style.minHeight = '60vh';
+                    iframe.style.border = '0';
+                    iframe.srcdoc = srcdoc;
+
+                    container.appendChild(iframe);
+                } catch (err) {
+                    console.error('Failed to render original HTML in iframe', err);
+                    container.innerText = html;
+                }
+            }
 
             // Initialize email page
             document.addEventListener('DOMContentLoaded', function () {
@@ -1441,85 +1495,67 @@
                                         const modal = new bootstrap.Modal(document.getElementById('emailViewModal'));
                                         modal.show();
 
-                                        // After modal content is inserted, render body appropriately
-                                                        (function renderBody() {
+                                        // After modal content is inserted, render body with no client-side parsing.
+                                        (function renderBodyMinimal() {
                                             const bodyContainer = document.getElementById('emailBodyContainer');
+                                            const toggleBtn = document.getElementById('emailViewToggleRenderBtn');
+                                            if (toggleBtn) toggleBtn.style.display = 'none'; // Disable toggle since parsing removed
                                             if (!bodyContainer) return;
-                                            const hasHtml = bodyContainer.getAttribute('data-has-html') === 'true';
-                                            if (hasHtml) {
-                                                // render the original HTML inside a sandboxed iframe
-                                                                // default to theme-adapted view
-                                                                renderEmailHtmlInIframe(bodyContainer, email.body || '');
-                                                                setupEmailRenderToggle(bodyContainer, email.body || '');
+
+                                            // If server provided explicit HTML, embed it directly in a sandboxed iframe.
+                                            const htmlContent = email.htmlBody || email.body;
+                                            if (htmlContent && /<[^>]+>/g.test(htmlContent)) {
+                                                renderEmailThemeInIframe(bodyContainer, htmlContent);
+                                                // enable toggle so user can switch to original view
+                                                try { setupEmailRenderToggle(bodyContainer, htmlContent); } catch (e) { console.error('setupEmailRenderToggle failed', e); }
                                             } else {
-                                                // insert formatted plain text
-                                                bodyContainer.innerHTML = formattedBody;
+                                                // Plain text: escape and preserve newlines
+                                                bodyContainer.innerHTML = escapeHtml(email.body || '').replace(/\n/g, '<br>');
                                             }
                                         })();
 
-                                                        // Setup toggle for switching rendering modes
-                                                        function setupEmailRenderToggle(bodyContainer, rawHtml) {
-                                                            try {
-                                                                const toggleBtn = document.getElementById('emailViewToggleRenderBtn');
-                                                                if (!toggleBtn) return;
+                                        // Minimal iframe renderer that does not parse or sanitize the HTML.
+                                        function renderEmailThemeInIframe(container, html) {
+                                            try {
+                                                container.innerHTML = '';
 
-                                                                // Keep state on the button dataset
-                                                                toggleBtn.dataset.mode = 'theme'; // 'theme' or 'original'
-                                                                toggleBtn.textContent = 'Theme view';
+                                                // Determine site theme via data-bs-theme or .dark class
+                                                let theme = document.documentElement.getAttribute('data-bs-theme');
+                                                if (!theme) theme = (document.documentElement.classList.contains('dark') || document.body.classList.contains('dark')) ? 'dark' : 'light';
 
-                                                                // Ensure click handler is idempotent
-                                                                toggleBtn.onclick = function () {
-                                                                    const currentMode = toggleBtn.dataset.mode;
-                                                                    if (currentMode === 'theme') {
-                                                                        // switch to original HTML rendering (preserve original HTML, no injected overrides)
-                                                                        renderOriginalHtmlInIframe(bodyContainer, rawHtml);
-                                                                        toggleBtn.dataset.mode = 'original';
-                                                                        toggleBtn.textContent = 'Original view';
-                                                                    } else {
-                                                                        // switch back to theme-adapted rendering
-                                                                        renderEmailHtmlInIframe(bodyContainer, rawHtml);
-                                                                        toggleBtn.dataset.mode = 'theme';
-                                                                        toggleBtn.textContent = 'Theme view';
-                                                                    }
-                                                                };
-                                                            } catch (err) {
-                                                                console.error('Failed to setup render toggle', err);
-                                                            }
-                                                        }
+                                                // For dark site theme use a neutral dark gray background and light text (no blue tint)
+                                                const bg = theme === 'dark' ? '#212529;' : '#ffffff';
+                                                const text = theme === 'dark' ? '#dee2e6' : '#111827';
+                                                const link = theme === 'dark' ? '#8ab4ff' : '#1a73e8';
 
-                                                        // Render the original HTML inside a sandboxed iframe without theme overrides
-                                                        function renderOriginalHtmlInIframe(container, html) {
-                                                            try {
-                                                                container.innerHTML = '';
-                                                                const srcdoc = `
-                                                                    <!doctype html>
-                                                                    <html>
-                                                                      <head>
-                                                                        <meta charset="utf-8">
-                                                                        <meta name="viewport" content="width=device-width, initial-scale=1">
-                                                                        <style>html,body{margin:0;padding:12px;background:transparent;color:inherit;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial;} img{max-width:100% !important;height:auto !important;display:block;margin:0 auto} table{max-width:100% !important;width:100% !important;border-collapse:collapse} a{color:#1a73e8}</style>
-                                                                      </head>
-                                                                      <body>
-                                                                        <div>${html}</div>
-                                                                      </body>
-                                                                    </html>
-                                                                `;
+                                                const injected = `<style>
+                                                    :root{--iframe-bg:${bg};--iframe-text:${text};--iframe-link:${link}}
+                                                    /* Force neutral background and readable text for theme view */
+                                                    html,body, * { margin:0; padding:0; background:var(--iframe-bg) !important; color:var(--iframe-text) !important; border-color: rgba(255,255,255,0.06) !important }
+                                                    :where(table,td,th){ background:transparent !important }
+                                                    html,body{padding:12px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial}
+                                                    img{max-width:100% !important;height:auto !important;display:block;margin:0 auto}
+                                                    table{max-width:100% !important;width:100% !important;border-collapse:collapse}
+                                                    a{color:var(--iframe-link) !important}
+                                                </style>`;
 
-                                                                const iframe = document.createElement('iframe');
-                                                                iframe.className = 'email-iframe border-0 rounded-2';
-                                                                iframe.setAttribute('sandbox', '');
-                                                                iframe.setAttribute('scrolling', 'auto');
-                                                                iframe.style.width = '100%';
-                                                                iframe.style.minHeight = '60vh';
-                                                                iframe.style.border = '0';
-                                                                iframe.srcdoc = srcdoc;
+                                                const srcdoc = '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">' + injected + '</head><body><div>' + html + '</div></body></html>';
 
-                                                                container.appendChild(iframe);
-                                                            } catch (err) {
-                                                                console.error('Failed to render original HTML in iframe', err);
-                                                                container.innerText = html;
-                                                            }
-                                                        }
+                                                const iframe = document.createElement('iframe');
+                                                iframe.className = 'email-iframe border-0 rounded-2';
+                                                iframe.setAttribute('sandbox', '');
+                                                iframe.setAttribute('scrolling', 'auto');
+                                                iframe.style.width = '100%';
+                                                iframe.style.minHeight = '60vh';
+                                                iframe.style.border = '0';
+                                                iframe.srcdoc = srcdoc;
+
+                                                container.appendChild(iframe);
+                                            } catch (err) {
+                                                console.error('Failed to render HTML in iframe', err);
+                                                container.innerText = html;
+                                            }
+                                        }
                 } catch (error) {
                     console.error('Error viewing email:', error);
                     showError('Failed to load email. Please try again.');
@@ -1857,7 +1893,17 @@
                                 try {
                                         container.innerHTML = '';
 
-                                        const theme = document.documentElement.getAttribute('data-bs-theme') || 'light';
+                                        // Robust theme detection: data-bs-theme, .dark class, body class, or prefers-color-scheme
+                                        let theme = document.documentElement.getAttribute('data-bs-theme');
+                                        if (!theme) {
+                                            if (document.documentElement.classList.contains('dark') || document.body.classList.contains('dark')) {
+                                                theme = 'dark';
+                                            } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                                                theme = 'dark';
+                                            } else {
+                                                theme = 'light';
+                                            }
+                                        }
 
                                         // If the html is escaped (contains &lt;), decode it first
                                         const decoder = document.createElement('textarea');
@@ -1881,18 +1927,22 @@
                                                 a{color:var(--app-link) !important}
                                                 .gmail-card > .gmail-card, .gmail-card .inner-card, .gmail-card .gmail-card, .gmail-card center > table, .gmail-card table[align="center"], .gmail-card table[width]{border:none !important;box-shadow:none !important;width:100% !important;max-width:100% !important;margin:0 !important;padding:0 !important}
                                                 .gmail-card hr{border-color:rgba(0,0,0,0.08)}
-                                                /* Dark-mode stronger overrides to neutralize embedded light backgrounds */
-                                                ${theme === 'dark' ? `
-                                                    /* Force neutral backgrounds and readable text across common containers */
-                                                    html, body, table, td, div, center, section, main { background: transparent !important; color: rgb(226,232,240) !important }
-                                                    /* Neutralize elements that often create white cards */
-                                                    table[width], table[height], table[role], .mdv2rw, .v2sp, .v2rsp, .gmail-card, .gmail-inner { background: transparent !important }
-                                                    /* Then apply our card look to the wrapper */
-                                                    .gmail-wrapper > .gmail-card, .gmail-card { background: var(--card-bg) !important; border-color: var(--card-border) !important }
-                                                    .gmail-inner { background: rgba(255,255,255,0.02) !important; padding:12px; border-radius:6px }
-                                                    /* Make links and text readable */
-                                                    .gmail-card, .gmail-card * { color: rgb(226,232,240) !important }
-                                                ` : ''}
+                                                        /* Dark-mode stronger overrides to neutralize embedded light backgrounds */
+                                                        ${theme === 'dark' ? `
+                                                            /* Aggressive reset to override inline/background styles inside email HTML */
+                                                            /* Force transparent backgrounds and readable text for all elements */
+                                                            html, body { background: transparent !important; color: rgb(226,232,240) !important }
+                                                            /* Star selector to neutralize deeply nested inline/backgrounds */
+                                                            html, body, * { background: transparent !important; color: rgb(226,232,240) !important; border-color: rgba(255,255,255,0.06) !important }
+                                                            /* Neutralize known table/card containers used by email clients */
+                                                            table, td, th, div, center, section, main, table[width], table[height], table[role], .mdv2rw, .v2sp, .v2rsp { background: transparent !important }
+                                                            /* Apply our card look to the iframe wrapper only */
+                                                            .gmail-wrapper > .gmail-card, .gmail-card { background: var(--card-bg) !important; border-color: var(--card-border) !important }
+                                                            .gmail-inner { background: rgba(255,255,255,0.02) !important; padding:12px; border-radius:6px }
+                                                            /* Ensure links remain visible and other text inherits readable color */
+                                                            a { color: #8ab4ff !important }
+                                                            .gmail-card, .gmail-card * { color: rgb(226,232,240) !important }
+                                                        ` : ''}
                                                 @media (max-width:600px){.gmail-card{padding:16px;border-radius:10px}}
                                             </style>
                                         `;
@@ -1902,18 +1952,45 @@
                                         let srcdoc = '';
 
                                         if (looksLikeDoc) {
-                                            // Try to insert injectedStyles into </head> or after <head>
-                                            let modified = sanitized;
-                                            if (/<\/head>/i.test(modified)) {
-                                                modified = modified.replace(/<\/head>/i, injectedStyles + '\n</head>');
-                                            } else if (/<head[^>]*>/i.test(modified)) {
-                                                modified = modified.replace(/<head[^>]*>/i, match => match + injectedStyles);
-                                            } else if (/<html[^>]*>/i.test(modified)) {
-                                                modified = modified.replace(/<html[^>]*>/i, match => match + '<head>' + injectedStyles + '</head>');
-                                            } else {
-                                                modified = '<!doctype html><html><head>' + injectedStyles + '</head><body>' + sanitized + '</body></html>';
+                                            // Parse the sanitized full document and extract safe head nodes and the body content.
+                                            try {
+                                                const parser2 = new DOMParser();
+                                                const doc2 = parser2.parseFromString(sanitized, 'text/html');
+
+                                                // Collect safe head nodes to preserve without style/script blocks.
+                                                // IMPORTANT: skip external stylesheets to avoid email-provided CSS forcing a light theme
+                                                let preservedHead = '';
+                                                if (doc2.head) {
+                                                    Array.from(doc2.head.children).forEach(node => {
+                                                        const tag = node.tagName && node.tagName.toLowerCase();
+                                                        if (tag === 'meta' || tag === 'base') {
+                                                            preservedHead += node.outerHTML + '\n';
+                                                        } else if (tag === 'link') {
+                                                            try {
+                                                                const rel = (node.getAttribute && (node.getAttribute('rel') || '')).toLowerCase();
+                                                                // Allow only benign link rels; explicitly skip rel=stylesheet
+                                                                const allowedRels = ['icon', 'shortcut icon', 'apple-touch-icon', 'preconnect', 'dns-prefetch', 'manifest'];
+                                                                if (rel && allowedRels.includes(rel)) {
+                                                                    preservedHead += node.outerHTML + '\n';
+                                                                } else {
+                                                                    // skip stylesheet or unknown link rel to prevent external CSS from loading
+                                                                }
+                                                            } catch (e) {
+                                                                // On any unexpected node shape, skip preserving the link
+                                                            }
+                                                        }
+                                                        // intentionally skip <style> and <script>
+                                                    });
+                                                }
+
+                                                const bodyInner = (doc2.body && doc2.body.innerHTML) ? doc2.body.innerHTML : sanitized;
+
+                                                // Build a wrapped doc so our gmail-card wrapper always applies
+                                                srcdoc = '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">' + preservedHead + injectedStyles + '</head><body><div class="gmail-wrapper"><div class="gmail-card"><div class="gmail-inner">' + bodyInner + '</div></div></div></body></html>';
+                                            } catch (e) {
+                                                // Fallback to previous approach
+                                                srcdoc = '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">' + injectedStyles + '</head><body><div class="gmail-wrapper"><div class="gmail-card"><div class="gmail-inner">' + sanitized + '</div></div></div></body></html>';
                                             }
-                                            srcdoc = modified;
                                         } else {
                                             srcdoc = '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">' + injectedStyles + '</head><body><div class="gmail-wrapper"><div class="gmail-card"><div class="gmail-inner">' + sanitized + '</div></div></div></body></html>';
                                         }
